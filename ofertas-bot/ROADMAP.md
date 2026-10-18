@@ -1,6 +1,6 @@
 # Roadmap do Ofertas Bot
 
-O projeto mantém a fundação e o fluxo simulado da fase 2. A fase 2.1 autorizada acrescenta categorias e filtragem conservadora por destino. A validação PostgreSQL real continua pendente de execução no PowerShell do usuário com acesso ao Docker. O avanço à fase 3 depende de nova aprovação explícita do responsável pelo projeto.
+O projeto mantém a fundação e o fluxo simulado da fase 2. A fase 2.1 autorizada acrescenta categorias e filtragem conservadora por destino. Os dois testes de integração PostgreSQL real foram aprovados no banco exclusivo de testes. A verificação do CLI Docker/Compose neste contexto continua separada. O avanço à fase 3 depende de nova aprovação explícita do responsável pelo projeto.
 
 ## Fase 1 — Fundação
 
@@ -40,7 +40,7 @@ Validação consolidada daquela fase: **173 testes aprovados, 1 pulado, Ruff e f
 
 ## Fase 2.1 — Categorias e validação de infraestrutura
 
-Parte de categorias concluída em **18/10/2026**, com **241 testes aprovados, nenhuma falha e 2 testes PostgreSQL ignorados**; **a validação de Compose/PostgreSQL real permanece pendente de ambiente**. Não há consultas a lojas, IA paga ou publicações reais.
+Parte de categorias concluída em **18/10/2026**, com **241 testes isolados aprovados e, em execução posterior, os 2 testes PostgreSQL reais aprovados**. Não há consultas a lojas, IA paga ou publicações reais.
 
 - [x] Modelos `Category`, `ProductCategory` e `DestinationCategory`, origem/confiança/explicação e unicidades.
 - [x] Migração incremental `0003_category_routing`, sem substituir revisões anteriores.
@@ -57,7 +57,8 @@ Parte de categorias concluída em **18/10/2026**, com **241 testes aprovados, ne
 - [x] Suíte anterior preservada: 173 testes anteriores mais 68 novos, mantendo as verificações de deduplicação, concorrência e janela de três horas. Os destinos usados nos testes antigos foram configurados explicitamente em `all` para atender à nova política conservadora.
 - [x] Ruff e formatação aprovados em 50 arquivos Python; 22 blocos PowerShell e o exemplo executável passaram no parser.
 - [x] Alembic `upgrade head`, `current` e `check` aprovados em SQLite isolado na revisão 0003, sem divergências; seed executável repetido sem duplicações.
-- [ ] Executar Compose, migrações e testes no PostgreSQL real; confirmar `/health` com banco PostgreSQL conectado.
+- [x] Executar os dois testes de integração no PostgreSQL real, incluindo migrações, categorias, seed, roteamento e `/health`, em schemas exclusivos do banco `ofertas_bot_test`.
+- [ ] Verificar diretamente o CLI Docker/Compose neste contexto e registrar a inspeção do container de desenvolvimento.
 
 **Estado do ambiente:** o usuário informou Docker Desktop instalado e engine **29.8.2** ativo via WSL 2 no seu PowerShell do Windows. Esse relato não substitui a execução dos comandos pelo agente. O processo Codex usa shell/caminho Windows; nele, os três comandos `docker --version`, `docker compose version` e `docker info` retornaram `The term 'docker' is not recognized`. O executável não foi localizado nos caminhos usuais consultados e o `.env` estava ausente. O bloqueio é acesso ao CLI nesse processo, sem evidência de falta de instalação do Desktop. Nenhum recurso Windows/WSL, credencial ou volume foi alterado.
 
@@ -66,6 +67,8 @@ Parte de categorias concluída em **18/10/2026**, com **241 testes aprovados, ne
 **Nova tentativa final em 18/10/2026:** o `.env` passou a estar visível e foi carregado sem exibir segredos. O CLI Docker continuou indisponível no `PATH` e no caminho explícito solicitado. A conexão direta ao PostgreSQL configurado falhou com `OperationalError`; a verificação TCP no destino local confirmou conexão recusada. Por isso, Compose, migrações/seed reais, criação do banco de testes e Pytest PostgreSQL continuam pendentes. Não se repetiu a suíte isolada. Ruff e formatação passaram nos 50 arquivos Python, sem mudanças funcionais. O [relatório da tentativa](VALIDACAO_FASE_2_1.md) separa as evidências atuais dos 241 testes anteriores e não declara PostgreSQL validado.
 
 `Gerais` é somente fallback, não uma permissão global. `all` ainda exige categoria ativa; `selected=[]` e `unconfigured` bloqueiam. `Ofertas de Casa` fica desativado até configuração explícita. A fase 3 continua aguardando aprovação.
+
+**Validação PostgreSQL concluída em execução posterior de 18/10/2026:** conexão real com PostgreSQL **17.11**, banco `ofertas_bot_test` já existente e identidade confirmada antes dos testes. `python -m pytest -q -m postgres` terminou com **2 aprovados, 0 falhas, 0 ignorados, 241 deselecionados**, em 8,01 segundos. A URL foi temporária no subprocesso, sem exposição de credenciais e sem operações de teste no banco principal. Os objetos preexistentes foram preservados. A suíte completa não foi repetida. O [relatório atualizado](VALIDACAO_FASE_2_1.md) registra a superação do bloqueio PostgreSQL anterior; Docker/Compose não foram reavaliados nesta rodada.
 
 ## Fase 3 — Fontes comerciais autorizadas
 

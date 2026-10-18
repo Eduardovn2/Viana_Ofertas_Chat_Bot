@@ -450,6 +450,8 @@ Por esse bloqueio de acesso ao CLI neste ambiente de execução, **Compose, migr
 
 Na tentativa final posterior, ainda em 18/10/2026, o `.env` já estava acessível e foi carregado com sucesso, mas o CLI Docker continuou indisponível e a conexão direta ao PostgreSQL local foi recusada. Não foram repetidos os testes isolados. Ruff e formatação passaram. Os resultados e as etapas não executadas estão no [relatório de validação real](VALIDACAO_FASE_2_1.md).
 
+**Atualização posterior em 18/10/2026:** o acesso direto ao PostgreSQL **17.11** passou a funcionar. O banco `ofertas_bot_test` já existia e os dois testes antes ignorados foram executados com `TEST_DATABASE_URL` temporária: **2 aprovados, 0 falhas, 0 ignorados e 241 deselecionados**, em 8,01 segundos. Nenhuma operação de teste foi executada no banco principal e nenhum objeto preexistente foi excluído. A suíte completa e o diagnóstico Docker/Compose não foram repetidos nessa rodada.
+
 ## Estrutura e decisões técnicas
 
 ```text
@@ -504,4 +506,4 @@ Para retomar, ative o ambiente virtual, execute `docker compose up -d postgres`,
 
 ## Próximo avanço
 
-O [`ROADMAP.md`](ROADMAP.md) detalha as fases. A fase 2.1 mantém o fluxo simulado e acrescenta classificação e seleção por destino. A validação em PostgreSQL real permanece pendente de execução no PowerShell com acesso ao Docker. Para a fase 3 faltam aprovação explícita, credenciais, permissões e confirmação das operações disponíveis nas APIs autorizadas de cada plataforma. O provedor real deverá respeitar limites, falhas e procedência dos dados. Integrações comerciais e publicações reais permanecem pendentes.
+O [`ROADMAP.md`](ROADMAP.md) detalha as fases. A fase 2.1 mantém o fluxo simulado e acrescenta classificação e seleção por destino, com os dois testes PostgreSQL reais aprovados. A verificação independente do CLI Docker/Compose neste contexto permanece separada. Para a fase 3 faltam aprovação explícita, credenciais, permissões e confirmação das operações disponíveis nas APIs autorizadas de cada plataforma. O provedor real deverá respeitar limites, falhas e procedência dos dados. Integrações comerciais e publicações reais permanecem pendentes.

@@ -1,8 +1,23 @@
-# Tentativa de validação real — Fase 2.1
+# Validação real — Fase 2.1
 
-Data: **18/10/2026**. Resultado: **bloqueada pelo acesso à infraestrutura neste processo**, sem alteração das funcionalidades aprovadas.
+Data: **18/10/2026**. Resultado atual: **integração PostgreSQL real aprovada**, sem alteração das funcionalidades aprovadas.
 
-O usuário informou Docker Desktop, PostgreSQL e `.env` funcionando no Windows. O diagnóstico abaixo descreve somente o que o processo PowerShell do Codex conseguiu verificar; não indica falha na instalação do usuário.
+## Execução mais recente
+
+- Conexão real confirmada com PostgreSQL **17.11**, usando o `.env` existente sem exibir credenciais.
+- Banco **`ofertas_bot_test`** já existente; reutilizado após confirmar `current_database()` antes de executar testes.
+- `TEST_DATABASE_URL` foi definida somente no ambiente do subprocesso Pytest. O `.env` e o ambiente do processo principal permaneceram inalterados.
+- Comando executado: `python -m pytest -q -m postgres`.
+- Resultado: **2 aprovados, 0 falhas, 0 ignorados e 241 deselecionados**, em **8,01 segundos**; código de saída 0.
+- Os dois testes antes ignorados validaram migrações, integridade, categorias, seed, roteamento e `/health` em schemas exclusivos criados dentro do banco de testes. A limpeza atingiu somente os objetos novos desses testes.
+- Nenhum banco, tabela ou volume preexistente foi excluído; o banco principal não recebeu operações de teste.
+- Um aviso de depreciação do TestClient/`httpx` permaneceu, sem impedir os testes.
+
+A suíte completa não foi repetida nesta execução. Sua evidência anterior permanece 241 testes isolados aprovados. Docker/Compose não foram reavaliados nesta rodada; a conexão PostgreSQL direta foi suficiente para executar os testes solicitados. A Fase 3 permanece aguardando aprovação.
+
+## Tentativa anterior — bloqueio de ambiente
+
+O diagnóstico histórico abaixo descreve a tentativa anterior, que não conseguiu acessar a infraestrutura. Ele foi superado pela conexão e pelos testes PostgreSQL registrados acima.
 
 | Verificação | Resultado desta execução |
 | --- | --- |
@@ -24,4 +39,4 @@ Não foram excluídos bancos, tabelas, schemas, volumes ou dados. Não houve rei
 
 A evidência anterior permanece **241 testes aprovados e 2 testes PostgreSQL ignorados**; esses números não representam uma nova execução nem comprovam PostgreSQL real.
 
-Para retomar, este processo precisa conseguir alcançar o Docker e o endereço PostgreSQL configurados no Windows. Depois disso, seguir o [README](README.md): verificar o Compose, aplicar Alembic, repetir o seed sem sobrescrever preferências, confirmar `/health` e executar testes em `ofertas_bot_test` com `TEST_DATABASE_URL` temporária. A Fase 3 continua não autorizada.
+O roteiro operacional permanece no [README](README.md). A validação dos dois testes PostgreSQL antes pendentes está concluída; a verificação independente do CLI Docker/Compose neste contexto permanece separada.

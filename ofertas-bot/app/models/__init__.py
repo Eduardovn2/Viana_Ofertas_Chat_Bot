@@ -6,7 +6,9 @@ from app.models.entities import (
     AppSetting,
     Category,
     Coupon,
+    CouponEvidence,
     DestinationCategory,
+    IntegrationEvent,
     MonitoringJob,
     MonitoringLease,
     Offer,
@@ -22,6 +24,7 @@ from app.models.enums import (
     CategoryMode,
     CategorySource,
     CouponDiscountType,
+    CouponEvidenceType,
     CouponValidationState,
     DestinationChannel,
     MonitoringJobStatus,
@@ -30,6 +33,7 @@ from app.models.enums import (
     PriceAccess,
     PublicationStatus,
     QueueStatus,
+    SourceType,
 )
 
 __all__ = [
@@ -42,9 +46,12 @@ __all__ = [
     "CategorySource",
     "Coupon",
     "CouponDiscountType",
+    "CouponEvidence",
+    "CouponEvidenceType",
     "CouponValidationState",
     "DestinationChannel",
     "DestinationCategory",
+    "IntegrationEvent",
     "MonitoringJob",
     "MonitoringJobStatus",
     "MonitoringLease",
@@ -60,6 +67,7 @@ __all__ = [
     "PublicationStatus",
     "PublicationQueueItem",
     "QueueStatus",
+    "SourceType",
     "UTCDateTime",
     "utcnow",
 ]

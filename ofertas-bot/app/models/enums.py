@@ -29,6 +29,22 @@ class CategoryMode(StrEnum):
 class PriceAccess(StrEnum):
     PUBLIC = "PUBLIC"
     EXCLUSIVE = "EXCLUSIVE"
+    CONDITIONAL = "CONDITIONAL"
+    UNKNOWN = "UNKNOWN"
+
+
+class SourceType(StrEnum):
+    OFFICIAL_API = "OFFICIAL_API"
+    MANUAL = "MANUAL"
+    SIMULATED = "SIMULATED"
+    UNKNOWN = "UNKNOWN"
+
+
+class CouponEvidenceType(StrEnum):
+    PERCENT = "PERCENT"
+    FIXED = "FIXED"
+    FREE_SHIPPING = "FREE_SHIPPING"
+    UNKNOWN = "UNKNOWN"
 
 
 class CouponDiscountType(StrEnum):

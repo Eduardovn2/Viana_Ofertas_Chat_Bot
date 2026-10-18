@@ -21,8 +21,10 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     false,
+    text,
     true,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UTCDateTime, utcnow
@@ -31,6 +33,7 @@ from app.models.enums import (
     CategoryMode,
     CategorySource,
     CouponDiscountType,
+    CouponEvidenceType,
     CouponValidationState,
     DestinationChannel,
     MonitoringJobStatus,
@@ -39,6 +42,7 @@ from app.models.enums import (
     PriceAccess,
     PublicationStatus,
     QueueStatus,
+    SourceType,
 )
 
 
@@ -66,7 +70,12 @@ coupon_products = Table(
 class Product(TimestampMixin, Base):
     __tablename__ = "products"
     __table_args__ = (
-        UniqueConstraint("platform", "external_id", name="uq_products_platform_external_id"),
+        UniqueConstraint(
+            "platform",
+            "external_id",
+            "variant_id",
+            name="uq_products_platform_external_id_variant_id",
+        ),
         Index("ix_products_monitoring_enabled_priority", "monitoring_enabled", "priority"),
         Index("ix_products_platform", "platform"),
     )
@@ -74,6 +83,7 @@ class Product(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     platform: Mapped[Platform] = mapped_column(state_enum(Platform, "product_platform"))
     external_id: Mapped[str | None] = mapped_column(String(100))
+    variant_id: Mapped[str] = mapped_column(String(100), default="", server_default=text("''"))
     name: Mapped[str] = mapped_column(String(500))
     description: Mapped[str | None] = mapped_column(Text)
     classification_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
@@ -121,6 +131,16 @@ class AffiliateLink(TimestampMixin, Base):
 class ProductPriceHistory(Base):
     __tablename__ = "product_price_history"
     __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "source",
+            "raw_fingerprint",
+            "observed_at",
+            name="uq_product_price_history_source_fingerprint_observed",
+        ),
+        CheckConstraint(
+            "raw_fingerprint IS NULL OR length(raw_fingerprint) = 64", name="fingerprint_length"
+        ),
         CheckConstraint(
             "current_price IS NULL OR current_price > 0", name="current_price_positive"
         ),
@@ -146,6 +166,19 @@ class ProductPriceHistory(Base):
         server_default=PriceAccess.PUBLIC.value,
     )
     source: Mapped[str] = mapped_column(String(100))
+    source_type: Mapped[SourceType] = mapped_column(
+        state_enum(SourceType, "price_source_type"),
+        default=SourceType.UNKNOWN,
+        server_default=SourceType.UNKNOWN.value,
+    )
+    source_reference: Mapped[str | None] = mapped_column(String(500))
+    evidence_metadata: Mapped[dict[str, Any]] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        default=dict,
+        server_default="{}",
+        nullable=False,
+    )
+    raw_fingerprint: Mapped[str | None] = mapped_column(String(64))
     is_simulated: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     observed_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
@@ -396,6 +429,8 @@ class PublicationQueueItem(TimestampMixin, Base):
     published_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     last_error: Mapped[str | None] = mapped_column(Text)
+    next_eligible_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    blocked_reason: Mapped[str | None] = mapped_column(String(100))
 
 
 class MonitoringLease(Base):
@@ -463,3 +498,76 @@ class DestinationCategory(TimestampMixin, Base):
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"))
     destination: Mapped[PublicationDestination] = relationship(back_populates="category_links")
     category: Mapped[Category] = relationship(back_populates="destination_links")
+
+
+class CouponEvidence(TimestampMixin, Base):
+    __tablename__ = "coupon_evidence"
+    __table_args__ = (
+        CheckConstraint("value IS NULL OR value > 0", name="value_positive"),
+        CheckConstraint(
+            "type <> 'PERCENT' OR value IS NULL OR value <= 100", name="percentage_at_most_100"
+        ),
+        CheckConstraint(
+            "minimum_purchase IS NULL OR minimum_purchase >= 0", name="minimum_purchase_nonnegative"
+        ),
+        CheckConstraint("max_discount IS NULL OR max_discount > 0", name="max_discount_positive"),
+        Index("ix_coupon_evidence_product_id_observed_at", "product_id", "observed_at"),
+        Index("ix_coupon_evidence_platform_validation_state", "platform", "validation_state"),
+        Index("ix_coupon_evidence_coupon_id", "coupon_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int | None] = mapped_column(ForeignKey("products.id", ondelete="SET NULL"))
+    coupon_id: Mapped[int | None] = mapped_column(ForeignKey("coupons.id", ondelete="SET NULL"))
+    platform: Mapped[Platform] = mapped_column(state_enum(Platform, "coupon_evidence_platform"))
+    code: Mapped[str | None] = mapped_column(String(100))
+    type: Mapped[CouponEvidenceType] = mapped_column(
+        state_enum(CouponEvidenceType, "coupon_evidence_type"),
+        default=CouponEvidenceType.UNKNOWN,
+        server_default=CouponEvidenceType.UNKNOWN.value,
+    )
+    value: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    minimum_purchase: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    max_discount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    validation_state: Mapped[CouponValidationState] = mapped_column(
+        state_enum(CouponValidationState, "coupon_evidence_validation_state"),
+        default=CouponValidationState.UNVERIFIED,
+        server_default=CouponValidationState.UNVERIFIED.value,
+    )
+    price_access: Mapped[PriceAccess] = mapped_column(
+        state_enum(PriceAccess, "coupon_evidence_price_access"),
+        default=PriceAccess.UNKNOWN,
+        server_default=PriceAccess.UNKNOWN.value,
+    )
+    observed_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    verified_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    source_type: Mapped[SourceType] = mapped_column(
+        state_enum(SourceType, "coupon_evidence_source_type"),
+        default=SourceType.UNKNOWN,
+        server_default=SourceType.UNKNOWN.value,
+    )
+    source_reference: Mapped[str | None] = mapped_column(String(500))
+    conditions: Mapped[dict[str, Any]] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        default=dict,
+        server_default="{}",
+        nullable=False,
+    )
+
+
+class IntegrationEvent(Base):
+    __tablename__ = "integration_events"
+    __table_args__ = (
+        Index("ix_integration_events_platform_observed_at", "platform", "observed_at"),
+        Index("ix_integration_events_product_id_observed_at", "product_id", "observed_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int | None] = mapped_column(ForeignKey("products.id", ondelete="SET NULL"))
+    platform: Mapped[Platform] = mapped_column(state_enum(Platform, "integration_event_platform"))
+    operation: Mapped[str] = mapped_column(String(50))
+    status: Mapped[str] = mapped_column(String(30))
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    observed_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    source_reference: Mapped[str | None] = mapped_column(String(500))

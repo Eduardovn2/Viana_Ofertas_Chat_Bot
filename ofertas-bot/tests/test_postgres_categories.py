@@ -26,13 +26,19 @@ from app.models import (
     Category,
     CategoryMode,
     CategorySource,
+    CouponEvidence,
+    CouponEvidenceType,
     DestinationCategory,
     DestinationChannel,
+    IntegrationEvent,
     Platform,
+    PriceAccess,
     Product,
     ProductCategory,
+    ProductPriceHistory,
     PublicationDestination,
     PublicationQueueItem,
+    SourceType,
 )
 from app.services.categories import CategoryService
 from app.services.category_routing import destination_accepts
@@ -68,7 +74,7 @@ def categories_postgres(monkeypatch):
         monkeypatch.setenv("DATABASE_URL", isolated_url.render_as_string(hide_password=False))
         get_settings.cache_clear()
         config = Config(str(PROJECT_ROOT / "alembic.ini"))
-        command.upgrade(config, "0003_category_routing")
+        command.upgrade(config, "head")
         isolated_engine = create_engine(
             isolated_url, hide_parameters=True, connect_args={"connect_timeout": 5}
         )
@@ -90,6 +96,15 @@ def test_category_migration_seed_routing_and_health_on_postgresql(categories_pos
     assert {"categories", "product_categories", "destination_categories"} <= set(
         inspector.get_table_names()
     )
+    assert {"coupon_evidence", "integration_events"} <= set(inspector.get_table_names())
+    assert ("platform", "external_id", "variant_id") in {
+        tuple(constraint["column_names"])
+        for constraint in inspector.get_unique_constraints("products")
+    }
+    assert ("product_id", "source", "raw_fingerprint", "observed_at") in {
+        tuple(constraint["column_names"])
+        for constraint in inspector.get_unique_constraints("product_price_history")
+    }
     with engine.connect() as connection:
         context = MigrationContext.configure(
             connection, opts={"compare_type": True, "compare_server_default": True}
@@ -294,6 +309,52 @@ def test_category_migration_seed_routing_and_health_on_postgresql(categories_pos
             with pytest.raises(IntegrityError), session.begin_nested():
                 session.add(invalid_row)
                 session.flush()
+        # The new source/evidence schema also uses only controlled synthetic data.
+        variant = Product(
+            platform=product.platform,
+            external_id=product.external_id,
+            variant_id="synthetic-variant",
+            name="Variante sintética",
+            original_url=product.original_url,
+        )
+        session.add(variant)
+        session.flush()
+        evidence = CouponEvidence(
+            product_id=variant.id,
+            platform=variant.platform,
+            type=CouponEvidenceType.FREE_SHIPPING,
+            conditions={"fixture": "synthetic"},
+            source_type=SourceType.UNKNOWN,
+        )
+        session.add_all(
+            [
+                evidence,
+                ProductPriceHistory(
+                    product_id=variant.id,
+                    current_price=Decimal("79.90"),
+                    price_access=PriceAccess.CONDITIONAL,
+                    source="synthetic_contract",
+                    source_type=SourceType.OFFICIAL_API,
+                    raw_fingerprint="c" * 64,
+                    evidence_metadata={"fixture": "synthetic"},
+                    observed_at=now,
+                ),
+                IntegrationEvent(
+                    product_id=variant.id,
+                    platform=variant.platform,
+                    operation="fetch_product",
+                    status="FAILED",
+                    error_code="SYNTHETIC_TIMEOUT",
+                    observed_at=now,
+                ),
+            ]
+        )
+        session.commit()
+        session.refresh(evidence)
+        assert evidence.value is None and evidence.code is None
+        assert evidence.price_access == PriceAccess.UNKNOWN
+        assert evidence.conditions == {"fixture": "synthetic"}
+        assert evidence.observed_at.utcoffset().total_seconds() == 0
         with pytest.raises(IntegrityError), session.begin_nested():
             session.execute(
                 text(

@@ -26,18 +26,23 @@ from app.models import (
     Category,
     CategoryMode,
     CategorySource,
+    CouponEvidence,
+    CouponEvidenceType,
     DestinationCategory,
     DestinationChannel,
+    IntegrationEvent,
     MonitoringLease,
     Offer,
     OfferStatus,
     Platform,
+    PriceAccess,
     Product,
     ProductCategory,
     ProductPriceHistory,
     PublicationDestination,
     PublicationQueueItem,
     QueueStatus,
+    SourceType,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -57,6 +62,8 @@ EXPECTED_TABLES = {
     "categories",
     "product_categories",
     "destination_categories",
+    "coupon_evidence",
+    "integration_events",
 }
 
 
@@ -210,6 +217,11 @@ def test_initial_revision_compiles_for_postgresql(monkeypatch):
     assert "CREATE TABLE categories" in sql
     assert "CREATE TABLE product_categories" in sql
     assert "CREATE TABLE destination_categories" in sql
+    assert "CREATE TABLE coupon_evidence" in sql
+    assert "CREATE TABLE integration_events" in sql
+    assert "FREE_SHIPPING" in sql
+    assert "CONDITIONAL" in sql
+    assert "JSONB" in sql
     assert "DEFAULT 'unconfigured' NOT NULL" in sql
     assert "SIMULATED" in sql
     assert "uq_offers_price_history_id" in sql
@@ -515,15 +527,25 @@ def test_downgrade_refuses_phase2_states_without_dropping_queue(migration_databa
 def test_category_migration_preserves_phase2_rows_and_defaults_to_unconfigured(migration_database):
     config, engine = migration_database
     ids = _seed_legacy_data(engine)
+    legacy_metadata = MetaData()
+    legacy_metadata.reflect(engine)
+    observed_at = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+    with engine.begin() as connection:
+        connection.execute(
+            legacy_metadata.tables["publication_queue_items"]
+            .insert()
+            .values(
+                product_id=ids["product_id"],
+                offer_id=ids["offer_id"],
+                destination_id=ids["destination_id"],
+                status="READY",
+                created_at=observed_at,
+                updated_at=observed_at,
+            )
+        )
     with Session(engine) as session:
         session.add_all(
             [
-                PublicationQueueItem(
-                    product_id=ids["product_id"],
-                    offer_id=ids["offer_id"],
-                    destination_id=ids["destination_id"],
-                    status=QueueStatus.READY,
-                ),
                 MonitoringLease(
                     name="legacy-lease",
                     owner="legacy-owner",
@@ -714,6 +736,290 @@ def test_category_fk_restricts_deletion_and_parent_cascades_remove_only_links(mi
         assert connection.scalar(select(func.count()).select_from(ProductCategory)) == 0
         assert connection.scalar(select(func.count()).select_from(DestinationCategory)) == 1
         assert connection.scalar(select(func.count()).select_from(Category)) == 1
+
+
+@pytest.mark.parametrize("migration_database", ["0003_category_routing"], indirect=True)
+def test_marketplace_migration_preserves_legacy_rows_and_derives_only_simulated_source(
+    migration_database,
+):
+    config, engine = migration_database
+    ids = _seed_legacy_data(engine)
+    _create_category_links(engine, ids)
+    metadata = MetaData()
+    metadata.reflect(engine)
+    observed_at = datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+    with engine.begin() as connection:
+        connection.execute(
+            metadata.tables["product_price_history"]
+            .insert()
+            .values(
+                product_id=ids["product_id"],
+                current_price=Decimal("89.90"),
+                price_access="EXCLUSIVE",
+                source="legacy-manual",
+                is_simulated=False,
+                observed_at=observed_at,
+                created_at=observed_at,
+            )
+        )
+        connection.execute(
+            metadata.tables["publication_queue_items"]
+            .insert()
+            .values(
+                product_id=ids["product_id"],
+                offer_id=ids["offer_id"],
+                destination_id=ids["destination_id"],
+                status="READY",
+                created_at=observed_at,
+                updated_at=observed_at,
+            )
+        )
+    command.upgrade(config, "head")
+    _assert_legacy_data_intact(engine, ids)
+    with Session(engine) as session:
+        product = session.get(Product, ids["product_id"])
+        assert product.variant_id == ""
+        assert product.category_links[0].source == CategorySource.MANUAL
+        simulated = session.get(ProductPriceHistory, ids["price_history_id"])
+        assert simulated.source_type == SourceType.SIMULATED
+        assert simulated.evidence_metadata == {}
+        assert simulated.raw_fingerprint is None
+        unknown = session.scalar(
+            select(ProductPriceHistory).where(ProductPriceHistory.source == "legacy-manual")
+        )
+        assert unknown.source_type == SourceType.UNKNOWN
+        assert unknown.price_access == PriceAccess.EXCLUSIVE
+        item = session.scalar(select(PublicationQueueItem))
+        assert item.blocked_reason is None and item.next_eligible_at is None
+        assert item.is_simulated is True
+    command.downgrade(config, "0003_category_routing")
+    _assert_legacy_data_intact(engine, ids)
+    assert "variant_id" not in {
+        column["name"] for column in inspect(engine).get_columns("products")
+    }
+    command.upgrade(config, "head")
+    _assert_legacy_data_intact(engine, ids)
+
+
+def test_product_variants_are_distinct_and_same_variant_remains_unique(migration_database):
+    _, engine = migration_database
+    with Session(engine) as session:
+        common = dict(
+            platform=Platform.SHOPEE,
+            external_id="shop:123:item:456",
+            name="Produto",
+            original_url="https://shopee.com.br/teste",
+        )
+        rows = [Product(**common, variant_id=variant) for variant in ("", "red-128", "blue-256")]
+        session.add_all(rows)
+        session.commit()
+        assert len({product.id for product in rows}) == 3
+        session.add(Product(**common, variant_id="red-128"))
+        with pytest.raises(IntegrityError):
+            session.commit()
+        session.rollback()
+
+
+def test_snapshot_fingerprint_deduplicates_same_instant_but_preserves_fresh_revalidation(
+    migration_database,
+):
+    _, engine = migration_database
+    ids = _seed_legacy_data(engine)
+    observed_at = datetime(2026, 10, 18, 13, 0, tzinfo=UTC)
+    values = dict(
+        product_id=ids["product_id"],
+        current_price=Decimal("80.00"),
+        source="official_synthetic_fixture",
+        source_type=SourceType.OFFICIAL_API,
+        source_reference="synthetic:product-price",
+        raw_fingerprint="a" * 64,
+        observed_at=observed_at,
+        evidence_metadata={"fixture": True},
+    )
+    with Session(engine) as session:
+        session.add(ProductPriceHistory(**values))
+        session.commit()
+        session.add(ProductPriceHistory(**values))
+        with pytest.raises(IntegrityError):
+            session.commit()
+        session.rollback()
+        session.add(ProductPriceHistory(**{**values, "observed_at": observed_at.replace(hour=17)}))
+        session.commit()
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(ProductPriceHistory)
+                .where(ProductPriceHistory.raw_fingerprint == "a" * 64)
+            )
+            == 2
+        )
+        session.add(ProductPriceHistory(**{**values, "raw_fingerprint": "invalid"}))
+        with pytest.raises(IntegrityError):
+            session.commit()
+        session.rollback()
+
+
+@pytest.mark.parametrize(
+    "access", [PriceAccess.CONDITIONAL, PriceAccess.UNKNOWN, PriceAccess.EXCLUSIVE]
+)
+def test_new_access_states_and_noncalculable_coupon_evidence_are_preserved(
+    migration_database, access
+):
+    _, engine = migration_database
+    ids = _seed_legacy_data(engine)
+    with Session(engine) as session:
+        history = session.get(ProductPriceHistory, ids["price_history_id"])
+        history.price_access = access
+        evidence = CouponEvidence(
+            product_id=ids["product_id"],
+            platform=Platform.MERCADO_LIVRE,
+            type=CouponEvidenceType.FREE_SHIPPING,
+            price_access=access,
+            conditions={"minimum_known": False},
+        )
+        session.add(evidence)
+        session.commit()
+        session.refresh(evidence)
+        assert evidence.code is None and evidence.value is None
+        assert evidence.validation_state.value == "UNVERIFIED"
+        assert evidence.price_access == access
+        assert evidence.source_type == SourceType.UNKNOWN
+        assert evidence.observed_at.tzinfo is UTC
+        assert evidence.conditions == {"minimum_known": False}
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"type": CouponEvidenceType.PERCENT, "value": Decimal("100.01")},
+        {"value": Decimal("0")},
+        {"value": Decimal("-1")},
+        {"minimum_purchase": Decimal("-0.01")},
+        {"max_discount": Decimal("0")},
+    ],
+)
+def test_coupon_evidence_database_rejects_invalid_amounts(migration_database, values):
+    _, engine = migration_database
+    with Session(engine) as session:
+        session.add(CouponEvidence(platform=Platform.SHOPEE, **values))
+        with pytest.raises(IntegrityError):
+            session.commit()
+        session.rollback()
+
+
+def test_integration_events_preserve_errors_without_changing_valid_prices(migration_database):
+    _, engine = migration_database
+    ids = _seed_legacy_data(engine)
+    with Session(engine) as session:
+        session.add(
+            IntegrationEvent(
+                product_id=ids["product_id"],
+                platform=Platform.MERCADO_LIVRE,
+                operation="fetch_product",
+                status="FAILED",
+                error_code="TIMEOUT",
+                source_reference="official:item-price",
+            )
+        )
+        session.commit()
+        event_row = session.scalar(select(IntegrationEvent))
+        assert event_row.observed_at.tzinfo is UTC
+        assert session.get(ProductPriceHistory, ids["price_history_id"]).current_price == Decimal(
+            "99.90"
+        )
+        assert {column.name for column in IntegrationEvent.__table__.columns} == {
+            "id",
+            "product_id",
+            "platform",
+            "operation",
+            "status",
+            "error_code",
+            "observed_at",
+            "source_reference",
+        }
+
+
+@pytest.mark.parametrize(
+    "risk",
+    [
+        "variant",
+        "history_access",
+        "coupon_access",
+        "source",
+        "source_reference",
+        "metadata",
+        "fingerprint",
+        "next_eligible",
+        "blocked_reason",
+        "coupon_evidence",
+        "integration_event",
+    ],
+)
+def test_marketplace_downgrade_refuses_data_loss_before_any_schema_change(migration_database, risk):
+    config, engine = migration_database
+    ids = _seed_legacy_data(engine)
+    with Session(engine) as session:
+        if risk == "variant":
+            session.get(Product, ids["product_id"]).variant_id = "red-128"
+        elif risk == "history_access":
+            session.get(
+                ProductPriceHistory, ids["price_history_id"]
+            ).price_access = PriceAccess.CONDITIONAL
+        elif risk == "coupon_access":
+            session.execute(text("UPDATE coupons SET price_access = 'UNKNOWN'"))
+        elif risk in ("source", "source_reference", "metadata", "fingerprint"):
+            row = session.get(ProductPriceHistory, ids["price_history_id"])
+            if risk == "source":
+                row.source_type = SourceType.OFFICIAL_API
+            elif risk == "source_reference":
+                row.source_reference = "official:price"
+            elif risk == "metadata":
+                row.evidence_metadata = {"seller_id": "synthetic-seller"}
+            else:
+                row.raw_fingerprint = "b" * 64
+        elif risk in ("next_eligible", "blocked_reason"):
+            row = PublicationQueueItem(
+                product_id=ids["product_id"],
+                offer_id=ids["offer_id"],
+                destination_id=ids["destination_id"],
+            )
+            if risk == "next_eligible":
+                row.next_eligible_at = datetime(2026, 10, 18, 15, 0, tzinfo=UTC)
+            else:
+                row.blocked_reason = "AFFILIATE_PENDING"
+            session.add(row)
+        elif risk == "coupon_evidence":
+            session.add(CouponEvidence(platform=Platform.SHOPEE, type=CouponEvidenceType.UNKNOWN))
+        else:
+            session.add(
+                IntegrationEvent(
+                    platform=Platform.SHOPEE, operation="fetch_product", status="DISABLED"
+                )
+            )
+        session.commit()
+    with pytest.raises(RuntimeError, match="without data loss"):
+        command.downgrade(config, "0003_category_routing")
+    assert set(inspect(engine).get_table_names()) == EXPECTED_TABLES | {"alembic_version"}
+    with engine.connect() as connection:
+        assert (
+            connection.scalar(text("SELECT version_num FROM alembic_version"))
+            == "0004_marketplace_provenance"
+        )
+
+
+def test_marketplace_downgrade_offline_postgresql_emits_guard_before_drop(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://test@localhost/test")
+    get_settings.cache_clear()
+    output = StringIO()
+    config = Config(str(PROJECT_ROOT / "alembic.ini"), output_buffer=output)
+    try:
+        command.downgrade(config, "0004_marketplace_provenance:0003_category_routing", sql=True)
+    finally:
+        get_settings.cache_clear()
+    sql = output.getvalue()
+    assert sql.index("Cannot downgrade marketplace provenance without data loss") < sql.index(
+        "DROP TABLE integration_events"
+    )
 
 
 @pytest.mark.postgres

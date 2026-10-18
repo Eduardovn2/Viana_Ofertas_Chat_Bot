@@ -1,6 +1,6 @@
 # Roadmap do Ofertas Bot
 
-Esta entrega cobre a fundação do monólito modular. Cada fase seguinte depende de aprovação explícita do responsável pelo projeto. Os modelos reservados no banco não significam que a funcionalidade correspondente já existe.
+O projeto mantém a fundação e o fluxo simulado da fase 2. A fase 2.1 autorizada acrescenta categorias e filtragem conservadora por destino. A validação PostgreSQL real continua pendente de execução no PowerShell do usuário com acesso ao Docker. O avanço à fase 3 depende de nova aprovação explícita do responsável pelo projeto.
 
 ## Fase 1 — Fundação
 
@@ -17,20 +17,57 @@ Concluída em **18/10/2026**, com 88 testes aprovados, 1 teste PostgreSQL pulado
 
 O preço simulado não é uma oferta real. Nenhuma consulta comercial, descoberta automática, rotina agendada ou publicação é executada nesta fase.
 
-## Fase 2 — Monitoramento e regras de preços
+## Fase 2 — Monitoramento, pontuação e fila simulada
 
-**Aguardando aprovação para iniciar.**
+**Concluída em 18/10/2026: 173 testes aprovados e 1 PostgreSQL real pulado.** O fluxo completo opera com dados simulados, incluindo pontuação, avaliação conservadora de cupons e fila local. Nenhuma consulta a loja ou publicação real foi implementada.
 
-- Formalizar atualização, validade e procedência dos dados de preço.
-- Diferenciar preço anterior da loja de queda comprovada no histórico.
-- Tratar preço público, restrições de assinatura/VIP, disponibilidade, frete e parcelamento.
-- Adicionar o agendador e intervalos configuráveis, condicionados às permissões de cada fonte.
-- Implementar limites de requisições, timeout, backoff e prevenção de execuções concorrentes repetidas.
-- Testar dados ausentes, preços inválidos, informação desatualizada e comparação histórica.
+- APScheduler 3.11 integrado ao lifecycle, sem threads em testes, com pausa e retomada.
+- Intervalos de 60/300 segundos para produtos prioritários/gerais, limite do provedor simulado, backoff e leases persistentes para concorrência.
+- Configuração validada em `AppSetting` por API, incluindo frequência, validade dos dados, pesos e preços de teste.
+- Comparação com histórico compatível, distinguindo queda, alta, estabilidade e preço anterior declarado pela loja.
+- Exclusão de dados inválidos, indisponíveis, exclusivos, futuros ou desatualizados da avaliação de oportunidades.
+- Pontuação configurável para queda comprovada, cupom confirmado, prioridade, desconto e disponibilidade.
+- Cupons opcionais: cálculo somente com confirmação, produto elegível, validade, verificação recente e regras conhecidas suficientes.
+- Ofertas elegíveis sem cupom; ausência de link manual mantém a oferta/fila pendente.
+- Fila `PENDING`/`READY`/`PUBLISHED`/`FAILED`/`EXPIRED`, um item ativo por produto/destino, revalidação e janela mínima de três horas.
+- Destino local `SIMULATED`; `/queue/{id}/simulate` registra o resultado sem enviar mensagens externas.
+- Migração `0002_simulated_pipeline`, preservando a revisão 0001 e os dados existentes, com fila e leases novos.
+- Testes unitários e de integração para o runtime, comparação, cupons, pontuação, fila e contratos HTTP; concorrência e relógio controlado sem iniciar o scheduler real nos testes.
 
-**Critério de avanço:** comportamento demonstrado com dados simulados e aprovação para integrar fontes reais.
+Validação consolidada daquela fase: **173 testes aprovados, 1 pulado, Ruff e formatação aprovados**. Os 18 testes de migração incluem preservação dos registros da fase 1, zero divergências entre modelos e esquema, checks de fila e rollback SQLite após falha injetada no meio da migração. Alembic `upgrade head`, `current` e `check` passaram em SQLite isolado. O SQL PostgreSQL foi gerado offline. Naquela execução, o CLI Docker e a porta PostgreSQL local 5432 não estavam acessíveis ao processo; Compose e PostgreSQL real ficaram pendentes.
+
+**Fluxo validado:** cadastro → observação base → queda simulada → pontuação → fila → simulação explícita, com testes e instruções locais revisados. **Critério de avanço:** aprovação explícita para a fase 3, além de credenciais e permissões verificadas das fontes reais.
+
+## Fase 2.1 — Categorias e validação de infraestrutura
+
+Parte de categorias concluída em **18/10/2026**, com **241 testes aprovados, nenhuma falha e 2 testes PostgreSQL ignorados**; **a validação de Compose/PostgreSQL real permanece pendente de ambiente**. Não há consultas a lojas, IA paga ou publicações reais.
+
+- [x] Modelos `Category`, `ProductCategory` e `DestinationCategory`, origem/confiança/explicação e unicidades.
+- [x] Migração incremental `0003_category_routing`, sem substituir revisões anteriores.
+- [x] Seed idempotente de nove categorias e do destino `Ofertas de Casa`, local/desativado, em `selected` com oito categorias; `Gerais` não é selecionada.
+- [x] Preservação das preferências existentes ao repetir o seed.
+- [x] Classificação por correção manual, categoria confiável de loja já disponível, regras locais e fallback `Gerais`, nessa prioridade.
+- [x] Regras JSON configuráveis, normalização de texto e reclassificação que preserva a correção manual.
+- [x] API administrativa de categorias, associações, reclassificação e preferências dos destinos.
+- [x] Modos `unconfigured`, `selected` e `all`, com padrão conservador também para destinos existentes.
+- [x] Filtro por categoria ativa na fila e na simulação; múltiplas categorias aceitas não multiplicam entradas.
+- [x] Expiração de itens ativos que deixam de atender ao destino, preservando auditoria e janela de três horas.
+- [x] Teste PostgreSQL opcional com banco `*_test`, schema aleatório, migração 0003, constraints, seed, roteamento e `/health` sem threads.
+- [x] Diagnóstico de infraestrutura reutilizável, sem imprimir saída sensível de `docker info` nem modificar o ambiente.
+- [x] Suíte anterior preservada: 173 testes anteriores mais 68 novos, mantendo as verificações de deduplicação, concorrência e janela de três horas. Os destinos usados nos testes antigos foram configurados explicitamente em `all` para atender à nova política conservadora.
+- [x] Ruff e formatação aprovados em 50 arquivos Python; 22 blocos PowerShell e o exemplo executável passaram no parser.
+- [x] Alembic `upgrade head`, `current` e `check` aprovados em SQLite isolado na revisão 0003, sem divergências; seed executável repetido sem duplicações.
+- [ ] Executar Compose, migrações e testes no PostgreSQL real; confirmar `/health` com banco PostgreSQL conectado.
+
+**Estado do ambiente:** o usuário informou Docker Desktop instalado e engine **29.8.2** ativo via WSL 2 no seu PowerShell do Windows. Esse relato não substitui a execução dos comandos pelo agente. O processo Codex usa shell/caminho Windows; nele, os três comandos `docker --version`, `docker compose version` e `docker info` retornaram `The term 'docker' is not recognized`. O executável não foi localizado nos caminhos usuais consultados e o `.env` estava ausente. O bloqueio é acesso ao CLI nesse processo, sem evidência de falta de instalação do Desktop. Nenhum recurso Windows/WSL, credencial ou volume foi alterado.
+
+**Validação real a concluir:** no PowerShell Windows em que `docker info` funciona, seguir o README para subir apenas `postgres`, aguardar `healthy`, executar Alembic até `0003_category_routing`, iniciar a API e confirmar `/health`. Em seguida, usar `ofertas_bot_test` e `TEST_DATABASE_URL` temporária para `pytest -m postgres`. O roteiro cria o banco somente se ausente e preserva o volume e o `.env` existentes.
+
+`Gerais` é somente fallback, não uma permissão global. `all` ainda exige categoria ativa; `selected=[]` e `unconfigured` bloqueiam. `Ofertas de Casa` fica desativado até configuração explícita. A fase 3 continua aguardando aprovação.
 
 ## Fase 3 — Fontes comerciais autorizadas
+
+**Aguardando aprovação e acesso autorizado.**
 
 - Confirmar credenciais, documentação oficial, permissões e limites para cada operação.
 - Implementar conectores independentes de Mercado Livre e Shopee apenas para operações autorizadas.
@@ -51,14 +88,14 @@ O preço simulado não é uma oferta real. Nenhuma consulta comercial, descobert
 
 **Critério de avanço:** conteúdo revisado no modo de teste e aprovação explícita antes do primeiro envio real.
 
-## Fase 5 — Cupons, prioridades e fila
+## Fase 5 — Ampliar cupons e operação da fila
 
-- Implementar `CouponService` e os estados `CONFIRMED`, `UNVERIFIED` e `INVALID`.
-- Calcular preço final apenas quando as regras conhecidas e a aplicabilidade permitirem.
-- Implementar `OfferScoringService` configurável; cupom permanece opcional.
-- Implementar fila, tentativas limitadas e deduplicação por plataforma, produto, destino e histórico.
-- Aplicar janela de três horas e revalidar preço/cupom antes de republicar.
-- Cobrir regras de cupom, pontuação, duplicação e templates com testes próprios.
+- Expandir a avaliação conservadora de cupons da fase 2 com cadastro administrativo e fontes autorizadas de confirmação.
+- Ajustar pesos e prioridades com evidência de uso, mantendo cupom opcional.
+- Estender fila, tentativas e deduplicação simuladas aos publishers reais aprovados nas fases anteriores.
+- Aplicar a janela mínima de três horas e a revalidação já demonstradas na simulação aos envios reais.
+- Completar aprovação manual, limites por destino e conteúdo com imagens/templates.
+- Ampliar cobertura de falhas de publishers, concorrência PostgreSQL e operação contínua.
 
 **Critério de avanço:** nenhuma promessa de desconto sem verificação; ausência de cupom não impede oferta válida.
 

@@ -1,8 +1,8 @@
-# Ofertas Bot — fundação do MVP
+# Ofertas Bot — MVP pessoal, fase 2.1
 
-Backend local para cadastrar produtos, guardar links de afiliado informados manualmente e registrar um histórico de preços **simulados**. A aplicação usa Python 3.12+, FastAPI, SQLAlchemy, PostgreSQL e Alembic em um monólito modular.
+Backend local para cadastrar produtos, guardar links de afiliado manuais e acompanhar preços **simulados**, com comparação histórica, pontuação e fila de simulação. A aplicação usa Python 3.12+, FastAPI, SQLAlchemy, PostgreSQL, Alembic e APScheduler 3.11 em um monólito modular.
 
-Esta é somente a primeira entrega. Não há consulta real a lojas, garimpo automático, agendador ativo, cálculo de cupons, pontuação, fila ou envio de mensagens. Mercado Livre e Shopee ficam desativados como fontes reais. Nenhuma oferta é publicada.
+A fase 2.1 acrescenta categorias explicáveis, correção manual e filtro por destino ao monitoramento e à fila simulados da fase 2. Mercado Livre e Shopee permanecem desativados como fontes reais. A fila registra uma **simulação**, inclusive quando seu estado se chama `PUBLISHED`; ela não envia mensagens a Telegram, WhatsApp ou qualquer serviço externo.
 
 ## O que já pode ser usado
 
@@ -11,10 +11,16 @@ Esta é somente a primeira entrega. Não há consulta real a lojas, garimpo auto
 - Ativação e desativação do monitoramento de cada produto.
 - Cadastro, consulta, alteração e exclusão de um link de afiliado manual por produto.
 - Consulta manual ao provedor simulado e leitura do histórico persistido.
+- Monitoramento agendado, pausa/retomada, intervalos persistentes e controle de concorrência.
+- Comparação de queda, alta e estabilidade, separada do preço anterior informado pela loja.
+- Pontuação configurável, avaliação conservadora de cupons já cadastrados e fila simulada.
+- Consulta de ofertas, destinos simulados e simulação explícita de publicação.
+- Catálogo de categorias, classificação local e associações manuais com origem e explicação.
+- Preferências conservadoras de categorias por destino, reavaliadas na fila e na simulação.
 - Proteção das rotas administrativas por `X-API-Key`.
-- Modelos iniciais e migração para as nove entidades previstas no briefing.
+- Migrações das entidades iniciais, fila e leases de monitoramento.
 
-Um produto sem link de afiliado retorna `affiliate_pending=true`. O registro de preços funciona independentemente desse link. O preço anterior não é inventado: o provedor simulado informa apenas o preço atual configurado, disponibilidade pública simulada e sua origem.
+Um produto sem link de afiliado retorna `affiliate_pending=true`; seus preços continuam sendo monitorados. Uma oportunidade elegível fica `PENDING` sem o link manual e pode ficar `READY` com ele. O preço anterior não é inventado: `mock_previous_price` só representa um preço anterior declarado no ensaio, enquanto o preço histórico vem das observações persistidas.
 
 ## Requisitos no Windows
 
@@ -60,13 +66,13 @@ uv sync --frozen --extra dev
 ## 2. Configurar o ambiente local
 
 ```powershell
-Copy-Item .env.example .env
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item .env.example .env }
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 notepad .env
 ```
 
-Use os dois valores gerados para segredos diferentes:
+Em uma instalação nova, use os dois valores gerados para segredos diferentes. Se o `.env` já estiver configurado, preserve suas credenciais; não as substitua para executar este guia:
 
 1. Preencha `POSTGRES_PASSWORD` com um deles.
 2. Substitua `SUBSTITUA_SENHA` em `DATABASE_URL` pela mesma senha do PostgreSQL.
@@ -84,21 +90,46 @@ Use os dois valores gerados para segredos diferentes:
 | `ADMIN_API_KEY` | Chave das rotas administrativas. Vazia mantém essas rotas bloqueadas. |
 | `PRICE_PROVIDER` | Provedor de preços; somente `simulated` está disponível nesta entrega. |
 | `MOCK_CURRENT_PRICE` | Preço atual de desenvolvimento; `99.90` significa R$ 99,90. |
+| `SCHEDULER_ENABLED` | Habilita o agendador por padrão; `true` inicia o ciclo com a aplicação. |
+| `PRIORITY_INTERVAL_SECONDS` / `GENERAL_INTERVAL_SECONDS` | Intervalos iniciais dos produtos prioritários/gerais: 60/300 segundos. |
+| `PROVIDER_MIN_INTERVAL_SECONDS` | Espaçamento mínimo do provedor simulado: 1 segundo. |
+| `PRICE_MAX_AGE_SECONDS` | Idade máxima da informação usada em ofertas: 600 segundos. |
 
 Os valores monetários usam precisão decimal. `99.90` é um dado de teste e não foi consultado em nenhuma loja. O arquivo `.env` não deve ser versionado ou compartilhado. Não inclua chaves, senhas ou tokens em código, capturas de tela e logs.
 
 ## 3. Iniciar o PostgreSQL e aplicar a migração
 
+Use o **PowerShell do Windows** em que o Docker Desktop já está acessível, com a pasta do projeto aberta. Confira o CLI, o Compose e o engine:
+
 ```powershell
-docker compose up -d postgres
-docker compose ps
-python -m alembic upgrade head
-python -m alembic current
+docker --version
+docker compose version
+docker info
 ```
 
-Aguarde o serviço `postgres` aparecer como `healthy` antes da migração. O Compose publica o banco somente em `127.0.0.1:5432` e mantém os dados no volume `postgres_data`. A API não cria tabelas automaticamente ao iniciar; a alteração do esquema é responsabilidade das migrações.
+O diagnóstico opcional abaixo faz somente verificações de leitura. Ele descarta a saída completa de `docker info`, que pode conter detalhes de proxy, e não modifica Windows, WSL, credenciais ou volumes:
+
+```powershell
+python scripts/validate_infrastructure.py
+```
+
+Com o `.env` já configurado, suba somente o PostgreSQL:
+
+```powershell
+docker compose up -d postgres
+docker compose ps postgres
+python -m alembic upgrade head
+python -m alembic current
+python -m app.services.categories seed
+```
+
+Aguarde o serviço `postgres` aparecer como `healthy` antes da migração. `alembic current` deve indicar `0003_category_routing (head)`. O seed pode ser repetido sem duplicar categorias ou substituir preferências existentes. O Compose publica o banco somente em `127.0.0.1:5432` e mantém os dados no volume `postgres_data`. A API não cria tabelas automaticamente ao iniciar; a alteração do esquema é responsabilidade das migrações.
 
 O usuário e a senha do container são aplicados na primeira inicialização do volume. Alterar apenas o `.env` depois disso não altera a senha de um banco já criado. Preserve o volume e faça a alteração da credencial no PostgreSQL antes de atualizar a configuração da aplicação.
+
+Para atualizar uma instalação da fase 1, pare a API, atualize as dependências com `python -m pip install -e '.[dev]'` e execute `python -m alembic upgrade head`. A revisão atual é `0002_simulated_pipeline`: ela adiciona a fila e os leases, amplia estados e garante uma oferta por observação. A revisão `0001_initial_foundation` permanece intacta. Produtos, links e histórico existentes são preservados. Se um banco já tiver ofertas duplicadas para a mesma observação, a migração recusa a atualização antes de alterar o esquema; resolva os registros explicitamente.
+
+Um downgrade da fase 2 recusa ofertas em `PENDING`/`FAILED` ou destinos `SIMULATED`, pois esses estados não existem na fase 1. Ele não converte nem exclui esses registros silenciosamente. As tabelas novas são removidas por um downgrade válido; faça backup antes de reverter uma instalação com dados.
 
 ## 4. Iniciar a API
 
@@ -119,6 +150,8 @@ A resposta saudável é `{"status":"ok","database":"connected","price_provider":
 A documentação local está em [Swagger UI](http://127.0.0.1:8000/docs), com contrato em [OpenAPI](http://127.0.0.1:8000/openapi.json). As operações administrativas exigem o cabeçalho `X-API-Key`, inclusive quando chamadas pela documentação.
 
 Mantenha o bind em `127.0.0.1` durante esta fase. A aplicação também restringe o host e a origem da conexão ao acesso local. Exposição em rede exige uma etapa própria de implantação e proteção de acesso.
+
+O ciclo do APScheduler inicia no lifecycle da API e termina no shutdown. Com `APP_ENV=test`, ou durante pytest, não são iniciadas threads de agendamento. Em desenvolvimento, use os controles `/monitoring/pause` e `/monitoring/resume` para pausar e retomar o ciclo. Os produtos prioritários usam 60 segundos e os demais 300 segundos por padrão. Intervalos de agendamento aceitam no mínimo 1 segundo.
 
 ## 5. Experimentar o cadastro e o histórico
 
@@ -162,15 +195,66 @@ Invoke-RestMethod -Uri "$baseUrl/products/$productId" -Headers $headers
 
 O projeto guarda o endereço informado e deixa de marcar o produto como pendente. Ele não gera parâmetros de afiliado nem comprova que um link informado pertence ao administrador.
 
-Registre duas observações simuladas e consulte o histórico:
+Configure um destino **local de ensaio**, separado de `Ofertas de Casa`, e escolha a categoria do exemplo. Um destino sem preferências não recebe novas entradas de fila:
 
 ```powershell
-Invoke-RestMethod -Method Post -Uri "$baseUrl/products/$productId/monitor" -Headers $headers
-Invoke-RestMethod -Method Post -Uri "$baseUrl/products/$productId/monitor" -Headers $headers
-Invoke-RestMethod -Uri "$baseUrl/products/$productId/price-history" -Headers $headers
+$null = Invoke-RestMethod -Method Post -Uri "$baseUrl/categories/seed" -Headers $headers
+$categories = @(Invoke-RestMethod -Uri "$baseUrl/categories?limit=100" -Headers $headers)
+$casa = $categories | Where-Object { $_.slug -eq 'casa-decoracao' }
+$selectionBody = @{ category_ids = @($casa.id) } | ConvertTo-Json
+$null = Invoke-RestMethod -Method Put -Uri "$baseUrl/products/$productId/categories" -Headers $headers -ContentType 'application/json' -Body $selectionBody
+
+$destinationBody = @{
+    name = 'Ensaio local de categorias'
+    external_id = "demo-categories-$productId"
+    manual_approval_required = $false
+    category_mode = 'selected'
+} | ConvertTo-Json
+$demoDestination = Invoke-RestMethod -Method Post -Uri "$baseUrl/destinations" -Headers $headers -ContentType 'application/json' -Body $destinationBody
+$preferencesBody = @{ mode = 'selected'; category_ids = @($casa.id) } | ConvertTo-Json
+$null = Invoke-RestMethod -Method Put -Uri "$baseUrl/destinations/$($demoDestination.id)/categories" -Headers $headers -ContentType 'application/json' -Body $preferencesBody
 ```
 
-Cada chamada explícita de monitoramento cria uma observação. Com a configuração padrão, ambas recebem o mesmo preço simulado de R$ 99,90. Isso demonstra persistência, origem e horário; não comprova queda de preço. Para experimentar outra observação, altere `MOCK_CURRENT_PRICE`, reinicie a API e faça nova chamada. O histórico anterior permanece salvo.
+Para reproduzir uma queda de R$ 100,00 para R$ 80,00, pause o agendador e altere a configuração simulada pela API. O roteiro salva e restaura a configuração anterior, inclusive seu estado de pausa, ao terminar:
+
+```powershell
+$configBefore = Invoke-RestMethod -Uri "$baseUrl/monitoring/config" -Headers $headers
+try {
+    $null = Invoke-RestMethod -Method Post -Uri "$baseUrl/monitoring/pause" -Headers $headers
+    $baselineBody = @{
+        provider_min_interval_seconds = 0
+        mock_current_price = 100.00
+        mock_previous_price = $null
+        mock_availability = 'AVAILABLE'
+        mock_price_access = 'PUBLIC'
+    } | ConvertTo-Json
+    $null = Invoke-RestMethod -Method Patch -Uri "$baseUrl/monitoring/config" -Headers $headers -ContentType 'application/json' -Body $baselineBody
+    $null = Invoke-RestMethod -Method Post -Uri "$baseUrl/products/$productId/monitor" -Headers $headers
+
+    $dropBody = @{ mock_current_price = 80.00 } | ConvertTo-Json
+    $null = Invoke-RestMethod -Method Patch -Uri "$baseUrl/monitoring/config" -Headers $headers -ContentType 'application/json' -Body $dropBody
+    $null = Invoke-RestMethod -Method Post -Uri "$baseUrl/products/$productId/monitor" -Headers $headers
+
+    Invoke-RestMethod -Uri "$baseUrl/products/$productId/price-history" -Headers $headers
+    Invoke-RestMethod -Uri "$baseUrl/products/$productId/variations" -Headers $headers
+    Invoke-RestMethod -Uri "$baseUrl/offers" -Headers $headers
+    $queue = @(Invoke-RestMethod -Uri "$baseUrl/queue?state=READY" -Headers $headers)
+    $readyItem = $queue | Where-Object { $_.product_id -eq $productId } | Select-Object -First 1
+    if ($null -ne $readyItem) {
+        Invoke-RestMethod -Method Post -Uri "$baseUrl/queue/$($readyItem.id)/simulate" -Headers $headers
+    }
+}
+finally {
+    $restoreBody = $configBefore | ConvertTo-Json
+    $null = Invoke-RestMethod -Method Patch -Uri "$baseUrl/monitoring/config" -Headers $headers -ContentType 'application/json' -Body $restoreBody
+}
+```
+
+O zero acima desativa apenas o espaçamento do provedor **simulado**, para permitir as duas chamadas imediatas do ensaio. O agendamento continua exigindo intervalos maiores ou iguais a 1 segundo. Com o padrão de 1 segundo, chamadas próximas de `/monitor` podem receber HTTP 429; espere antes de repetir. Uma consulta concorrente ao mesmo produto pode retornar HTTP 409.
+
+A variação é calculada como `(atual - histórico) / histórico`: neste exemplo, `amount=-20.00`, `percentage=-20.00` e direção `DROP`. O histórico comparável usa a mesma origem, moeda e indicação de simulação. `store_previous_price` é independente desse histórico. A pontuação e a porcentagem de desconto da oferta usam desconto positivo; não confunda isso com a variação histórica assinada.
+
+O motor distribui oportunidades aos destinos `SIMULATED` ativos cujas preferências aceitam uma categoria ativa do produto. Destinos antigos e novos sem configuração de categorias não qualificam novas entradas. Cada destino tem sua própria fila e janela de republicação. O endpoint `/simulate` revalida dados, categorias e link manual, registra o resultado no banco e pode marcar `PUBLISHED`; nenhum envio de rede acontece. Uma nova simulação do mesmo produto/destino exige pelo menos três horas, uma observação posterior à última simulação e dados ainda atuais. Ao repetir o roteiro antes disso, pode não existir novo item `READY`. Um destino com aprovação manual mantém o item `PENDING` até a chamada explícita a `/simulate`.
 
 Outras operações do CRUD:
 
@@ -193,12 +277,12 @@ Invoke-RestMethod -Method Patch -Uri "$baseUrl/products/$productId/monitoring" -
 # Remover o link manual; o produto volta a ficar pendente.
 Invoke-RestMethod -Method Delete -Uri "$baseUrl/products/$productId/affiliate-link" -Headers $headers
 
-# Excluir apenas o produto usado neste exemplo.
-Invoke-RestMethod -Method Delete -Uri "$baseUrl/products/$productId" -Headers $headers
+# Excluir um produto sem ofertas, fila ou logs associados.
+# Invoke-RestMethod -Method Delete -Uri "$baseUrl/products/$productId" -Headers $headers
 Remove-Variable headers
 ```
 
-Há também um roteiro executável em [`examples/first_run.ps1`](examples/first_run.ps1). Ele solicita a chave, cadastra o exemplo, associa o link, grava duas observações e mostra o histórico. Execute uma vez em um banco sem esse produto ou exclua o cadastro anterior antes de repetir:
+Há também o roteiro de cadastro da fase 1 em [`examples/first_run.ps1`](examples/first_run.ps1). Ele solicita a chave, cadastra o exemplo, associa o link, grava duas observações e mostra o histórico. Para esse ensaio, pause antes o agendador com `/monitoring/pause` e retome com `/monitoring/resume` depois. Execute uma vez em um banco sem esse produto ou reutilize o cadastro anterior:
 
 ```powershell
 .\examples\first_run.ps1
@@ -210,7 +294,64 @@ Use `-Cleanup` se quiser que esse roteiro exclua ao final o produto que acabou d
 .\examples\first_run.ps1 -Cleanup
 ```
 
-A exclusão de um produto remove também seu link de afiliado e seu histórico relacionados.
+A exclusão remove link e histórico quando o produto não possui referências de ofertas, fila ou publicação. Com referências de auditoria, a operação pode ser recusada por integridade; preserve o cadastro usado no roteiro de fase 2.
+
+## Configuração, elegibilidade e fila simulada
+
+`GET /api/v1/monitoring/config` mostra a configuração efetiva. `PATCH` altera somente os campos enviados e persiste o conjunto em `AppSetting`, sem guardar credenciais. Depois desse primeiro ajuste, os valores persistidos prevalecem sobre os valores iniciais do ambiente e sobrevivem ao reinício da API.
+
+| Campo da configuração | Padrão | Uso |
+| --- | --- | --- |
+| `scheduler_enabled` | `true` | Ciclo agendado habilitado. |
+| `priority_interval_seconds` | `60` | Intervalo dos produtos com `priority=true`. |
+| `general_interval_seconds` | `300` | Intervalo dos outros produtos. |
+| `provider_min_interval_seconds` | `1` | Espaçamento global das consultas simuladas; zero permitido para ensaios. |
+| `price_max_age_seconds` | `600` | Validade da observação atual e da verificação do cupom. |
+| `score_price_drop` | `40` | Peso de queda histórica comprovada. |
+| `score_confirmed_coupon` | `30` | Peso de cupom confirmado e aplicável. |
+| `score_priority` | `20` | Peso de produto prioritário. |
+| `score_discount_percent` | `1` | Peso de cada ponto percentual de desconto. |
+| `score_availability` | `5` | Peso de disponibilidade. |
+| `mock_current_price` | `99.90` | Preço atual do provedor simulado. |
+| `mock_previous_price` | `null` | Preço anterior declarado no ensaio; campo opcional. |
+| `mock_availability` | `AVAILABLE` | Também aceita `UNAVAILABLE` e `UNKNOWN`. |
+| `mock_price_access` | `PUBLIC` | `EXCLUSIVE` representa preço restrito e é excluído. |
+
+O motor reconhece oportunidade por queda histórica, desconto declarado pela loja quando o preço anterior é válido e maior que o atual, ou cupom público confirmado e aplicável. Um produto sem cupom continua elegível. Preço ausente/inválido, indisponibilidade, acesso exclusivo e informação vencida impedem a oferta. Alterar `priority` pelo CRUD afeta o intervalo e a pontuação das próximas avaliações.
+
+A avaliação de cupom exige confirmação, validade e verificação recente, plataforma compatível, produto explicitamente elegível, compra mínima atendida e ausência de restrições textuais ainda sem interpretação. O cálculo respeita teto e valor do desconto. Cupons `UNVERIFIED` e `INVALID` não produzem uma promessa de preço final. Esta fase não busca cupons reais nem oferece CRUD HTTP de cupons; os serviços são exercitados com dados controlados nos testes.
+
+A fila usa `PENDING`, `READY`, `PUBLISHED`, `FAILED` e `EXPIRED`. Há no máximo um item ativo por produto/destino; o histórico terminal permanece armazenado. A simulação revalida preço, cupom, disponibilidade, atualidade e link manual antes de concluir. Os estados de ofertas legados continuam válidos no banco; a API de ofertas pode apresentar esses estados ao atualizar uma base antiga.
+
+## Categorias e seleção por destino
+
+O seed idempotente cria Casa e Decoração (`casa-decoracao`), Materiais e Ferramentas (`materiais-ferramentas`), Eletrodomésticos (`eletrodomesticos`), Moda (`moda`), Infantil (`infantil`), Tecnologia (`tecnologia`), Games (`games`), Beleza (`beleza`) e Gerais (`gerais`). Ele também cria `Ofertas de Casa` como destino `SIMULATED`, **desativado**, com identificador local `local:ofertas-de-casa` e modo `selected`: as oito primeiras categorias estão selecionadas e `Gerais` fica de fora. Esse identificador é interno; não representa um grupo real. Repetir o seed preserva nomes, ativações e preferências já alteradas pelo administrador.
+
+A classificação usa, nesta ordem, **correção manual → categorias confiáveis da loja já presentes nos metadados → regras locais → Gerais**. Nome, descrição e campos públicos permitidos de `classification_metadata` são normalizados sem distinção de acentos/caixa e comparados por palavras ou expressões completas. Metadados de credenciais e campos desconhecidos não entram nas regras. Não há consulta a lojas nem serviço de IA.
+
+As regras ficam em `app/classification_rules.json`, com slug, palavras-chave e confiança entre 0 e 1. É possível apontar `CATEGORY_RULES_PATH` para outro JSON local antes de iniciar a API. O código registra `source` (`manual`, `store` ou `rule`), confiança e uma explicação; confiança de regra é uma heurística local. Categoria confiável de loja exige `store_category_trusted=true` e `store_category_slugs` conhecidos nos metadados, sem presumir informações ausentes.
+
+Para suspender uma categoria inicial, desative-a: a classificação assegura que os nove slugs básicos existam, portanto excluir um deles sem vínculos permite sua recriação. A reclassificação não reativa categorias desativadas nem substitui correções manuais. Uma seleção manual vazia continua vazia até remover explicitamente a correção manual.
+
+A API classifica automaticamente ao cadastrar ou alterar nome, descrição e metadados relevantes, e o motor reavalia antes de formar ofertas/fila. `POST /products/{id}/reclassify` reaplica as regras sem substituir escolhas manuais. `PUT /products/{id}/categories` substitui a seleção manual; uma lista vazia é uma decisão explícita de deixar o produto sem categorias. `DELETE /products/{id}/categories/manual-override` remove a correção e permite classificar automaticamente de novo.
+
+| Modo do destino | Seleção para novas entradas de fila |
+| --- | --- |
+| `unconfigured` (padrão) | Bloqueia até configuração explícita, mesmo se o destino estiver ativado. |
+| `selected` | Exige ao menos uma categoria ativa do produto entre os IDs escolhidos. Lista vazia bloqueia. |
+| `all` | Aceita qualquer categoria ativa já associada ao produto; não dispensa classificação. Use `category_ids=[]`. |
+
+`Gerais` é uma categoria de fallback comum: selecioná-la não aceita produtos de outras categorias. Um produto associado apenas a categorias desativadas, ou sem categoria por correção manual, não qualifica nem em `all`. Múltiplas categorias aceitas continuam gerando no máximo um item ativo por produto/destino. Mudanças que tornem o item inelegível expiram a entrada ativa; preservam registros anteriores e a janela de três horas. Categorias associadas não são apagadas silenciosamente: para interromper seu uso, desative-as com `PATCH {"active":false}`.
+
+Com `$baseUrl`, `$headers` e `$productId` já definidos, consulte a explicação ou teste reclassificação:
+
+```powershell
+Invoke-RestMethod -Uri "$baseUrl/products/$productId/categories" -Headers $headers
+Invoke-RestMethod -Method Post -Uri "$baseUrl/products/$productId/reclassify" -Headers $headers
+Invoke-RestMethod -Uri "$baseUrl/destinations/$($demoDestination.id)/categories" -Headers $headers
+```
+
+Uma ativação posterior de `Ofertas de Casa` pela API continua sendo apenas local e simulada. A configuração de um canal real e os envios externos pertencem a fases futuras.
 
 ## API disponível
 
@@ -230,8 +371,26 @@ Todos os caminhos com prefixo `/api/v1` exigem a chave administrativa. Não há 
 | `DELETE` | `/api/v1/products/{id}/affiliate-link` | Remover o link manual. |
 | `POST` | `/api/v1/products/{id}/monitor` | Consultar o provedor simulado; não recebe corpo. |
 | `GET` | `/api/v1/products/{id}/price-history` | Consultar observações persistidas. |
+| `GET` | `/api/v1/products/{id}/variations` | Comparar observações e separar histórico do preço anterior da loja. |
+| `GET` | `/api/v1/monitoring/status` | Consultar estado do ciclo e configuração efetiva. |
+| `GET`, `PATCH` | `/api/v1/monitoring/config` | Consultar/alterar configuração persistida. |
+| `POST` | `/api/v1/monitoring/pause` | Pausar o ciclo agendado. |
+| `POST` | `/api/v1/monitoring/resume` | Retomar o ciclo agendado. |
+| `GET` | `/api/v1/monitoring/jobs` | Consultar jobs e falhas de monitoramento. |
+| `GET` | `/api/v1/offers` | Listar ofertas por pontuação. |
+| `GET` | `/api/v1/queue?state=READY` | Listar fila; filtro de estado é opcional. |
+| `POST` | `/api/v1/queue/{id}/simulate` | Revalidar e registrar uma simulação, sem enviar mensagens. |
+| `GET`, `POST` | `/api/v1/destinations` | Consultar/cadastrar destinos exclusivamente simulados. |
+| `PATCH` | `/api/v1/destinations/{id}` | Alterar dados do destino simulado, incluindo ativação. |
+| `POST` | `/api/v1/categories/seed` | Criar catálogo e destino local ausentes sem sobrescrever preferências. |
+| `GET`, `POST` | `/api/v1/categories` | Listar ou cadastrar categorias; `active` é filtro opcional da listagem. |
+| `GET`, `PATCH`, `DELETE` | `/api/v1/categories/{id}` | Consultar, alterar/ativar ou excluir categoria sem vínculos. |
+| `GET`, `PUT` | `/api/v1/products/{id}/categories` | Consultar origem/explicação ou definir `{"category_ids":[1,2]}` manualmente. |
+| `POST` | `/api/v1/products/{id}/reclassify` | Reclassificar preservando correção manual. |
+| `DELETE` | `/api/v1/products/{id}/categories/manual-override` | Remover correção manual e voltar à classificação automática. |
+| `GET`, `PUT` | `/api/v1/destinations/{id}/categories` | Consultar/definir `{"mode":"selected","category_ids":[1,2]}`. |
 
-Listagens de produtos e histórico aceitam `limit` de 1 a 100 (padrão 50) e `offset` a partir de zero. O histórico é ordenado da observação mais recente para a mais antiga. Produtos inexistentes, URLs inválidas, duplicidades e operações incompatíveis com o estado atual retornam erros HTTP. Consulte o OpenAPI local para os schemas e respostas completos.
+Listagens de produtos, histórico, ofertas e fila aceitam `limit` de 1 a 100 (padrão 50) e `offset` a partir de zero. O histórico é ordenado da observação mais recente para a mais antiga; ofertas e fila priorizam pontuação. `/monitor` retorna HTTP 201 quando registra uma observação, 429 ao atingir o espaçamento do provedor e 409 em conflito de monitoramento. Produtos inexistentes, URLs inválidas, duplicidades e estados incompatíveis também retornam erros HTTP. Consulte o OpenAPI local para os schemas e respostas completos.
 
 ## Testes e verificações
 
@@ -240,18 +399,24 @@ Em um terminal com o ambiente virtual ativado e a pasta do projeto aberta, execu
 ```powershell
 python -m pytest -q
 python -m ruff check .
-python -m ruff format --check app tests alembic
+python -m ruff format --check app tests alembic scripts
 ```
 
-O teste opcional de integração PostgreSQL exige `TEST_DATABASE_URL` e um banco cujo nome termine em `_test`. Ele usa um schema aleatório isolado, removido ao final. Sem a variável, o teste é pulado. A validação do SQLite e a compilação da migração para o dialeto PostgreSQL não substituem a execução em um servidor PostgreSQL real.
+Os testes opcionais de integração PostgreSQL exigem `TEST_DATABASE_URL` e um banco cujo nome termine em `_test`. Cada um usa um schema aleatório isolado, removido ao final. Sem a variável, são pulados. O teste novo de categorias cobre a revisão 0003, unicidades/checks/chaves estrangeiras, seed repetido, roteamento, fila e `/health` com threads desativadas. A validação do SQLite e a compilação da migração para o dialeto PostgreSQL não substituem a execução em um servidor PostgreSQL real.
 
 Crie um banco **exclusivo e descartável para testes**, separado de `ofertas_bot`. O exemplo abaixo usa o usuário padrão deste guia e solicita sua senha sem colocá-la no histórico do PowerShell:
 
 ```powershell
-docker compose exec postgres psql -U ofertas_bot -d postgres -c 'CREATE DATABASE ofertas_bot_test;'
+$testDbExists = docker compose exec -T postgres psql -U ofertas_bot -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'ofertas_bot_test'"
+if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel verificar o banco de testes.' }
+if (($testDbExists -join '').Trim() -ne '1') {
+    docker compose exec -T postgres psql -U ofertas_bot -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE ofertas_bot_test;'
+    if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel criar o banco de testes.' }
+}
 $secureDbPassword = Read-Host 'Informe POSTGRES_PASSWORD do seu .env' -AsSecureString
 $dbPassword = [System.Net.NetworkCredential]::new('', $secureDbPassword).Password
 $encodedDbPassword = [Uri]::EscapeDataString($dbPassword)
+$previousTestDatabaseUrl = $env:TEST_DATABASE_URL
 $env:TEST_DATABASE_URL = "postgresql+psycopg://ofertas_bot:${encodedDbPassword}@127.0.0.1:5432/ofertas_bot_test"
 Remove-Variable secureDbPassword, dbPassword, encodedDbPassword
 
@@ -259,21 +424,29 @@ try {
     python -m pytest -q -m postgres
 }
 finally {
-    Remove-Item Env:\TEST_DATABASE_URL
+    if ($null -eq $previousTestDatabaseUrl) {
+        Remove-Item Env:\TEST_DATABASE_URL -ErrorAction SilentlyContinue
+    }
+    else { $env:TEST_DATABASE_URL = $previousTestDatabaseUrl }
+    Remove-Variable previousTestDatabaseUrl
 }
 ```
 
 A criação do banco é necessária apenas uma vez. Não aponte `TEST_DATABASE_URL` para o banco de uso cotidiano.
 
-Validação executada em **18/10/2026**:
+Baseline da fase 2 em **18/10/2026**: **173 testes aprovados, 1 pulado e nenhuma falha**. O teste pulado exige PostgreSQL real via `TEST_DATABASE_URL`. A suíte cobre concorrência entre sessões, fencing de workers expirados, intervalos e limites, comparação Decimal, cupons, pontuação, múltiplos destinos, republicação com relógio controlado e integração HTTP completa. Nenhuma thread real do APScheduler é iniciada nos testes; o registro e o ciclo de vida usam um scheduler controlado.
 
-- **88 testes aprovados e 1 pulado.** O teste pulado exige `TEST_DATABASE_URL` para PostgreSQL real.
-- Os 7 testes de migração aprovados cobrem o esquema SQLite, alterações de revisão, restrições e geração de SQL PostgreSQL sem conexão com servidor. A integração da API também aplica as migrações Alembic no banco isolado.
-- Ruff passou na verificação de código; a verificação de formatação passou para 28 arquivos.
-- O roteiro `examples/first_run.ps1` e os blocos PowerShell deste README passaram pela verificação de sintaxe do parser PowerShell.
-- Houve 1 aviso de depreciação de dependência no uso de `httpx` pelo `Starlette TestClient`, sem falha de teste.
+Os **18 testes de migração** verificaram upgrade/downgrade, preservação dos registros da fase 1, ausência de divergências de tipos/defaults, integridade da fila e SQL PostgreSQL offline. Uma falha injetada na reconstrução SQLite demonstrou rollback do esquema, dos dados e da revisão. Os comandos Alembic `upgrade head`, `current` e `check` também passaram em SQLite isolado, na revisão `0002_simulated_pipeline`, sem novas operações pendentes.
 
-O Docker não estava disponível no `PATH` do ambiente de execução. Por isso, **o Docker Compose e o PostgreSQL real não foram executados nesta validação**. Os comandos deste guia e o teste opcional permitem fazer essa verificação localmente quando o Docker estiver disponível.
+Validação consolidada da **fase 2.1 em 18/10/2026: 241 testes aprovados, nenhuma falha e 2 testes PostgreSQL ignorados** por ausência de `TEST_DATABASE_URL`. São os 173 testes anteriores e 68 novos: 44 de categorização/roteamento, 14 da API administrativa e 10 adicionais de migração. As fixtures dos cenários antigos de fila passaram a declarar `category_mode=all` explicitamente; suas verificações de preço, concorrência, deduplicação e três horas foram preservadas. A alteração é necessária porque destinos sem configuração agora bloqueiam o roteamento.
+
+A suíte atual inclui **28 testes de migração aprovados**. Além dela, os comandos Alembic `upgrade head`, `current` e `check` passaram em SQLite isolado na revisão `0003_category_routing`, sem divergências. O seed executado duas vezes criou nove categorias e um destino na primeira execução e zero registros na segunda. O SQL PostgreSQL foi verificado offline; isso não equivale a executar PostgreSQL real.
+
+Ruff e formatação passaram nos **50 arquivos Python**. Os **22 blocos PowerShell** do guia e `examples/first_run.ps1` passaram no parser. Há um aviso de depreciação de terceiros no TestClient do Starlette sobre `httpx`; ele não impediu os testes. Caso o ambiente restrinja o diretório temporário padrão do pytest, acrescente `--basetemp=.pytest_cache/testes-locais` a uma execução em um diretório reservado para esses testes.
+
+Na fase 2.1, o usuário confirmou **Docker Desktop instalado e engine 29.8.2 ativo via WSL 2 no seu PowerShell do Windows**. Isso é um relato do usuário, separado do que este processo verificou. O processo de execução do Codex está no Windows, com caminho e shell Windows; nele, `docker --version`, `docker compose version` e `docker info` falharam com `The term 'docker' is not recognized`. O CLI também não foi encontrado nos caminhos usuais consultados, e o `.env` local estava ausente. Isso não demonstra falta de instalação nem uma falha no Docker do usuário.
+
+Por esse bloqueio de acesso ao CLI neste ambiente de execução, **Compose, migração no PostgreSQL real e `/health` conectado ao PostgreSQL real permanecem pendentes de verificação**. Nenhum recurso do Windows/WSL, credencial ou volume foi alterado. Execute os comandos da seção 3, inicie a API e consulte `/health` no PowerShell em que o Docker já funciona; depois rode `python -m pytest -q -m postgres` com a variável temporária acima. Não é necessário reinstalar o Docker para executar este roteiro.
 
 ## Estrutura e decisões técnicas
 
@@ -285,13 +458,15 @@ ofertas-bot/
     api/            rotas e contratos HTTP
     core/           configurações e segurança
     models/         entidades SQLAlchemy
-    services/       cadastro, links e monitoramento simulado
+    services/       categorias, roteamento, comparação, cupons, scoring e fila simulada
+    classification_rules.json  regras locais de categorias
     integrations/   contrato de provedor e integrações desativadas
     publishers/     contrato abstrato para WhatsApp futuro
-    jobs/           estrutura reservada, sem scheduler ativo
+    jobs/           runtime APScheduler, limites e leases de monitoramento
   alembic/          migrações versionadas
   tests/            regras e integração básica
   examples/         roteiro PowerShell para a API local
+  scripts/          diagnóstico de infraestrutura sem modificar o ambiente
   docker-compose.yml
   pyproject.toml
   .env.example
@@ -299,7 +474,9 @@ ofertas-bot/
   ROADMAP.md
 ```
 
-As entidades iniciais são `Product`, `ProductPriceHistory`, `AffiliateLink`, `Coupon`, `Offer`, `PublicationDestination`, `PublicationLog`, `MonitoringJob` e `AppSetting`. Cupons, ofertas, destinos, publicações, jobs e configurações persistentes ficam como base de esquema para as próximas fases, sem API funcional correspondente nesta entrega.
+As entidades iniciais são `Product`, `ProductPriceHistory`, `AffiliateLink`, `Coupon`, `Offer`, `PublicationDestination`, `PublicationLog`, `MonitoringJob` e `AppSetting`, com associação `coupon_products`. A fase 2 acrescenta `PublicationQueueItem` e `MonitoringLease`, configurações persistentes e os endpoints descritos acima. A fila tem uma restrição de banco que exige `is_simulated=true`; não existe implementação de envio real nesta versão.
+
+A fase 2.1 acrescenta `Category`, `ProductCategory` e `DestinationCategory`, preferências por destino e os campos opcionais de descrição/metadados do produto. A revisão `0003_category_routing` segue o histórico anterior e adota `unconfigured` para destinos existentes; configure as preferências explicitamente antes de esperar novas entradas de fila.
 
 Valores monetários são decimais; os modelos preservam os campos opcionais de preço. As migrações controlam o esquema e o histórico de preços é independente do cadastro de afiliado. A API usa logs estruturados sem registrar a chave administrativa ou a URL de conexão. O contrato abstrato `WhatsAppPublisher` não tem implementação e não realiza automação.
 
@@ -316,7 +493,7 @@ Para retomar, ative o ambiente virtual, execute `docker compose up -d postgres`,
 ## Problemas comuns
 
 - **`py` não encontrado:** instale/configure um Python 3.12+ e reabra o terminal.
-- **Docker indisponível:** inicie o Docker Desktop e confira `docker compose version`.
+- **Comando Docker não encontrado:** use o PowerShell em que `docker info` já funciona e confira `(Get-Command docker).Source`; não confunda ausência do CLI neste processo com falta de instalação do Desktop.
 - **Porta 5432 ocupada:** pare o serviço local que ocupa a porta ou ajuste o bind no Compose e a porta do `DATABASE_URL` de forma correspondente.
 - **Banco ainda não responde:** aguarde `healthy` em `docker compose ps`; confira se o banco foi criado com a senha que consta no `.env`.
 - **Tabela inexistente:** execute `python -m alembic upgrade head` com o mesmo `DATABASE_URL` usado pela API.
@@ -325,4 +502,4 @@ Para retomar, ative o ambiente virtual, execute `docker compose up -d postgres`,
 
 ## Próximo avanço
 
-O [`ROADMAP.md`](ROADMAP.md) detalha as fases. Para conectar fontes reais faltam credenciais, permissões e confirmação das operações disponíveis nas APIs autorizadas de cada plataforma, além de tratamento de limites, falhas e atualização de dados. A próxima fase depende de aprovação explícita; esta entrega não ativa integrações nem publicações reais.
+O [`ROADMAP.md`](ROADMAP.md) detalha as fases. A fase 2.1 mantém o fluxo simulado e acrescenta classificação e seleção por destino. A validação em PostgreSQL real permanece pendente de execução no PowerShell com acesso ao Docker. Para a fase 3 faltam aprovação explícita, credenciais, permissões e confirmação das operações disponíveis nas APIs autorizadas de cada plataforma. O provedor real deverá respeitar limites, falhas e procedência dos dados. Integrações comerciais e publicações reais permanecem pendentes.

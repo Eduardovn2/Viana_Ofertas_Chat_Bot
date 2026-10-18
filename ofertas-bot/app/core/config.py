@@ -1,6 +1,8 @@
+import re
 from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,6 +24,12 @@ class Settings(BaseSettings):
     price_provider: Literal["simulated", "marketplaces"] = "simulated"
     mercado_livre_enabled: bool = False
     mercado_livre_access_token: SecretStr | None = Field(default=None, repr=False)
+    mercadolivre_oauth_enabled: bool = False
+    mercadolivre_client_id: SecretStr | None = Field(default=None, repr=False)
+    mercadolivre_client_secret: SecretStr | None = Field(default=None, repr=False)
+    mercadolivre_redirect_uri: str | None = None
+    mercadolivre_pkce_enabled: bool = True
+    mercadolivre_oauth_state_ttl_seconds: int = Field(default=600, ge=60, le=900)
     shopee_enabled: bool = False
     shopee_app_id: SecretStr | None = Field(default=None, repr=False)
     shopee_secret: SecretStr | None = Field(default=None, repr=False)
@@ -55,6 +63,49 @@ class Settings(BaseSettings):
     score_discount_percent: Decimal = Field(default=Decimal("1"), ge=0, le=100000)
     score_availability: Decimal = Field(default=Decimal("5"), ge=0, le=100000)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    @field_validator("mercadolivre_redirect_uri", mode="before")
+    @classmethod
+    def validate_oauth_redirect(cls, value):
+        if value in (None, ""):
+            return None
+        try:
+            if not isinstance(value, str) or len(value) > 2048:
+                raise ValueError
+            uri = urlsplit(value)
+            host = uri.hostname or ""
+            if (
+                uri.scheme != "https"
+                or uri.port not in (None, 443)
+                or not host
+                or "." not in host
+                or host.endswith(".")
+                or uri.username is not None
+                or uri.password is not None
+                or uri.netloc.lower() not in {host, host + ":443"}
+                or uri.path != "/oauth/mercadolivre/callback"
+                or uri.query
+                or uri.fragment
+                or any(char.isspace() or ord(char) < 32 for char in value)
+                or "\\" in value
+                or not re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}", host)
+                or host.endswith((".local", ".internal", ".localhost", ".localdomain"))
+                or host in {"localhost", "localhost.localdomain"}
+            ):
+                raise ValueError
+            import ipaddress
+
+            try:
+                ipaddress.ip_address(host)
+            except ValueError:
+                pass
+            else:
+                raise ValueError
+        except (TypeError, ValueError):
+            raise ValueError(
+                "MERCADOLIVRE_REDIRECT_URI requer HTTPS e o callback exato, sem parâmetros."
+            ) from None
+        return value
 
     @field_validator("admin_api_key", mode="before")
     @classmethod

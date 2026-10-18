@@ -448,6 +448,8 @@ Na fase 2.1, o usuário confirmou **Docker Desktop instalado e engine 29.8.2 ati
 
 Por esse bloqueio de acesso ao CLI neste ambiente de execução, **Compose, migração no PostgreSQL real e `/health` conectado ao PostgreSQL real permanecem pendentes de verificação**. Nenhum recurso do Windows/WSL, credencial ou volume foi alterado. Execute os comandos da seção 3, inicie a API e consulte `/health` no PowerShell em que o Docker já funciona; depois rode `python -m pytest -q -m postgres` com a variável temporária acima. Não é necessário reinstalar o Docker para executar este roteiro.
 
+Na tentativa final posterior, ainda em 18/10/2026, o `.env` já estava acessível e foi carregado com sucesso, mas o CLI Docker continuou indisponível e a conexão direta ao PostgreSQL local foi recusada. Não foram repetidos os testes isolados. Ruff e formatação passaram. Os resultados e as etapas não executadas estão no [relatório de validação real](VALIDACAO_FASE_2_1.md).
+
 ## Estrutura e decisões técnicas
 
 ```text

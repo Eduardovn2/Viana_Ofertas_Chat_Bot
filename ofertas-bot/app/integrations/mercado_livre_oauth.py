@@ -25,6 +25,19 @@ from app.services.oauth_store import OAuthAttempt, OAuthStateError, OAuthStorage
 
 AUTHORIZATION_URL = "https://auth.mercadolivre.com.br/authorization"
 TOKEN_URL = "https://api.mercadolibre.com/oauth/token"
+_OAUTH_ERROR_CODES = frozenset(
+    {
+        "invalid_client",
+        "invalid_grant",
+        "invalid_scope",
+        "invalid_request",
+        "unauthorized_client",
+        "unauthorized_application",
+        "unsupported_grant_type",
+        "forbidden",
+        "local_rate_limited",
+    }
+)
 _HASH = re.compile(r"[a-f0-9]{64}\Z")
 _STATE = re.compile(r"[A-Za-z0-9_-]{43}\Z")
 _VERIFIER = re.compile(r"[A-Za-z0-9._~-]{43,128}\Z")
@@ -43,6 +56,26 @@ _MESSAGES = {
 
 def _error(code: str) -> IntegrationError:
     return IntegrationError(code, _MESSAGES[code])
+
+
+class OAuthTokenExchangeError(IntegrationError):
+    """Only controlled diagnostics may cross the boundary to the HTTP/log layer."""
+
+    def __init__(self, status_code: int | None = None, oauth_error: str = "unclassified"):
+        super().__init__("OAUTH_TOKEN_EXCHANGE", _MESSAGES["OAUTH_TOKEN_EXCHANGE"])
+        self.status_code = (
+            status_code
+            if isinstance(status_code, int)
+            and not isinstance(status_code, bool)
+            and 100 <= status_code <= 599
+            else None
+        )
+        self.oauth_error = (
+            oauth_error
+            if isinstance(oauth_error, str)
+            and oauth_error in _OAUTH_ERROR_CODES | {"unclassified", "network_error"}
+            else "unclassified"
+        )
 
 
 class OAuthStorage(Protocol):
@@ -297,11 +330,22 @@ class OAuthService:
                 timeout=5,
                 follow_redirects=False,
             )
-            if response.status_code != 200:
-                raise ValueError
-            return response
+        except httpx.TransportError:
+            raise OAuthTokenExchangeError(oauth_error="network_error") from None
         except Exception:
-            raise _error("OAUTH_TOKEN_EXCHANGE") from None
+            raise OAuthTokenExchangeError() from None
+        if response.status_code != 200:
+            oauth_error = "unclassified"
+            try:
+                if len(response.content) <= 262_144:
+                    payload = response.json()
+                    candidate = payload.get("error") if isinstance(payload, dict) else None
+                    if isinstance(candidate, str) and candidate in _OAUTH_ERROR_CODES:
+                        oauth_error = candidate
+            except Exception:
+                pass
+            raise OAuthTokenExchangeError(response.status_code, oauth_error) from None
+        return response
 
     @staticmethod
     def _tokens(response: httpx.Response, now: datetime) -> OAuthTokens:

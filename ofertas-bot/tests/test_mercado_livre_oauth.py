@@ -19,6 +19,7 @@ from app.integrations.mercado_livre_oauth import (
     AUTHORIZATION_URL,
     TOKEN_URL,
     OAuthService,
+    OAuthTokenExchangeError,
     OAuthTokens,
 )
 from app.services.oauth_store import OAuthAttempt, OAuthStateError, OAuthStorageError
@@ -391,9 +392,11 @@ def test_http_failures_never_retry_follow_redirects_or_expose_body(settings, pay
 
     service, store, _, requests, _ = setup_service(settings, payload, handler=handler)
     state = start(service)
-    assert_error(
+    failure = assert_error(
         "OAUTH_TOKEN_EXCHANGE", lambda: service.callback(state, AUTH_CODE, binding_hash=BINDING)
     )
+    assert failure.status_code == status
+    assert failure.oauth_error == "unclassified"
     assert len(requests) == 1 and store.tokens == [] and store.attempts == {}
     assert_error(
         "OAUTH_INVALID_STATE", lambda: service.callback(state, AUTH_CODE, binding_hash=BINDING)
@@ -408,10 +411,158 @@ def test_transport_exception_is_safe_and_not_retried(settings, payload, exceptio
 
     service, store, _, requests, _ = setup_service(settings, payload, handler=handler)
     state = start(service)
-    assert_error(
+    failure = assert_error(
         "OAUTH_TOKEN_EXCHANGE", lambda: service.callback(state, AUTH_CODE, binding_hash=BINDING)
     )
+    assert failure.status_code is None
+    assert failure.oauth_error == ("unclassified" if exception is RuntimeError else "network_error")
     assert len(requests) == 1 and store.tokens == []
+
+
+@pytest.mark.parametrize(
+    "oauth_error",
+    [
+        "invalid_client",
+        "invalid_grant",
+        "invalid_scope",
+        "invalid_request",
+        "unauthorized_client",
+        "unauthorized_application",
+        "unsupported_grant_type",
+        "forbidden",
+        "local_rate_limited",
+    ],
+)
+def test_only_standard_oauth_error_code_and_status_are_exposed(settings, payload, oauth_error):
+    def response(request):
+        return httpx.Response(
+            400,
+            json={
+                "error": oauth_error,
+                "error_description": f"{AUTH_CODE} {CLIENT_SECRET}",
+                "message": ACCESS_TOKEN,
+                "details": {"refresh_token": REFRESH_TOKEN},
+            },
+        )
+
+    service, store, _, requests, _ = setup_service(settings, payload, handler=response)
+    state = start(service)
+    failure = assert_error(
+        "OAUTH_TOKEN_EXCHANGE",
+        lambda: service.callback(state, AUTH_CODE, binding_hash=BINDING),
+    )
+    assert failure.status_code == 400 and failure.oauth_error == oauth_error
+    assert set(vars(failure)) == {"code", "message", "status_code", "oauth_error"}
+    for secret in (AUTH_CODE, CLIENT_SECRET, ACCESS_TOKEN, REFRESH_TOKEN):
+        assert secret not in repr(vars(failure))
+    assert len(requests) == 1 and store.attempts == {} and store.tokens == []
+
+
+@pytest.mark.parametrize(
+    "oauth_error",
+    [
+        CLIENT_SECRET,
+        "invalid_client " + CLIENT_SECRET,
+        "invalid_client\n",
+        "INVALID_CLIENT",
+        "network_error",
+        "arbitrary",
+        "",
+        None,
+        123,
+        True,
+        ["invalid_client"],
+        {"error": "invalid_client", "secret": CLIENT_SECRET},
+    ],
+    ids=[
+        "secret",
+        "injected",
+        "newline",
+        "uppercase",
+        "forged-network",
+        "unknown",
+        "empty",
+        "none",
+        "number",
+        "bool",
+        "list",
+        "object",
+    ],
+)
+def test_untrusted_oauth_error_values_are_never_exposed(settings, payload, oauth_error):
+    service, store, _, requests, _ = setup_service(
+        settings,
+        payload,
+        handler=lambda _: httpx.Response(
+            401,
+            json={
+                "error": oauth_error,
+                "error_description": CLIENT_SECRET,
+            },
+        ),
+    )
+    failure = assert_error(
+        "OAUTH_TOKEN_EXCHANGE",
+        lambda: service.callback(
+            start(service),
+            AUTH_CODE,
+            binding_hash=BINDING,
+        ),
+    )
+    assert failure.status_code == 401 and failure.oauth_error == "unclassified"
+    assert CLIENT_SECRET not in repr(vars(failure))
+    assert len(requests) == 1 and store.tokens == []
+
+
+@pytest.mark.parametrize(
+    "body",
+    [b"not-json", b"[]", b"null", b"x" * 262145],
+    ids=["not-json", "list", "null", "oversized"],
+)
+def test_unreadable_error_response_keeps_only_status(settings, payload, body):
+    service, _, _, requests, _ = setup_service(
+        settings,
+        payload,
+        handler=lambda _: httpx.Response(503, content=body),
+    )
+    failure = assert_error(
+        "OAUTH_TOKEN_EXCHANGE",
+        lambda: service.callback(
+            start(service),
+            AUTH_CODE,
+            binding_hash=BINDING,
+        ),
+    )
+    assert failure.status_code == 503 and failure.oauth_error == "unclassified"
+    assert len(requests) == 1
+
+
+def test_transport_cannot_forge_trusted_oauth_exception_diagnostics(settings, payload):
+    forged = IntegrationError("OAUTH_TOKEN_EXCHANGE", CLIENT_SECRET)
+    forged.status_code = AUTH_CODE
+    forged.oauth_error = ACCESS_TOKEN
+
+    def transport(request):
+        raise forged
+
+    service, _, _, requests, _ = setup_service(settings, payload, handler=transport)
+    failure = assert_error(
+        "OAUTH_TOKEN_EXCHANGE",
+        lambda: service.callback(
+            start(service),
+            AUTH_CODE,
+            binding_hash=BINDING,
+        ),
+    )
+    assert failure.status_code is None and failure.oauth_error == "unclassified"
+    assert len(requests) == 1
+
+
+@pytest.mark.parametrize("status", [CLIENT_SECRET, True, 0, -1, 600, None])
+def test_diagnostic_exception_validates_public_attributes(status):
+    failure = OAuthTokenExchangeError(status, CLIENT_SECRET)
+    assert failure.status_code is None and failure.oauth_error == "unclassified"
+    assert CLIENT_SECRET not in repr(vars(failure))
 
 
 @pytest.mark.parametrize(

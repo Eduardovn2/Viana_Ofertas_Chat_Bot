@@ -1,4 +1,4 @@
-"""Initial relational model. Publication and coupon workflows are later phases."""
+"""Relational foundation and the strictly simulated monitoring/publication queue."""
 
 from __future__ import annotations
 
@@ -28,6 +28,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UTCDateTime, utcnow
 from app.models.enums import (
     Availability,
+    CategoryMode,
+    CategorySource,
     CouponDiscountType,
     CouponValidationState,
     DestinationChannel,
@@ -36,6 +38,7 @@ from app.models.enums import (
     Platform,
     PriceAccess,
     PublicationStatus,
+    QueueStatus,
 )
 
 
@@ -72,6 +75,11 @@ class Product(TimestampMixin, Base):
     platform: Mapped[Platform] = mapped_column(state_enum(Platform, "product_platform"))
     external_id: Mapped[str | None] = mapped_column(String(100))
     name: Mapped[str] = mapped_column(String(500))
+    description: Mapped[str | None] = mapped_column(Text)
+    classification_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    manual_category_override: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
     original_url: Mapped[str] = mapped_column(String(2048))
     monitoring_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     priority: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
@@ -90,6 +98,9 @@ class Product(TimestampMixin, Base):
     )
     coupons: Mapped[list[Coupon]] = relationship(
         secondary=coupon_products, back_populates="eligible_products", passive_deletes=True
+    )
+    category_links: Mapped[list[ProductCategory]] = relationship(
+        back_populates="product", cascade="all, delete-orphan", passive_deletes=True
     )
 
 
@@ -190,6 +201,7 @@ class Coupon(TimestampMixin, Base):
 class Offer(TimestampMixin, Base):
     __tablename__ = "offers"
     __table_args__ = (
+        UniqueConstraint("price_history_id", name="uq_offers_price_history_id"),
         CheckConstraint("current_price > 0", name="current_price_positive"),
         CheckConstraint(
             "previous_price IS NULL OR previous_price > 0", name="previous_price_positive"
@@ -256,6 +268,14 @@ class PublicationDestination(TimestampMixin, Base):
     )
     min_interval_seconds: Mapped[int] = mapped_column(Integer, default=60, server_default="60")
     max_messages_per_hour: Mapped[int] = mapped_column(Integer, default=20, server_default="20")
+    category_mode: Mapped[CategoryMode] = mapped_column(
+        state_enum(CategoryMode, "destination_category_mode"),
+        default=CategoryMode.UNCONFIGURED,
+        server_default=CategoryMode.UNCONFIGURED.value,
+    )
+    category_links: Mapped[list[DestinationCategory]] = relationship(
+        back_populates="destination", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class PublicationLog(TimestampMixin, Base):
@@ -328,3 +348,118 @@ class AppSetting(TimestampMixin, Base):
     key: Mapped[str] = mapped_column(String(100), unique=True)
     value: Mapped[Any] = mapped_column(JSON, nullable=False)
     description: Mapped[str | None] = mapped_column(String(500))
+
+
+class PublicationQueueItem(TimestampMixin, Base):
+    __tablename__ = "publication_queue_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "destination_id",
+            "active_slot",
+            name="uq_publication_queue_items_product_destination_active_slot",
+        ),
+        CheckConstraint(
+            "(status IN ('PENDING', 'READY') AND active_slot IS NOT NULL AND active_slot = 1) "
+            "OR (status IN ('PUBLISHED', 'FAILED', 'EXPIRED') AND active_slot IS NULL)",
+            name="active_slot_matches_status",
+        ),
+        CheckConstraint("is_simulated = true", name="simulated_only"),
+        CheckConstraint("attempts >= 0", name="attempts_nonnegative"),
+        Index("ix_publication_queue_items_status_created_at", "status", "created_at"),
+        Index(
+            "ix_publication_queue_items_product_destination_published_at",
+            "product_id",
+            "destination_id",
+            "published_at",
+        ),
+        Index("ix_publication_queue_items_offer_id", "offer_id"),
+        Index("ix_publication_queue_items_destination_id", "destination_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="RESTRICT"))
+    offer_id: Mapped[int] = mapped_column(ForeignKey("offers.id", ondelete="RESTRICT"))
+    destination_id: Mapped[int] = mapped_column(
+        ForeignKey("publication_destinations.id", ondelete="RESTRICT")
+    )
+    status: Mapped[QueueStatus] = mapped_column(
+        state_enum(QueueStatus, "queue_status"),
+        default=QueueStatus.PENDING,
+        server_default=QueueStatus.PENDING.value,
+    )
+    active_slot: Mapped[int | None] = mapped_column(
+        Integer().evaluates_none(), default=1, server_default="1"
+    )
+    is_simulated: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    validated_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    published_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    last_error: Mapped[str | None] = mapped_column(Text)
+
+
+class MonitoringLease(Base):
+    __tablename__ = "monitoring_leases"
+
+    name: Mapped[str] = mapped_column(String(100), primary_key=True)
+    owner: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class Category(TimestampMixin, Base):
+    __tablename__ = "categories"
+    __table_args__ = (Index("ix_categories_active", "active"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    slug: Mapped[str] = mapped_column(String(100), unique=True)
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str | None] = mapped_column(Text)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    product_links: Mapped[list[ProductCategory]] = relationship(
+        back_populates="category", passive_deletes="all"
+    )
+    destination_links: Mapped[list[DestinationCategory]] = relationship(
+        back_populates="category", passive_deletes="all"
+    )
+
+
+class ProductCategory(TimestampMixin, Base):
+    __tablename__ = "product_categories"
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id", "category_id", name="uq_product_categories_product_category"
+        ),
+        CheckConstraint(
+            "confidence IS NULL OR (confidence >= 0 AND confidence <= 1)", name="confidence_range"
+        ),
+        Index("ix_product_categories_category_id", "category_id"),
+        Index("ix_product_categories_source", "source"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"))
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"))
+    source: Mapped[CategorySource] = mapped_column(state_enum(CategorySource, "category_source"))
+    confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
+    explanation: Mapped[str | None] = mapped_column(String(500))
+    product: Mapped[Product] = relationship(back_populates="category_links")
+    category: Mapped[Category] = relationship(back_populates="product_links")
+
+
+class DestinationCategory(TimestampMixin, Base):
+    __tablename__ = "destination_categories"
+    __table_args__ = (
+        UniqueConstraint(
+            "destination_id", "category_id", name="uq_destination_categories_destination_category"
+        ),
+        Index("ix_destination_categories_category_id", "category_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    destination_id: Mapped[int] = mapped_column(
+        ForeignKey("publication_destinations.id", ondelete="CASCADE")
+    )
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"))
+    destination: Mapped[PublicationDestination] = relationship(back_populates="category_links")
+    category: Mapped[Category] = relationship(back_populates="destination_links")

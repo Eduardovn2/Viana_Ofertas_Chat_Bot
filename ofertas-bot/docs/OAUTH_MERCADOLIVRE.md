@@ -93,7 +93,7 @@ Remove-Variable oauthHeaders, oauthBase
 
 Confira a indicação de token armazenado e sua expiração. A API de status não retorna access token, refresh token, Secret, verificador, cookie ou ticket. Presença no armazenamento não prova acesso comercial nem garante que uma credencial não tenha sido revogada.
 
-Os tokens e o verificador da tentativa são protegidos por **DPAPI do usuário Windows atual** no SQLite privado `%LOCALAPPDATA%\VianaOfertasChatBot\oauth\mercadolivre.sqlite3`. Esse arquivo fica fora do repositório e do PostgreSQL de produtos. Não exporte nem abra seu conteúdo para diagnóstico. Copiar o banco para outro usuário/computador não constitui uma migração de credenciais suportada. O token não é copiado para `.env` e ainda não é injetado no provedor de preços.
+Os tokens e o verificador da tentativa são protegidos por **DPAPI do usuário Windows atual** no SQLite privado `%LOCALAPPDATA%\VianaOfertasChatBot\oauth\mercadolivre.sqlite3`, com ACL restrita ao usuário atual e SYSTEM. Esse arquivo fica fora do repositório e do PostgreSQL de produtos. Não exporte nem abra seu conteúdo para diagnóstico. Copiar o banco para outro usuário/computador não constitui uma migração de credenciais suportada. O token não é copiado para `.env` e ainda não é injetado no provedor de preços. Renovação e rotação de refresh token não foram implementadas nem testadas.
 
 O script de parada verifica PIDs e o horário de início registrados no manifesto antes de encerrar os processos gerenciados; ele preserva os dados. Encerrar túnel/gateway não revoga tokens já concedidos no Mercado Livre. Se voltar a executar o script de início após a parada, atualize no DevCenter a nova URI antes de autorizar outra vez.
 
@@ -116,6 +116,17 @@ O roteiro automatizado pode ser executado sem credenciais comerciais reais:
 .\.venv\Scripts\python.exe -m pytest -q -k oauth
 ```
 
-Os testes controlados devem verificar configuração desativada, autenticação administrativa, validade/uso único das tentativas, associação com cookie e PKCE, respostas sanitizadas, proteção do armazenamento e isolamento do gateway. Eles não substituem consentimento no navegador nem comprovam permissões de uma conta real.
+Os testes controlados verificam configuração desativada, autenticação administrativa, validade/uso único das tentativas, associação com cookie e PKCE, respostas sanitizadas, proteção do armazenamento e isolamento do gateway. Eles não substituem consentimento no navegador nem comprovam permissões comerciais de uma conta real.
 
-**Estado em 18/10/2026:** documentação preparada; resultados de testes OAuth, túnel ativo e autorização de conta serão registrados após execução. Nenhum sucesso real é pressuposto por este guia. O manifesto `.runtime/oauth-tunnel.json` e a variável local `MERCADOLIVRE_REDIRECT_URI` são as referências da URI efetivamente preparada, sem fixar no repositório um hostname temporário.
+**Autorização real concluída em 18/10/2026 às 17:28:59 America/Sao_Paulo (20:28:59 UTC)**, mediante consentimento do proprietário no navegador. A execução confirmou:
+
+- Lançamento autorizado pela API local, vínculo com o navegador, validação de `state` e PKCE S256.
+- Troca do código no endpoint oficial e armazenamento dos tokens por DPAPI CurrentUser, com ACL restrita ao usuário atual e SYSTEM.
+- Consumo dos registros de lançamento e estado, impedindo a reutilização da tentativa concluída.
+- Expiração válida, fingerprint do Client ID compatível e ausência dos tokens em texto puro nos blobs cifrados inspecionados.
+
+Após a validação, `MERCADOLIVRE_OAUTH_ENABLED` foi restaurada para `false`. `MERCADO_LIVRE_ENABLED=false`, `SHOPEE_ENABLED=false` e `PRICE_PROVIDER=simulated` foram preservados. A autorização não foi seguida por consulta comercial nem publicação. Os tokens permanecem fora do provedor de preços; o uso comercial autorizado e a renovação/rotação de refresh token continuam pendentes.
+
+A suíte completa final aprovou **699 testes em 64,61 segundos**, incluindo quatro testes PostgreSQL reais em schemas isolados de `ofertas_bot_test`, com um `StarletteDeprecationWarning`. O aviso conhecido de terceiros não causou falhas. Ruff e formatação aprovaram os **88 arquivos Python**, e `git diff --check` passou. Esse resultado abrange a aplicação e o acréscimo OAuth, sem substituir o registro de consentimento real acima.
+
+O manifesto `.runtime/oauth-tunnel.json` e a variável local `MERCADOLIVRE_REDIRECT_URI` são as referências da URI efetivamente preparada. O hostname temporário, códigos, tickets, tokens e identificadores privados não são fixados neste registro.

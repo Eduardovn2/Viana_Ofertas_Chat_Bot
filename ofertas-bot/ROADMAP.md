@@ -99,6 +99,25 @@ Parte de categorias concluída em **18/10/2026**, com **241 testes isolados apro
 
 Evidências e limites detalhados em [docs/VALIDACAO_FASE_3.md](docs/VALIDACAO_FASE_3.md). A implementação está na branch local `codex/fase-3`, sem push.
 
+### OAuth Mercado Livre — desenvolvimento autorizado
+
+- [x] Callback `GET /oauth/mercadolivre/callback` e gateway isolado, com HTTPS real via Cloudflare Quick Tunnel gratuito. A URI exata fica no `.env` e no manifesto local, sem hostname fictício.
+- [x] Authorization Code com `state` criptograficamente aleatório, uso único/expiração, vínculo com navegador e PKCE S256 quando habilitado.
+- [x] Client ID/Secret somente no ambiente local; troca form em endpoint oficial, sem retry automático ou logs de códigos/tokens.
+- [x] Tokens/verificador protegidos por DPAPI CurrentUser em SQLite privado fora do PostgreSQL/Git; DACL exata para usuário atual + SYSTEM.
+- [x] Rotas administrativas autenticadas para criar o lançamento e consultar status sem segredos. API principal permanece local; túnel expõe só o callback.
+- [x] Scripts de início, reuso, atualização apenas do gateway e parada por identidade do processo, sem alterar configurações globais.
+- [x] Testes offline, proteção nativa Windows e isolamento público demonstrados; resultados em [docs/OAUTH_MERCADOLIVRE.md](docs/OAUTH_MERCADOLIVRE.md).
+- [x] Consentimento real do proprietário, troca oficial e armazenamento concluídos em **18/10/2026 às 17:28:59 America/Sao_Paulo (20:28:59 UTC)**. Vínculo com navegador, `state`, PKCE S256 e consumo de lançamento/estado confirmados.
+- [x] Inspeção real confirmou DPAPI CurrentUser, ACL restrita ao usuário atual + SYSTEM, expiração válida, fingerprint de Client ID compatível e ausência dos tokens em texto puro nos blobs cifrados.
+- [x] Flag OAuth restaurada para `false`; comerciais Mercado Livre/Shopee `false` e `PRICE_PROVIDER=simulated` preservados. Nenhuma consulta comercial ou publicação executada.
+- [x] Suíte completa posterior: **699 testes aprovados em 64,61 segundos**, incluindo quatro PostgreSQL reais em schemas isolados de `ofertas_bot_test`, com um `StarletteDeprecationWarning`.
+- [x] Ruff e formatação finais aprovados em **88 arquivos Python**; `git diff --check` aprovado.
+- [ ] Conectar os tokens OAuth ao provedor de preços e demonstrar uma consulta comercial autorizada; o token armazenado ainda não é usado por esse provedor.
+- [ ] Implementar e testar renovação com rotação de refresh token antes de assumir operação contínua autenticada.
+
+A URI temporária permanece somente no `.env` e no manifesto `.runtime/oauth-tunnel.json`; não é fixada neste roadmap. A autorização real acrescenta evidência ao fluxo OAuth e preserva o bloqueio de avanço comercial/publicação descrito acima. Detalhes em [docs/OAUTH_MERCADOLIVRE.md](docs/OAUTH_MERCADOLIVRE.md).
+
 ## Fase 4 — Publicação Telegram
 
 - Implementar `MessageTemplateService`, omitindo campos ausentes e usando identificação publicitária aplicável.

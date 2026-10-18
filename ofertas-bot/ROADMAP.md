@@ -119,6 +119,24 @@ Evidências e limites detalhados em [docs/VALIDACAO_FASE_3.md](docs/VALIDACAO_FA
 
 A URI temporária permanece somente no `.env` e no manifesto `.runtime/oauth-tunnel.json`; não é fixada neste roadmap. A autorização real acrescenta evidência ao fluxo OAuth e preserva o bloqueio de avanço comercial/publicação descrito acima. Detalhes em [docs/OAUTH_MERCADOLIVRE.md](docs/OAUTH_MERCADOLIVRE.md).
 
+### Fase 3.2 — ponto de retomada após pausa
+
+**Desenvolvimento pausado por solicitação do responsável em 18/10/2026, para economizar o limite de uso.** Não retomar automaticamente nem iniciar a Fase 4. Base funcional salva na branch local `codex/fase-3`, commit `da5c8d6`; este checkpoint acrescenta somente documentação.
+
+**Concluído:** conectores Mercado Livre/Shopee, fluxo OAuth real Mercado Livre com `state`, vínculo ao navegador e PKCE S256, troca oficial e tokens protegidos por DPAPI CurrentUser/ACL. Migrações e funcionalidades anteriores preservadas, PostgreSQL na revisão `0004_marketplace_provenance`. Última validação: 699 testes aprovados (quatro PostgreSQL reais), 19 verificações PowerShell aprovadas, Ruff/formatação em 88 arquivos Python; um aviso de depreciação de terceiros. Esses resultados são da execução anterior; nenhuma suíte foi repetida durante a pausa.
+
+**Encerramento:** gateway OAuth e Quick Tunnel gerenciados foram encerrados; manifesto removido e porta 8787 sem listener confirmados. Credenciais, tokens protegidos e dados PostgreSQL foram preservados. Nenhuma configuração global ou serviço Docker/PostgreSQL foi alterado. OAuth e integrações comerciais permanecem desativados; provedor simulado, sem garimpo real ou publicações. Não há teste ou implementação desta entrega em andamento.
+
+**Pendências para retomar, nesta ordem:**
+
+1. Conferir configuração e expiração do token por status/metadados seguros, sem imprimir segredos. A autorização real anterior já foi comprovada e não precisa ser refeita sem necessidade.
+2. Conectar o armazenamento OAuth ao provedor Mercado Livre, mantendo flags comerciais desativadas por padrão.
+3. Implementar e testar renovação com rotação segura do refresh token, incluindo concorrência, falhas e persistência protegida.
+4. Validar consultas comerciais pontuais autorizadas Mercado Livre/Shopee com as permissões e credenciais necessárias, sem monitoramento automático ou publicação. As limitações oficiais das operações permanecem as registradas nesta fase.
+5. Executar testes apropriados às mudanças e atualizar as evidências. Acesso comercial continua pendente; não considerar a Fase 3.2 operacional somente pela conclusão do OAuth.
+
+Se for necessário novo consentimento, iniciar outro Quick Tunnel, usar a nova URI HTTPS real no `.env` e cadastrar exatamente essa URI no DevCenter antes do fluxo. A URL anterior deixou de ser utilizável após o encerramento; não reutilizá-la nem inventar endereço. Tokens permanecem no armazenamento Windows privado fora do Git; `.env`, `.runtime` e `.tools` continuam ignorados. O briefing preexistente `FASE_3.md` foi preservado sem alterações e permanece não rastreado.
+
 ## Fase 4 — Publicação Telegram
 
 - Implementar `MessageTemplateService`, omitindo campos ausentes e usando identificação publicitária aplicável.

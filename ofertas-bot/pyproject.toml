@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ofertas-bot"
-version = "0.1.0"
+version = "0.2.1"
 description = "Fundação de um monólito modular para ofertas de afiliados"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -15,6 +15,7 @@ dependencies = [
   "alembic>=1.14,<2",
   "psycopg[binary]>=3.2,<4",
   "pydantic-settings>=2.7,<3",
+  "APScheduler>=3.11,<4",
 ]
 
 [project.optional-dependencies]

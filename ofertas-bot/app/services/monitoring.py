@@ -28,7 +28,7 @@ def _validate_price(value: Decimal | None, field: str) -> Decimal | None:
 
 
 def record_price(
-    session: Session, product: Product, snapshot: PriceSnapshot
+    session: Session, product: Product, snapshot: PriceSnapshot, *, now: datetime | None = None
 ) -> ProductPriceHistory:
     """Preserve the provider's observation, including absent or exclusive prices."""
     current_price = _validate_price(snapshot.current_price, "current_price")
@@ -59,7 +59,7 @@ def record_price(
     ):
         raise ValueError("A data da observação deve incluir fuso horário.")
     observed_at = snapshot.observed_at.astimezone(UTC)
-    if observed_at > datetime.now(UTC) + timedelta(seconds=60):
+    if observed_at > (now or datetime.now(UTC)) + timedelta(seconds=60):
         raise ValueError("A data da observação não pode estar no futuro além de 60 segundos.")
     if product.id is None:
         raise ValueError("O produto deve estar persistido antes de registrar preços.")
@@ -83,8 +83,8 @@ def record_price(
 
 
 def collect_price(
-    session: Session, product: Product, provider: PriceProvider
+    session: Session, product: Product, provider: PriceProvider, *, now: datetime | None = None
 ) -> ProductPriceHistory:
     if not product.monitoring_enabled:
         raise ValueError("O monitoramento deste produto está desativado.")
-    return record_price(session, product, provider.fetch(product))
+    return record_price(session, product, provider.fetch(product), now=now)

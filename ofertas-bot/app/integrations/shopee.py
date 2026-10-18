@@ -11,7 +11,7 @@ import re
 from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
-from urllib.parse import unquote, urlsplit
+from urllib.parse import parse_qsl, unquote, urlsplit
 from uuid import uuid4
 
 from pydantic import SecretStr
@@ -78,6 +78,36 @@ def _category_id(value) -> str:
     if int(result) > 2**31 - 1:
         raise InvalidPayload("Identificador de categoria Shopee inválido.")
     return result
+
+
+def _link_target_verified(long_url: str, expected: tuple[str, str]) -> bool:
+    """Require the authenticated response to identify the requested product.
+
+    An unfamiliar Shopee affiliate/deep-link format remains unverified. It is
+    never followed or decoded speculatively to claim ownership of a product link.
+    """
+    try:
+        actual = _url_identity(long_url)
+    except InvalidPayload:
+        try:
+            normalize_product_identity(Platform.SHOPEE, long_url, None)
+        except (ValueError, TypeError):
+            raise InvalidPayload("O destino retornado não é uma URL Shopee permitida.") from None
+        return False
+    if actual != expected:
+        raise InvalidPayload("O link retornado aponta para outro produto Shopee.")
+    selectors = {
+        "variation",
+        "variation_id",
+        "variationid",
+        "searchvariation",
+        "attributes",
+        "modelid",
+        "model_id",
+        "sku",
+        "sku_id",
+    }
+    return not any(key.casefold() in selectors for key, _ in parse_qsl(urlsplit(long_url).query))
 
 
 def _money(value, *, optional: bool = True) -> Decimal | None:
@@ -393,7 +423,7 @@ class ShopeeConnector:
             raise ConnectorDisabled(
                 "Geração de links Shopee exige habilitação explícita adicional."
             )
-        _url_identity(url)  # Existing third-party short/affiliate links are not conversion input.
+        identity = _url_identity(url)  # Existing affiliate links are not conversion input.
         parsed = urlsplit(url)
         if parsed.query:
             raise InvalidPayload("Use uma URL canônica sem parâmetros de afiliado ou rastreamento.")
@@ -413,11 +443,18 @@ class ShopeeConnector:
         short = data.get("shortLink")
         try:
             validate_affiliate_url(self.platform, short)
-            if urlsplit(short).hostname not in {"shope.ee", "s.shopee.com.br"}:
+            parsed_short = urlsplit(short)
+            if parsed_short.hostname not in {"shope.ee", "s.shopee.com.br"}:
                 raise ValueError
-            if urlsplit(short).fragment or urlsplit(short).query:
+            if (
+                parsed_short.fragment
+                or parsed_short.query
+                or re.fullmatch(r"/[A-Za-z0-9_-]+/?", parsed_short.path) is None
+            ):
                 raise ValueError
         except (ValueError, TypeError):
             raise InvalidPayload("A API Shopee não retornou um link curto permitido.") from None
-        self._verified_operations.add("generate_affiliate_link")
-        return AffiliateLinkResult(short, "SHOPEE_AFFILIATE_API", account_verified=True)
+        verified = _link_target_verified(data["longLink"], identity)
+        if verified:
+            self._verified_operations.add("generate_affiliate_link")
+        return AffiliateLinkResult(short, "SHOPEE_AFFILIATE_API", account_verified=verified)

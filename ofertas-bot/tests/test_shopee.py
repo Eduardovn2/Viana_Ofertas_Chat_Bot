@@ -406,12 +406,57 @@ def test_existing_affiliate_or_tracking_links_are_not_accepted_as_conversion_inp
         {"shortLink": "https://s.shopee.com.br/SYNTHETIC?token=secret", "longLink": URL},
         {"shortLink": "https://s.shopee.com.br/SYNTHETIC", "longLink": ""},
         {"shortLink": None, "longLink": URL},
+        {"shortLink": "https://s.shopee.com.br", "longLink": URL},
+        {"shortLink": "https://shope.ee/", "longLink": URL},
+        {"shortLink": "https://s.shopee.com.br/a/b", "longLink": URL},
+        {
+            "shortLink": "https://s.shopee.com.br/SYNTHETIC",
+            "longLink": "https://shopee.com.br/product/999/888",
+        },
+        {
+            "shortLink": "https://s.shopee.com.br/SYNTHETIC",
+            "longLink": "https://evil.test/product/101/202",
+        },
+        {
+            "shortLink": "https://s.shopee.com.br/SYNTHETIC",
+            "longLink": "http://shopee.com.br/product/101/202",
+        },
     ],
 )
 def test_invalid_short_link_results_never_gain_verified_ownership(link_data):
     transport = FakeTransport({"data": {"generateShortLink": link_data}})
     with pytest.raises(InvalidPayload):
         connector(transport, short_links_enabled=True).generate_affiliate_link(URL)
+
+
+@pytest.mark.parametrize(
+    "long_url",
+    [
+        "https://shopee.com.br/universal-link/product/101/202?synthetic-tracking=1",
+        "https://shopee.com.br/unknown-deep-link",
+        URL + "?variation_id=SYNTHETIC-VARIANT",
+        URL + "#context",
+    ],
+)
+def test_ambiguous_long_link_keeps_account_product_association_unverified(long_url):
+    transport = FakeTransport(
+        {
+            "data": {
+                "generateShortLink": {
+                    "shortLink": "https://s.shopee.com.br/SYNTHETIC",
+                    "longLink": long_url,
+                }
+            }
+        }
+    )
+    source = connector(transport, short_links_enabled=True)
+    result = source.generate_affiliate_link(URL)
+    assert result.url == "https://s.shopee.com.br/SYNTHETIC"
+    assert result.account_verified is False
+    assert {cap.name: cap.status for cap in source.capabilities()}[
+        "generate_affiliate_link"
+    ] is CapabilityStatus.REQUIRES_CREDENTIALS
+    assert len(transport.calls) == 1  # No redirect or speculative resolution request.
 
 
 @pytest.mark.parametrize(

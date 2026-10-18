@@ -104,4 +104,3 @@ function Stop-CallbackGateway([Diagnostics.Process]$Gateway, [int]$GatewayPort) 
         if (-not $process.WaitForExit(5000)) { throw 'Gateway anterior ainda esta encerrando.' }
     }
 }
-

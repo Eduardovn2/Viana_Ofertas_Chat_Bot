@@ -22,6 +22,7 @@ from app.models import (
     PublicationQueueItem,
     QueueStatus,
 )
+from app.services.affiliate_links import validate_link_for_product
 from app.services.categories import CategoryService
 from app.services.comparison import (
     CENT,
@@ -30,7 +31,6 @@ from app.services.comparison import (
     aware_utc,
     valid_money,
 )
-from app.services.products import validate_affiliate_url
 from app.services.scoring import OfferScoringService, best_coupon, evaluate_coupon
 
 _ACTIVE_OFFERS = (
@@ -64,12 +64,25 @@ def latest_observation(session: Session, product_id: int) -> ProductPriceHistory
     )
 
 
-def has_own_affiliate_link(product: Product) -> bool:
+def has_own_affiliate_link(product: Product, *, require_verified: bool = False) -> bool:
     link = product.affiliate_link
-    if link is None or link.source != "manual_official":
+    if link is None or link.source not in {
+        "manual_official",
+        "MANUAL_LINKBUILDER",
+        "MANUAL_SHOPEE",
+        "MANUAL_LINKBUILDER_VERIFIED",
+        "MANUAL_SHOPEE_VERIFIED",
+        "SHOPEE_OFFICIAL_API",
+    }:
+        return False
+    if require_verified and link.source not in {
+        "MANUAL_LINKBUILDER_VERIFIED",
+        "MANUAL_SHOPEE_VERIFIED",
+        "SHOPEE_OFFICIAL_API",
+    }:
         return False
     try:
-        validate_affiliate_url(product.platform, link.url)
+        validate_link_for_product(product, link.url)
     except ValueError:
         return False
     return True
@@ -281,7 +294,11 @@ class OfferEngine:
         offer = existing or Offer(product_id=product.id, price_history_id=observation.id)
         for field in OfferAssessment.__dataclass_fields__:
             setattr(offer, field, getattr(assessment, field))
-        offer.status = OfferStatus.READY if has_own_affiliate_link(product) else OfferStatus.PENDING
+        offer.status = (
+            OfferStatus.READY
+            if has_own_affiliate_link(product, require_verified=not observation.is_simulated)
+            else OfferStatus.PENDING
+        )
         session.add(offer)
         session.flush()
         # Local import keeps the revalidation helper available to the queue without a cycle.

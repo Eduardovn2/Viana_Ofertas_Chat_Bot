@@ -19,7 +19,20 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://ofertas_bot@127.0.0.1:5432/ofertas_bot", repr=False
     )
     admin_api_key: SecretStr | None = None
-    price_provider: Literal["simulated"] = "simulated"
+    price_provider: Literal["simulated", "marketplaces"] = "simulated"
+    mercado_livre_enabled: bool = False
+    mercado_livre_access_token: SecretStr | None = Field(default=None, repr=False)
+    shopee_enabled: bool = False
+    shopee_app_id: SecretStr | None = Field(default=None, repr=False)
+    shopee_secret: SecretStr | None = Field(default=None, repr=False)
+    shopee_short_links_enabled: bool = False
+    shopee_discovery_enabled: bool = False
+    shopee_discovery_query: str | None = Field(default=None, min_length=1, max_length=100)
+    integration_timeout_seconds: float = Field(default=5, ge=1, le=15)
+    integration_max_retries: int = Field(default=1, ge=0, le=2)
+    integration_min_interval_seconds: float = Field(default=1, ge=0.1, le=3600)
+    integration_cache_seconds: int = Field(default=30, ge=0, le=300)
+    integration_max_retry_wait_seconds: float = Field(default=5, ge=1, le=30)
     mock_current_price: Decimal = Field(
         default=Decimal("99.90"), gt=0, max_digits=12, decimal_places=2
     )

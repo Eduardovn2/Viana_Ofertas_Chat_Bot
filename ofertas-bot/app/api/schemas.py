@@ -23,6 +23,7 @@ class ProductCreate(InputModel):
     name: str = Field(min_length=1, max_length=255)
     original_url: str = Field(min_length=1, max_length=2048)
     external_id: str | None = Field(default=None, min_length=1, max_length=100)
+    variant_id: str = Field(default="", max_length=100, pattern=r"^[a-zA-Z0-9_.:-]*$")
     monitoring_enabled: bool = True
     priority: bool = False
     description: str | None = Field(default=None, max_length=10000)
@@ -50,6 +51,7 @@ class ProductRead(BaseModel):
     id: int
     platform: Platform
     external_id: str | None
+    variant_id: str = ""
     name: str
     original_url: str
     monitoring_enabled: bool
@@ -67,6 +69,7 @@ class MonitoringUpdate(InputModel):
 
 class AffiliateLinkWrite(InputModel):
     url: str = Field(min_length=1, max_length=2048)
+    operationally_verified: bool = False
 
     @field_validator("url")
     @classmethod
@@ -101,3 +104,7 @@ class PriceHistoryRead(BaseModel):
     created_at: datetime
     installment_text: str | None
     shipping_text: str | None
+    source_type: str = "UNKNOWN"
+    source_reference: str | None = None
+    raw_fingerprint: str | None = None
+    evidence_metadata: dict = Field(default_factory=dict)

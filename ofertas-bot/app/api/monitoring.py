@@ -18,6 +18,8 @@ from app.models import (
     DestinationChannel,
     MonitoringJob,
     Offer,
+    Product,
+    ProductPriceHistory,
     PublicationDestination,
     PublicationQueueItem,
     QueueStatus,
@@ -75,6 +77,14 @@ class OfferRead(BaseModel):
     score: Decimal
     status: str
     expires_at: datetime | None
+    source_type: str = "UNKNOWN"
+    source_reference: str | None = None
+    observed_at: datetime | None = None
+    is_simulated: bool = True
+    variant_id: str = ""
+    affiliate_pending: bool = True
+    blocked_reasons: list[str] = Field(default_factory=list)
+    publication_mode: str = "dry-run"
 
 
 class DestinationCreate(BaseModel):
@@ -168,9 +178,32 @@ def list_offers(
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ):
-    return session.scalars(
-        select(Offer).order_by(Offer.score.desc(), Offer.id.desc()).offset(offset).limit(limit)
-    ).all()
+    from app.services.offers import has_own_affiliate_link
+
+    rows = session.execute(
+        select(Offer, ProductPriceHistory, Product)
+        .join(ProductPriceHistory, ProductPriceHistory.id == Offer.price_history_id)
+        .join(Product, Product.id == Offer.product_id)
+        .order_by(Offer.score.desc(), Offer.id.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    result = []
+    for offer, history, product in rows:
+        pending = not has_own_affiliate_link(product, require_verified=not history.is_simulated)
+        result.append(
+            {
+                **{column.name: getattr(offer, column.name) for column in Offer.__table__.columns},
+                "source_type": history.source_type,
+                "source_reference": history.source_reference,
+                "observed_at": history.observed_at,
+                "is_simulated": history.is_simulated,
+                "variant_id": product.variant_id,
+                "affiliate_pending": pending,
+                "blocked_reasons": ["AFFILIATE_PENDING"] if pending else [],
+            }
+        )
+    return result
 
 
 @router.get("/queue")
@@ -180,8 +213,11 @@ def list_queue(
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ):
-    query = select(PublicationQueueItem, Offer.score).join(
-        Offer, Offer.id == PublicationQueueItem.offer_id
+    query = (
+        select(PublicationQueueItem, Offer.score, ProductPriceHistory, Product.variant_id)
+        .join(Offer, Offer.id == PublicationQueueItem.offer_id)
+        .join(ProductPriceHistory, ProductPriceHistory.id == Offer.price_history_id)
+        .join(Product, Product.id == PublicationQueueItem.product_id)
     )
     if state is not None:
         query = query.where(PublicationQueueItem.status == state)
@@ -198,8 +234,14 @@ def list_queue(
                     for column in PublicationQueueItem.__table__.columns
                 },
                 "score": score,
+                "source_type": history.source_type,
+                "source_reference": history.source_reference,
+                "source_observed_at": history.observed_at,
+                "source_is_simulated": history.is_simulated,
+                "variant_id": variant_id,
+                "publication_mode": "dry-run",
             }
-            for item, score in rows
+            for item, score, history, variant_id in rows
         ]
     )
 

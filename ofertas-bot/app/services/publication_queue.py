@@ -141,7 +141,11 @@ class SimulatedQueueService:
             return None
         if self._cooldown_issue(session, offer, destination.id, now) is not None:
             return None
-        ready = has_own_affiliate_link(product) and not destination.manual_approval_required
+        observation = session.get(ProductPriceHistory, offer.price_history_id)
+        ready = (
+            has_own_affiliate_link(product, require_verified=not observation.is_simulated)
+            and not destination.manual_approval_required
+        )
         target_status = QueueStatus.READY if ready else QueueStatus.PENDING
         query = select(PublicationQueueItem).where(
             PublicationQueueItem.product_id == offer.product_id,
@@ -173,6 +177,14 @@ class SimulatedQueueService:
         item.status = target_status
         item.validated_at = now if ready else None
         item.last_error = None
+        item.blocked_reason = (
+            None
+            if ready
+            else (
+                "MANUAL_APPROVAL" if destination.manual_approval_required else "AFFILIATE_PENDING"
+            )
+        )
+        item.next_eligible_at = now
         session.flush()
         return item
 
@@ -195,6 +207,8 @@ class SimulatedQueueService:
                 status=status,
                 active_slot=None,
                 last_error=reason,
+                blocked_reason="EXPIRED" if status == QueueStatus.EXPIRED else "VALIDATION_FAILED",
+                next_eligible_at=None,
                 validated_at=aware_utc(self.clock()),
             )
             .execution_options(synchronize_session=False)
@@ -280,7 +294,8 @@ class SimulatedQueueService:
         issue = issue or self._cooldown_issue(session, offer, destination.id, now)
         if issue is not None:
             return self._finish(session, item, offer, QueueStatus.EXPIRED, issue)
-        if not has_own_affiliate_link(product):
+        observation = session.get(ProductPriceHistory, offer.price_history_id)
+        if not has_own_affiliate_link(product, require_verified=not observation.is_simulated):
             waiting = session.execute(
                 update(PublicationQueueItem)
                 .where(
@@ -292,6 +307,7 @@ class SimulatedQueueService:
                     status=QueueStatus.PENDING,
                     validated_at=None,
                     last_error="Cadastre um link de afiliado próprio antes da simulação.",
+                    blocked_reason="AFFILIATE_PENDING",
                 )
                 .execution_options(synchronize_session=False)
             )
@@ -325,6 +341,8 @@ class SimulatedQueueService:
                 attempts=PublicationQueueItem.attempts + 1,
                 is_simulated=True,
                 last_error=None,
+                blocked_reason=None,
+                next_eligible_at=now + timedelta(seconds=self.settings.queue_republish_seconds),
             )
             .execution_options(synchronize_session=False)
         )

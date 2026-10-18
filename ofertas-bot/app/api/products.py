@@ -17,8 +17,9 @@ from app.api.schemas import (
 )
 from app.core.security import require_admin
 from app.db import get_session
-from app.models import AffiliateLink, Product, ProductPriceHistory
-from app.services.products import normalize_product_identity, validate_affiliate_url
+from app.models import AffiliateLink, Platform, Product, ProductPriceHistory
+from app.services.affiliate_links import validate_link_for_product
+from app.services.products import normalize_product_identity
 
 router = APIRouter(
     prefix="/api/v1/products", tags=["Produtos"], dependencies=[Depends(require_admin)]
@@ -43,6 +44,7 @@ def read_product(product: Product) -> ProductRead:
         id=product.id,
         platform=product.platform,
         external_id=product.external_id,
+        variant_id=product.variant_id,
         name=product.name,
         original_url=product.original_url,
         monitoring_enabled=product.monitoring_enabled,
@@ -160,7 +162,7 @@ def update_monitoring(product_id: int, data: MonitoringUpdate, session: Db):
 def put_affiliate_link(product_id: int, data: AffiliateLinkWrite, session: Db):
     product = get_product(session, product_id)
     try:
-        validate_affiliate_url(product.platform, data.url)
+        validate_link_for_product(product, data.url)
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     link = product.affiliate_link
@@ -169,6 +171,11 @@ def put_affiliate_link(product_id: int, data: AffiliateLinkWrite, session: Db):
         session.add(link)
     else:
         link.url = data.url
+    link.source = (
+        "MANUAL_LINKBUILDER" if product.platform == Platform.MERCADO_LIVRE else "MANUAL_SHOPEE"
+    )
+    if data.operationally_verified:
+        link.source += "_VERIFIED"
     commit(session)
     logger.info("affiliate_link_saved", extra={"product_id": product_id})
     return link
@@ -232,5 +239,14 @@ def monitor_product(product_id: int, request: Request, session: Db):
         raise HTTPException(404, "Produto não encontrado") from exc
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    except Exception as exc:
+        from app.integrations.errors import IntegrationError
+
+        if isinstance(exc, IntegrationError):
+            raise HTTPException(
+                409 if exc.code == "CONNECTOR_DISABLED" else 502,
+                {"code": exc.code, "message": exc.message},
+            ) from None
+        raise
     logger.info("simulated_price_recorded", extra={"product_id": product_id})
     return observation

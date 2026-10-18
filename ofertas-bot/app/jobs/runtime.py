@@ -13,8 +13,17 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.integrations.base import PriceProvider
+from app.integrations.errors import IntegrationError
 from app.integrations.mock import SimulatedPriceProvider
-from app.models import MonitoringJob, MonitoringJobStatus, Product, ProductPriceHistory
+from app.integrations.registry import ConnectorRegistry
+from app.models import (
+    IntegrationEvent,
+    MonitoringJob,
+    MonitoringJobStatus,
+    Platform,
+    Product,
+    ProductPriceHistory,
+)
 from app.services.configuration import load_monitoring_settings
 from app.services.leases import (
     Clock,
@@ -58,12 +67,16 @@ class MonitoringRuntime:
         settings: Settings,
         provider_factory: Callable[[Product], PriceProvider] | None = None,
         clock: Clock | None = None,
+        connector_registry: ConnectorRegistry | None = None,
     ) -> None:
         # No database connection or background thread is created here.
         self.session_factory = session_factory
         self.settings = settings
         self.provider_factory = provider_factory
         self.clock = clock or (lambda: datetime.now(UTC))
+        self.connectors = connector_registry or ConnectorRegistry(
+            settings, session_factory=session_factory, clock=self.clock
+        )
         self._scheduler: BackgroundScheduler | None = None
         self._paused = not settings.scheduler_enabled
         self._effective_enabled = settings.scheduler_enabled
@@ -129,7 +142,11 @@ class MonitoringRuntime:
         self._effective_enabled = effective.scheduler_enabled
         return effective
 
-    def _provider(self, product: Product, settings: Settings) -> PriceProvider:
+    def _provider(
+        self, product: Product, settings: Settings, *, real: bool = False, check: bool = False
+    ) -> PriceProvider:
+        if real or settings.price_provider == "marketplaces":
+            return self.connectors.provider(product, allow_blocked=check)
         if self.provider_factory is not None:
             return self.provider_factory(product)
         return SimulatedPriceProvider(
@@ -205,6 +222,17 @@ class MonitoringRuntime:
                 job.failure_count += 1
                 job.status = MonitoringJobStatus.FAILED
                 job.last_error = type(error).__name__[:100]
+                if isinstance(error, IntegrationError):
+                    session.add(
+                        IntegrationEvent(
+                            product_id=product.id,
+                            platform=product.platform,
+                            operation="fetch_product",
+                            status="FAILED",
+                            error_code=error.code,
+                            observed_at=utc_now(self.clock),
+                        )
+                    )
                 job.enabled = product.monitoring_enabled
                 delay = min(
                     settings.monitoring_backoff_max_seconds,
@@ -218,7 +246,9 @@ class MonitoringRuntime:
                 "monitoring_failure_record_unavailable", extra={"product_id": product_id}
             )
 
-    def run_product(self, product_id: int, *, manual: bool = True) -> ProductPriceHistory:
+    def run_product(
+        self, product_id: int, *, manual: bool = True, real: bool = False, check: bool = False
+    ) -> ProductPriceHistory:
         name = f"monitor:product:{product_id}"
         owner = acquire_lease(
             self.session_factory, name, self.settings.monitoring_lease_seconds, self.clock
@@ -252,8 +282,22 @@ class MonitoringRuntime:
                     select(MonitoringJob).where(MonitoringJob.product_id == product_id)
                 ).one()
                 history = collect_price(
-                    session, product, self._provider(product, effective), now=utc_now(self.clock)
+                    session,
+                    product,
+                    self._provider(product, effective, real=real, check=check),
+                    now=utc_now(self.clock),
                 )
+                if not history.is_simulated:
+                    session.add(
+                        IntegrationEvent(
+                            product_id=product.id,
+                            platform=product.platform,
+                            operation="fetch_product",
+                            status="SUCCEEDED",
+                            observed_at=utc_now(self.clock),
+                            source_reference=history.source_reference,
+                        )
+                    )
                 # Delayed import keeps construction independent from the offer implementation.
                 from app.services.offers import OfferEngine
 
@@ -270,6 +314,13 @@ class MonitoringRuntime:
                 logger.info("monitoring_succeeded", extra={"product_id": product_id})
                 return history
         except Exception as exc:
+            if isinstance(exc, IntegrationError) and exc.code == "AUTHORIZATION_DENIED":
+                with self.session_factory() as session:
+                    platform = session.scalar(
+                        select(Product.platform).where(Product.id == product_id)
+                    )
+                if platform is not None:
+                    self.connectors.block(platform)
             if started:
                 self._record_failure(product_id, name, owner, exc)
             raise
@@ -298,6 +349,10 @@ class MonitoringRuntime:
                 product.id
                 for product, job in rows
                 if self._is_due(job, self._interval(product, effective), now)
+                and (
+                    effective.price_provider == "simulated"
+                    or self.connectors.enabled(product.platform)
+                )
             ]
         for product_id in product_ids:
             result["attempted"] += 1
@@ -314,7 +369,46 @@ class MonitoringRuntime:
                     "monitoring_product_failed",
                     extra={"product_id": product_id, "error_type": type(exc).__name__},
                 )
+        self._discover_due(effective)
         return result
+
+    def _discover_due(self, settings: Settings):
+        if not (
+            settings.price_provider == "marketplaces"
+            and settings.shopee_discovery_enabled
+            and settings.shopee_discovery_query
+            and self.connectors.enabled(Platform.SHOPEE)
+        ):
+            return
+        # Keep the slot until the next interval, including failures/restarts. No catch-up loop.
+        owner = acquire_lease(
+            self.session_factory, "discovery:SHOPEE", settings.general_interval_seconds, self.clock
+        )
+        if owner is None:
+            return
+        try:
+            page = self.connectors.get(Platform.SHOPEE).discover_offers(
+                settings.shopee_discovery_query, page=1, limit=10, category=None
+            )
+            from app.services.marketplaces import ingest_discovery
+
+            with self.session_factory() as session:
+                ingest_discovery(session, page, Platform.SHOPEE, settings, clock=self.clock)
+                session.commit()
+        except IntegrationError as error:
+            if error.code == "AUTHORIZATION_DENIED":
+                self.connectors.block(Platform.SHOPEE)
+            with self.session_factory() as session:
+                session.add(
+                    IntegrationEvent(
+                        platform=Platform.SHOPEE,
+                        operation="discover_offers",
+                        status="FAILED",
+                        error_code=error.code,
+                        observed_at=utc_now(self.clock),
+                    )
+                )
+                session.commit()
 
     def _tick(self) -> None:
         now = utc_now(self.clock)
@@ -377,6 +471,7 @@ class MonitoringRuntime:
             if self._scheduler is not None:
                 self._scheduler.shutdown(wait=wait)
                 self._scheduler = None
+            self.connectors.close()
             return self.status()
 
     def status(self) -> dict:

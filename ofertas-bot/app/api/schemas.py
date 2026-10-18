@@ -1,13 +1,21 @@
+import json
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator, model_validator
 
 from app.models import Availability, Platform, PriceAccess
 
 
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    @field_validator("classification_metadata", check_fields=False)
+    @classmethod
+    def limit_metadata(cls, value):
+        if value is not None and len(json.dumps(value, ensure_ascii=False).encode("utf-8")) > 16384:
+            raise ValueError("Metadados de classificação devem ocupar no máximo 16 KiB")
+        return value
 
 
 class ProductCreate(InputModel):
@@ -17,6 +25,8 @@ class ProductCreate(InputModel):
     external_id: str | None = Field(default=None, min_length=1, max_length=100)
     monitoring_enabled: bool = True
     priority: bool = False
+    description: str | None = Field(default=None, max_length=10000)
+    classification_metadata: dict[str, JsonValue] | None = None
 
 
 class ProductUpdate(InputModel):
@@ -24,10 +34,13 @@ class ProductUpdate(InputModel):
     original_url: str | None = Field(default=None, min_length=1, max_length=2048)
     monitoring_enabled: bool | None = None
     priority: bool | None = None
+    description: str | None = Field(default=None, max_length=10000)
+    classification_metadata: dict[str, JsonValue] | None = None
 
     @model_validator(mode="after")
     def no_explicit_nulls(self):
-        if any(getattr(self, name) is None for name in self.model_fields_set):
+        required = self.model_fields_set - {"description", "classification_metadata"}
+        if any(getattr(self, name) is None for name in required):
             raise ValueError("Campos fornecidos não podem ser nulos")
         return self
 
@@ -44,6 +57,8 @@ class ProductRead(BaseModel):
     affiliate_pending: bool
     created_at: datetime
     updated_at: datetime
+    description: str | None = None
+    classification_metadata: dict[str, JsonValue] | None = None
 
 
 class MonitoringUpdate(InputModel):

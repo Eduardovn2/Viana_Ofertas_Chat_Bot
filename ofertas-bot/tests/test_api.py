@@ -33,6 +33,7 @@ def application(tmp_path, monkeypatch):
             app_env="test",
             database_url=database_url,
             admin_api_key=KEY,
+            provider_min_interval_seconds=0,
         )
     )
     yield application

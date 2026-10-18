@@ -8,10 +8,13 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.api.categories import router as categories_router
+from app.api.monitoring import router as monitoring_router
 from app.api.products import router as products_router
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.db import build_engine, build_session_factory
+from app.jobs.runtime import MonitoringRuntime
 
 logger = logging.getLogger("ofertas_bot")
 
@@ -24,13 +27,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI):
         logger.info("application_started_simulated_provider")
-        yield
-        engine.dispose()
+        try:
+            application.state.monitoring.start()
+            yield
+        finally:
+            application.state.monitoring.shutdown()
+            engine.dispose()
 
-    application = FastAPI(title="Ofertas Bot", version="0.1.0", lifespan=lifespan)
+    application = FastAPI(title="Ofertas Bot", version="0.2.1", lifespan=lifespan)
     application.state.settings = settings
     application.state.engine = engine
     application.state.session_factory = build_session_factory(engine)
+    application.state.monitoring = MonitoringRuntime(application.state.session_factory, settings)
     application.add_middleware(
         TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "[::1]"]
     )
@@ -73,6 +81,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok", "database": "connected", "price_provider": "simulated"}
 
     application.include_router(products_router)
+    application.include_router(monitoring_router)
+    application.include_router(categories_router)
     return application
 
 

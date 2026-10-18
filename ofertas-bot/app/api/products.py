@@ -17,9 +17,7 @@ from app.api.schemas import (
 )
 from app.core.security import require_admin
 from app.db import get_session
-from app.integrations.mock import SimulatedPriceProvider
 from app.models import AffiliateLink, Product, ProductPriceHistory
-from app.services.monitoring import collect_price
 from app.services.products import normalize_product_identity, validate_affiliate_url
 
 router = APIRouter(
@@ -52,6 +50,8 @@ def read_product(product: Product) -> ProductRead:
         affiliate_pending=product.affiliate_link is None,
         created_at=product.created_at,
         updated_at=product.updated_at,
+        description=product.description,
+        classification_metadata=product.classification_metadata,
     )
 
 
@@ -65,6 +65,14 @@ def commit(session: Session) -> None:
         ) from exc
 
 
+def flush_or_conflict(session: Session) -> None:
+    try:
+        session.flush()
+    except IntegrityError as exc:
+        session.rollback()
+        raise HTTPException(409, "Registro duplicado ou conflito de integridade") from exc
+
+
 @router.post("", response_model=ProductRead, status_code=status.HTTP_201_CREATED)
 def create_product(data: ProductCreate, session: Db):
     try:
@@ -73,6 +81,10 @@ def create_product(data: ProductCreate, session: Db):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     product = Product(**{**data.model_dump(), "external_id": external_id})
     session.add(product)
+    flush_or_conflict(session)
+    from app.services.categories import CategoryService
+
+    CategoryService().classify(session, product)
     commit(session)
     logger.info("product_created", extra={"product_id": product.id})
     return read_product(get_product(session, product.id))
@@ -117,6 +129,13 @@ def update_product(product_id: int, data: ProductUpdate, session: Db):
             )
     for key, value in changes.items():
         setattr(product, key, value)
+    if changes.keys() & {"name", "description", "classification_metadata"}:
+        from app.services.categories import CategoryService
+        from app.services.category_routing import invalidate_ineligible_queue
+
+        session.flush()
+        CategoryService().classify(session, product)
+        invalidate_ineligible_queue(session, product_id=product.id)
     commit(session)
     return read_product(product)
 
@@ -199,11 +218,19 @@ def monitor_product(product_id: int, request: Request, session: Db):
         raise HTTPException(
             status.HTTP_409_CONFLICT, "O monitoramento deste produto está desativado"
         )
-    provider = SimulatedPriceProvider(current_price=request.app.state.settings.mock_current_price)
+    from app.jobs.runtime import MonitoringBusyError, ProviderRateLimitedError
+
     try:
-        observation = collect_price(session, product, provider)
+        observation = request.app.state.monitoring.run_product(product_id)
+    except MonitoringBusyError as exc:
+        raise HTTPException(409, "Monitoramento já em execução para este produto") from exc
+    except ProviderRateLimitedError as exc:
+        raise HTTPException(
+            429, "Limite do provedor: aguarde antes de consultar novamente"
+        ) from exc
+    except LookupError as exc:
+        raise HTTPException(404, "Produto não encontrado") from exc
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
-    commit(session)
     logger.info("simulated_price_recorded", extra={"product_id": product_id})
     return observation

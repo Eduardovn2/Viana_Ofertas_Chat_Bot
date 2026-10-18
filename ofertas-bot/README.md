@@ -546,6 +546,16 @@ Histórico expõe `source_type`, `source_reference`, fingerprint e evidência p�
 
 Validação da Fase 3 em 18/10/2026: **485 testes aprovados, sem falhas/ignorados**, incluindo quatro testes PostgreSQL em `ofertas_bot_test`. Ruff e formatação aprovados em 68 arquivos Python; `alembic upgrade head/current/check` aprovados no PostgreSQL real, revisão 0004. Seed idempotente confirmou nove categorias e `Ofertas de Casa` desativado. Detalhes e a distinção entre PostgreSQL real e dados comerciais sintéticos estão no [relatório de validação](docs/VALIDACAO_FASE_3.md).
 
+## OAuth local do Mercado Livre
+
+O [guia OAuth do Mercado Livre](docs/OAUTH_MERCADOLIVRE.md) prepara uma autorização oficial pelo navegador com PKCE, sem expor a API administrativa. `MERCADOLIVRE_OAUTH_ENABLED=false` é o padrão; Client ID e Client Secret devem ser preenchidos apenas no `.env` local, após configurar sua própria aplicação no DevCenter. Não envie credenciais pelo chat.
+
+O script `scripts/start_oauth_tunnel.ps1` prepara um Cloudflare Quick Tunnel para um gateway separado em `127.0.0.1:8787`, grava a URI exata em `MERCADOLIVRE_REDIRECT_URI` e mantém o controle dos processos em `.runtime/oauth-tunnel.json`. Cadastre essa mesma URI HTTPS no DevCenter. A API principal permanece em `127.0.0.1:8000`; o gateway expõe somente o callback, sem Swagger/OpenAPI. Um túnel gerenciado ainda ativo é reutilizado; iniciar outro após encerrá-lo gera um hostname novo, que precisa ser recadastrado.
+
+`POST /api/v1/oauth/mercadolivre/authorize` exige administração local por `X-API-Key` e devolve uma `launch_url` descartável para abrir no navegador. Não imprima ou compartilhe essa URL. O navegador recebe um cookie seguro e segue para a autorização oficial; o retorno precisa corresponder ao cookie e ao `state`, dentro de 600 segundos por padrão. `GET /api/v1/oauth/mercadolivre/status` informa apenas configuração, presença e validade do token. As requisições OAuth releem o `.env`, permitindo preencher as credenciais depois de preparar o túnel sem reiniciá-lo.
+
+O armazenamento OAuth é separado do PostgreSQL: `%LOCALAPPDATA%\VianaOfertasChatBot\oauth\mercadolivre.sqlite3`, com tokens e verificador protegidos por DPAPI do usuário Windows atual. O token obtido **ainda não é injetado no provedor de preços**. As flags comerciais Mercado Livre/Shopee continuam independentes e desativadas por padrão; autorizar OAuth não consulta produtos nem publica mensagens. Ao terminar, execute `scripts/stop_oauth_tunnel.ps1`. O guia registra o roteiro de testes; a validação deste acréscimo será registrada após a execução, sem antecipar sucesso de autorização real.
+
 ## Próximo avanço
 
 O [`ROADMAP.md`](ROADMAP.md) registra a aprovação da fase 3 e a pendência de acesso comercial. Configure as credenciais opcionais obtidas oficialmente, confirme permissões com um produto por loja e registre horário/origem/preço sem publicar. A fase continua **parcial/bloqueada por acesso** até essa validação. A Fase 4 não foi iniciada e depende de novo aceite explícito antes de qualquer publicação real.

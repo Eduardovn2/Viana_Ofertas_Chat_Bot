@@ -1,8 +1,8 @@
-# Ofertas Bot — MVP pessoal, fase 2.1
+# Ofertas Bot — MVP pessoal, fase 3 parcial
 
-Backend local para cadastrar produtos, guardar links de afiliado manuais e acompanhar preços **simulados**, com comparação histórica, pontuação e fila de simulação. A aplicação usa Python 3.12+, FastAPI, SQLAlchemy, PostgreSQL, Alembic e APScheduler 3.11 em um monólito modular.
+Backend local para cadastrar produtos, guardar links de afiliado e acompanhar preços simulados ou APIs oficiais explicitamente habilitadas, com comparação histórica, pontuação e fila dry-run. A aplicação usa Python 3.12+, FastAPI, SQLAlchemy, PostgreSQL, Alembic e APScheduler 3.11 em um monólito modular.
 
-A fase 2.1 acrescenta categorias explicáveis, correção manual e filtro por destino ao monitoramento e à fila simulados da fase 2. Mercado Livre e Shopee permanecem desativados como fontes reais. A fila registra uma **simulação**, inclusive quando seu estado se chama `PUBLISHED`; ela não envia mensagens a Telegram, WhatsApp ou qualquer serviço externo.
+A fase 3 preserva as fases anteriores e adiciona conectores independentes Mercado Livre/Shopee, proveniência, variantes e evidências de cupom. Ambos ficam desativados por padrão. **FASE 3 PARCIAL / BLOQUEADA POR ACESSO:** não há credenciais comerciais configuradas e nenhuma consulta real a produto foi executada. A fila registra uma **simulação**, inclusive quando seu estado se chama `PUBLISHED`; ela não envia mensagens externas. A [matriz oficial de capacidades](docs/INTEGRACOES_FASE_3.md) distingue documentação, configuração e acesso comprovado.
 
 ## O que já pode ser usado
 
@@ -88,7 +88,7 @@ Em uma instalação nova, use os dois valores gerados para segredos diferentes. 
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Configuração usada pelo container PostgreSQL. |
 | `DATABASE_URL` | URL SQLAlchemy com driver `postgresql+psycopg`, usada pela API e pelo Alembic. |
 | `ADMIN_API_KEY` | Chave das rotas administrativas. Vazia mantém essas rotas bloqueadas. |
-| `PRICE_PROVIDER` | Provedor de preços; somente `simulated` está disponível nesta entrega. |
+| `PRICE_PROVIDER` | `simulated` por padrão; `marketplaces` seleciona os conectores habilitados, sem fallback que invente preço real. |
 | `MOCK_CURRENT_PRICE` | Preço atual de desenvolvimento; `99.90` significa R$ 99,90. |
 | `SCHEDULER_ENABLED` | Habilita o agendador por padrão; `true` inicia o ciclo com a aplicação. |
 | `PRIORITY_INTERVAL_SECONDS` / `GENERAL_INTERVAL_SECONDS` | Intervalos iniciais dos produtos prioritários/gerais: 60/300 segundos. |
@@ -123,7 +123,7 @@ python -m alembic current
 python -m app.services.categories seed
 ```
 
-Aguarde o serviço `postgres` aparecer como `healthy` antes da migração. `alembic current` deve indicar `0003_category_routing (head)`. O seed pode ser repetido sem duplicar categorias ou substituir preferências existentes. O Compose publica o banco somente em `127.0.0.1:5432` e mantém os dados no volume `postgres_data`. A API não cria tabelas automaticamente ao iniciar; a alteração do esquema é responsabilidade das migrações.
+Aguarde o serviço `postgres` aparecer como `healthy` antes da migração. `alembic current` deve indicar `0004_marketplace_provenance (head)`. O seed pode ser repetido sem duplicar categorias ou substituir preferências existentes. O Compose publica o banco somente em `127.0.0.1:5432` e mantém os dados no volume `postgres_data`. A API não cria tabelas automaticamente ao iniciar; a alteração do esquema é responsabilidade das migrações.
 
 O usuário e a senha do container são aplicados na primeira inicialização do volume. Alterar apenas o `.env` depois disso não altera a senha de um banco já criado. Preserve o volume e faça a alteração da credencial no PostgreSQL antes de atualizar a configuração da aplicação.
 
@@ -182,7 +182,7 @@ $produto | Format-List
 $productId = $produto.id
 ```
 
-O código MLB é identificado na URL e normalizado para `MLB3810190843`. Também é possível fornecer `external_id` no cadastro. O nome permanece o informado pelo administrador. A aplicação não completa informações por consulta à loja.
+O código MLB é identificado na URL e normalizado para `MLB3810190843`. Também é possível fornecer `external_id`. O provedor simulado mantém o nome cadastrado; consultas oficiais autorizadas atualizam o nome e os metadados públicos, preservando correções manuais de categoria.
 
 Associe o link gerado manualmente no Link Builder oficial:
 
@@ -402,7 +402,7 @@ python -m ruff check .
 python -m ruff format --check app tests alembic scripts
 ```
 
-Os testes opcionais de integração PostgreSQL exigem `TEST_DATABASE_URL` e um banco cujo nome termine em `_test`. Cada um usa um schema aleatório isolado, removido ao final. Sem a variável, são pulados. O teste novo de categorias cobre a revisão 0003, unicidades/checks/chaves estrangeiras, seed repetido, roteamento, fila e `/health` com threads desativadas. A validação do SQLite e a compilação da migração para o dialeto PostgreSQL não substituem a execução em um servidor PostgreSQL real.
+Os testes opcionais de integração PostgreSQL exigem `TEST_DATABASE_URL` e um banco cujo nome termine em `_test`. Cada um usa um schema aleatório isolado, removido ao final. Sem a variável, são pulados. Cobrem as revisões 0001–0004, constraints, preservação de dados, seed, roteamento, fila, contratos sintéticos dos conectores e `/health` sem threads. Testes comerciais nunca usam a internet. A validação SQLite/offline não substitui PostgreSQL real.
 
 Crie um banco **exclusivo e descartável para testes**, separado de `ofertas_bot`. O exemplo abaixo usa o usuário padrão deste guia e solicita sua senha sem colocá-la no histórico do PowerShell:
 
@@ -440,7 +440,7 @@ Os **18 testes de migração** verificaram upgrade/downgrade, preservação dos 
 
 Validação consolidada da **fase 2.1 em 18/10/2026: 241 testes aprovados, nenhuma falha e 2 testes PostgreSQL ignorados** por ausência de `TEST_DATABASE_URL`. São os 173 testes anteriores e 68 novos: 44 de categorização/roteamento, 14 da API administrativa e 10 adicionais de migração. As fixtures dos cenários antigos de fila passaram a declarar `category_mode=all` explicitamente; suas verificações de preço, concorrência, deduplicação e três horas foram preservadas. A alteração é necessária porque destinos sem configuração agora bloqueiam o roteamento.
 
-A suíte atual inclui **28 testes de migração aprovados**. Além dela, os comandos Alembic `upgrade head`, `current` e `check` passaram em SQLite isolado na revisão `0003_category_routing`, sem divergências. O seed executado duas vezes criou nove categorias e um destino na primeira execução e zero registros na segunda. O SQL PostgreSQL foi verificado offline; isso não equivale a executar PostgreSQL real.
+Na entrega da fase 2.1, a suíte incluía **28 testes de migração aprovados**. Os comandos Alembic `upgrade head`, `current` e `check` passaram em SQLite isolado na revisão `0003_category_routing`, sem divergências. O seed executado duas vezes criou nove categorias e um destino na primeira execução e zero registros na segunda. O SQL PostgreSQL foi verificado offline; a validação PostgreSQL posterior está registrada abaixo.
 
 Ruff e formatação passaram nos **50 arquivos Python**. Os **22 blocos PowerShell** do guia e `examples/first_run.ps1` passaram no parser. Há um aviso de depreciação de terceiros no TestClient do Starlette sobre `httpx`; ele não impediu os testes. Caso o ambiente restrinja o diretório temporário padrão do pytest, acrescente `--basetemp=.pytest_cache/testes-locais` a uma execução em um diretório reservado para esses testes.
 
@@ -504,6 +504,48 @@ Para retomar, ative o ambiente virtual, execute `docker compose up -d postgres`,
 - **Administração bloqueada:** configure `ADMIN_API_KEY` com pelo menos 32 caracteres, reinicie a API e use o mesmo valor no cabeçalho `X-API-Key`.
 - **Produto duplicado ao repetir o exemplo:** reutilize o identificador já cadastrado ou exclua o produto do ensaio anterior antes de cadastrar novamente.
 
+## Integrações da fase 3
+
+Use a [documentação de acesso](docs/INTEGRACOES_FASE_3.md) antes de habilitar qualquer loja. A instalação existente mantém `.env` e credenciais intactos. Obtenha acesso em sua própria conta oficial e configure **localmente**, sem compartilhar segredos:
+
+| Loja | Variáveis opcionais | Operação implementada e limite |
+| --- | --- | --- |
+| Mercado Livre | `MERCADO_LIVRE_ENABLED`, `MERCADO_LIVRE_ACCESS_TOKEN` | Metadados e preços em `/sale_price` + `/prices`; Bearer autorizado. Campos legados de preço de `/items` são ignorados. Busca ampla, cupons de terceiros e geração automática de links não foram comprovados. |
+| Shopee | `SHOPEE_ENABLED`, `SHOPEE_APP_ID`, `SHOPEE_SECRET` | `productOfferV2` para consulta/descoberta; assinatura SHA256 do corpo exato. Estoque, acesso público e preço antigo ficam desconhecidos quando o esquema não os comprova; tais observações não geram oferta elegível. |
+| Shopee, links | `SHOPEE_SHORT_LINKS_ENABLED` | `generateShortLink` somente mediante chamada administrativa explícita; sem retry da mutation, sem substituir link existente. Associação exige resposta coerente com o produto; formatos ambíguos exigem verificação manual. |
+
+Com `PRICE_PROVIDER=simulated`, a automação existente continua simulada; `refresh-real`/`check` permitem consultas pontuais se a loja estiver habilitada. Com `PRICE_PROVIDER=marketplaces`, o scheduler usa as lojas habilitadas e ignora as desativadas, sem substituí-las pelo simulado. Reinicie a API após mudar flags/credenciais locais. Startup e testes não fazem consultas comerciais involuntárias.
+
+`INTEGRATION_*` define timeout, tentativas, intervalo e cache (valores no `.env.example`). O intervalo local de 1 segundo é conservador/configurável, **não uma quota oficial garantida**. Adeque-o à permissão da conta. Locks de produto e limites por credencial são compartilhados no banco; `Retry-After` também persiste entre processos. 401/403 bloqueiam essa credencial até `check` explícito bem-sucedido. Falhas mantêm o último histórico válido e registram `IntegrationEvent` separado. O cache conserva o instante original e não simula uma revalidação.
+
+Descoberta Shopee manual é paginada. Automática exige também `SHOPEE_DISCOVERY_ENABLED=true`, `SHOPEE_DISCOVERY_QUERY` e `PRICE_PROVIDER=marketplaces`; consulta até 10 itens da primeira página por intervalo geral, sem varrer backlog no reinício. Não há descoberta automática Mercado Livre sem comprovação de acesso apropriado.
+
+Todas as rotas abaixo exigem `X-API-Key` e acesso local:
+
+| Rota | Uso |
+| --- | --- |
+| `GET /api/v1/integrations/status` | Flags, presença de credenciais, bloqueios, última consulta e capacidades; nenhum segredo. |
+| `GET /api/v1/integrations/{platform}/capabilities` | Estados por operação. Use `MERCADO_LIVRE` ou `SHOPEE`. |
+| `POST /api/v1/integrations/{platform}/check` | Corpo `{"product_id": 1}`; limpa cache, consulta um produto cadastrado e só libera bloqueio após sucesso. Persiste histórico/diagnóstico, sem publicação. |
+| `POST /api/v1/products/{id}/refresh-real` | Consulta oficial pontual usando as mesmas reservas e validações do scheduler. |
+| `POST /api/v1/integrations/{platform}/discover` | Corpo `{"query":"ferramentas","page":1,"limit":20}`; ingestão somente se a operação for autorizada. |
+| `POST /api/v1/products/{id}/affiliate-link/generate` | Shopee com flag específica; usa a URL canônica cadastrada. Mercado Livre retorna capacidade não suportada. |
+| `POST/GET /api/v1/products/{id}/coupon-evidence` | Cadastro manual conservador e consulta paginada de evidências; ver `/docs` para campos. |
+
+Produtos Shopee usam `external_id="shopId:itemId"` e URL `/product/shopId/itemId` ou slug `-i.shopId.itemId`. `variant_id` é opcional no cadastro, imutável e faz parte da unicidade: cada variante tem histórico/fila próprios. Se a API não resolve seu preço, fica `None/UNKNOWN`, sem empréstimo do menor preço do anúncio. Moeda é BRL e valores monetários são `Decimal`.
+
+O link Mercado Livre é cadastrado por `PUT /products/{id}/affiliate-link`, com origem `MANUAL_LINKBUILDER`; Shopee aceita o fluxo manual. Use `operationally_verified=true` **apenas após conferir pertencimento à própria conta e associação ao produto**. O sistema valida formato/identidades reconhecíveis, sem resolver encurtadores ou usar cookies. No armazenamento, fontes terminadas em `_VERIFIED` registram essa confirmação manual; links legados continuam válidos no ensaio simulado. Dados reais exigem confirmação operacional ou geração Shopee comprovada para chegar a `READY`. `affiliate_pending` no cadastro indica ausência de link; a lista de ofertas informa a pendência efetiva de elegibilidade.
+
+Cupom começa `UNVERIFIED/UNKNOWN`. Confirmação manual requer produto elegível, condições completas, referência oficial, verificação com fuso, validade e acesso público. Apenas código/desconto percentual ou fixo completos são projetados no avaliador anterior; mínimo, teto, frescor e expiração continuam obrigatórios. Frete grátis é evidência separada e não vira desconto inventado no produto. Campanha anunciada e cupom expirado não aumentam score.
+
+Uma nova confirmação do mesmo cupom manual, produto e condições renova `last_verified_at` e acrescenta evidência auditável. Condições/origem/produto diferentes são recusados para preservar o registro anterior.
+
+Histórico expõe `source_type`, `source_reference`, fingerprint e evidência pública limitada, sem respostas privadas. `previous_price` é preço anterior anunciado; `historical_price` continua vindo do histórico comparável. Metadados de loja sem mapeamento confiável não ganham categoria local inventada. Imagens são apenas referências públicas permitidas, sem download/publicação. A fila mostra origem, momento, bloqueio e próxima elegibilidade; `is_simulated=true` refere-se à ação dry-run, `source_is_simulated` distingue a origem dos dados. A janela de três horas exige uma nova observação e as categorias continuam sendo revalidadas. `Ofertas de Casa` permanece desativado.
+
+`0004_marketplace_provenance` acrescenta variantes, proveniência, evidências e diagnósticos, sem reescrever 0001–0003. O downgrade recusa dados novos que seriam perdidos; revise-os e faça backup antes de qualquer reversão. Nunca execute downgrade ou testes destrutivos no banco de desenvolvimento.
+
+Validação da Fase 3 em 18/10/2026: **485 testes aprovados, sem falhas/ignorados**, incluindo quatro testes PostgreSQL em `ofertas_bot_test`. Ruff e formatação aprovados em 68 arquivos Python; `alembic upgrade head/current/check` aprovados no PostgreSQL real, revisão 0004. Seed idempotente confirmou nove categorias e `Ofertas de Casa` desativado. Detalhes e a distinção entre PostgreSQL real e dados comerciais sintéticos estão no [relatório de validação](docs/VALIDACAO_FASE_3.md).
+
 ## Próximo avanço
 
-O [`ROADMAP.md`](ROADMAP.md) detalha as fases. A fase 2.1 mantém o fluxo simulado e acrescenta classificação e seleção por destino, com os dois testes PostgreSQL reais aprovados. A verificação independente do CLI Docker/Compose neste contexto permanece separada. Para a fase 3 faltam aprovação explícita, credenciais, permissões e confirmação das operações disponíveis nas APIs autorizadas de cada plataforma. O provedor real deverá respeitar limites, falhas e procedência dos dados. Integrações comerciais e publicações reais permanecem pendentes.
+O [`ROADMAP.md`](ROADMAP.md) registra a aprovação da fase 3 e a pendência de acesso comercial. Configure as credenciais opcionais obtidas oficialmente, confirme permissões com um produto por loja e registre horário/origem/preço sem publicar. A fase continua **parcial/bloqueada por acesso** até essa validação. A Fase 4 não foi iniciada e depende de novo aceite explícito antes de qualquer publicação real.

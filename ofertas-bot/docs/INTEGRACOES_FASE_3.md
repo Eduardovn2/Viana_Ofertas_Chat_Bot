@@ -49,3 +49,13 @@ O esquema fornece preços como strings, IDs, nome, links, imagem, categorias e d
 - Um teste comercial supervisionado por plataforma só poderá ocorrer com credenciais autorizadas e flag explícita. **Nenhum produto real foi consultado nesta etapa do gate.**
 
 Este gate poderá receber evidências adicionais mantendo a distinção entre documentação, configuração e acesso efetivamente comprovado.
+
+## Resultado da implementação
+
+Os dois adaptadores estão implementados com flags desligadas por padrão. Mercado Livre usa somente metadados, `/sale_price` e `/prices`; descoberta ampla, cupons de terceiros e conversão automática seguem `UnsupportedCapability`. Shopee usa `productOfferV2` e, por ação administrativa e flag própria, `generateShortLink`; `shopeeOfferV2` continua apenas documentada como campanha/coleção, sem endpoint administrativo de produto fictício.
+
+Identidade, preços e condições são normalizados de modo conservador; variantes não resolvidas não recebem preço genérico. O acesso público/estoque não demonstrados pela Shopee continuam `UNKNOWN`. Um link curto não comprova propriedade por domínio: geração só fica verificada com resposta autenticada coerente com a identidade canônica; formatos ambíguos requerem confirmação manual.
+
+Erros externos ficam em tabela própria. Rate limits e `Retry-After` são compartilhados no PostgreSQL por escopo de credencial com hash; 401/403 persistem bloqueio até consulta administrativa bem-sucedida. A fila continua dry-run e o destino Ofertas de Casa desativado. Os testes usam dados **sintéticos**, não respostas comerciais capturadas. Consulte [a validação técnica](VALIDACAO_FASE_3.md).
+
+**Resultado comercial:** não executado. `MERCADO_LIVRE_ACCESS_TOKEN`, `SHOPEE_APP_ID` e `SHOPEE_SECRET` não estavam configurados. Não existe preço, cupom, estoque ou comissão real verificado nesta entrega. A fase permanece **PARCIAL / BLOQUEADA POR ACESSO**, sem avanço à Fase 4.

@@ -1,6 +1,6 @@
 # Roadmap do Ofertas Bot
 
-O projeto mantém a fundação e o fluxo simulado da fase 2. A fase 2.1 autorizada acrescenta categorias e filtragem conservadora por destino. Os dois testes de integração PostgreSQL real foram aprovados no banco exclusivo de testes. A verificação do CLI Docker/Compose neste contexto continua separada. O avanço à fase 3 depende de nova aprovação explícita do responsável pelo projeto.
+Fases 1, 2 e 2.1 aprovadas e preservadas. A Fase 3 foi autorizada em 18/10/2026; conectores oficiais e pipeline dry-run implementados, com validação comercial pendente de credenciais/permissões. Estado: **FASE 3 PARCIAL / BLOQUEADA POR ACESSO**. A verificação do CLI Docker/Compose permanece separada do PostgreSQL real validado. Não iniciar a Fase 4 sem novo aceite.
 
 ## Fase 1 — Fundação
 
@@ -66,22 +66,38 @@ Parte de categorias concluída em **18/10/2026**, com **241 testes isolados apro
 
 **Nova tentativa final em 18/10/2026:** o `.env` passou a estar visível e foi carregado sem exibir segredos. O CLI Docker continuou indisponível no `PATH` e no caminho explícito solicitado. A conexão direta ao PostgreSQL configurado falhou com `OperationalError`; a verificação TCP no destino local confirmou conexão recusada. Por isso, Compose, migrações/seed reais, criação do banco de testes e Pytest PostgreSQL continuam pendentes. Não se repetiu a suíte isolada. Ruff e formatação passaram nos 50 arquivos Python, sem mudanças funcionais. O [relatório da tentativa](VALIDACAO_FASE_2_1.md) separa as evidências atuais dos 241 testes anteriores e não declara PostgreSQL validado.
 
-`Gerais` é somente fallback, não uma permissão global. `all` ainda exige categoria ativa; `selected=[]` e `unconfigured` bloqueiam. `Ofertas de Casa` fica desativado até configuração explícita. A fase 3 continua aguardando aprovação.
+`Gerais` é somente fallback, não uma permissão global. `all` ainda exige categoria ativa; `selected=[]` e `unconfigured` bloqueiam. `Ofertas de Casa` fica desativado até configuração explícita. A aprovação posterior da fase 3 está registrada na seção seguinte.
 
 **Validação PostgreSQL concluída em execução posterior de 18/10/2026:** conexão real com PostgreSQL **17.11**, banco `ofertas_bot_test` já existente e identidade confirmada antes dos testes. `python -m pytest -q -m postgres` terminou com **2 aprovados, 0 falhas, 0 ignorados, 241 deselecionados**, em 8,01 segundos. A URL foi temporária no subprocesso, sem exposição de credenciais e sem operações de teste no banco principal. Os objetos preexistentes foram preservados. A suíte completa não foi repetida. O [relatório atualizado](VALIDACAO_FASE_2_1.md) registra a superação do bloqueio PostgreSQL anterior; Docker/Compose não foram reavaliados nesta rodada.
 
 ## Fase 3 — Fontes comerciais autorizadas
 
-**Aguardando aprovação e acesso autorizado.**
+**Autorizada; implementação disponível, validação comercial bloqueada por acesso.**
 
-- Confirmar credenciais, documentação oficial, permissões e limites para cada operação.
-- Implementar conectores independentes de Mercado Livre e Shopee apenas para operações autorizadas.
-- Manter conectores sem credenciais desativados sem prejudicar o restante do sistema.
-- Registrar origem e horário de cada informação e explicitar limitações das fontes.
-- Manter o link do Mercado Livre como cadastro manual pelo Link Builder oficial, salvo autorização documentada de outra operação.
-- Testar falhas, autenticação, dados incompletos e rate limiting com respostas controladas.
+- [x] Gate oficial anterior ao código em [docs/INTEGRACOES_FASE_3.md](docs/INTEGRACOES_FASE_3.md), com capacidades por operação e fontes/data.
+- [x] Conectores independentes, flags opcionais, startup sem rede e provedor simulado preservado.
+- [x] Mercado Livre: metadados + APIs atuais de preços/condições; ignorar preço legado e excluir VIP, condições ocultas e variantes não resolvidas.
+- [x] Mercado Livre: Link Builder manual, identidade reconhecível validada e confirmação operacional explícita para dados reais.
+- [x] Shopee: assinatura publicada no Explorer BR, `productOfferV2`, consulta e descoberta paginada; descoberta automática pequena e opt-in.
+- [x] Shopee: `generateShortLink` com flag própria, sem retry de mutation, conferência de produto/conta e fallback manual para ambiguidade.
+- [x] `Decimal`, preço anterior anunciado separado do histórico, origem/instante/fingerprint, metadados públicos limitados e variantes isoladas.
+- [x] Evidência manual de cupom opcional, incluindo frete grátis/desconhecidos, sem prometer aplicabilidade ou preço final sem confirmação completa.
+- [x] Classificação e preferências de destinos reutilizadas; correções manuais e `Ofertas de Casa` desativado preservados.
+- [x] Monitoramento integrado ao score/fila dry-run; deduplicação e revalidação após três horas, sem publisher real.
+- [x] Timeout, cache com instante original, retries limitados, jitter e `Retry-After` persistido por credencial; recusa de autorização persiste até check explícito bem-sucedido.
+- [x] API administrativa local/autenticada para status, capacidades, consulta controlada, refresh real, descoberta, links e evidência manual.
+- [x] Migração `0004_marketplace_provenance` preserva revisões/dados anteriores e recusa downgrade com perda de informações novas.
+- [x] PostgreSQL de desenvolvimento migrado até 0004; `current/check` aprovados, seed idempotente de nove categorias e destino desativado confirmado.
+- [x] Suíte completa com PostgreSQL real: **485 aprovados, 0 falhas, 0 ignorados**, incluindo quatro testes PostgreSQL em schemas exclusivos de `ofertas_bot_test`. Os 243 casos anteriores foram preservados; testes novos usam somente contratos sintéticos e HTTP mockado.
+- [x] Ruff e verificação de formatação aprovados em 68 arquivos Python. Aviso conhecido de depreciação Starlette/httpx não impede os testes.
+- [ ] Executar um teste comercial autorizado por plataforma e registrar identidade, timestamp e origem, sem publicação. Faltam `MERCADO_LIVRE_ACCESS_TOKEN`, `SHOPEE_APP_ID` e `SHOPEE_SECRET`, além das permissões oficiais e flags explícitas.
+- [ ] Comprovar acesso apropriado para descoberta ampla Mercado Livre e cupons de terceiros; continuam não suportados/não verificados, sem endpoints inventados.
+
+**Limites comprovados:** esquema Shopee consultado não comprova estoque, preço público, variante nem preço antigo. Informações permanecem desconhecidas e não geram elegibilidade por suposição. `shopeeOfferV2` foi documentado como campanha/coleção, sem convertê-lo em produto/cupom; o conector implementa `productOfferV2`. Nenhuma consulta comercial real foi feita nesta entrega. `.env` e credenciais existentes não foram modificados. Execução local Windows/PowerShell; nenhum ajuste global, reinstalação Docker ou publicação.
 
 **Critério de avanço:** consulta demonstrada com acesso autorizado; nenhum endpoint privado ou contorno de proteção.
+
+Evidências e limites detalhados em [docs/VALIDACAO_FASE_3.md](docs/VALIDACAO_FASE_3.md). A implementação está na branch local `codex/fase-3`, sem push.
 
 ## Fase 4 — Publicação Telegram
 

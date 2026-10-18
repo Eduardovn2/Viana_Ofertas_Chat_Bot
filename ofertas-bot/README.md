@@ -558,6 +558,8 @@ O armazenamento OAuth é separado do PostgreSQL: `%LOCALAPPDATA%\VianaOfertasCha
 
 **OAuth real concluído em 18/10/2026 às 17:28:59 America/Sao_Paulo (20:28:59 UTC).** Foram confirmados vínculo com o navegador, `state`, PKCE S256, troca no endpoint oficial, consumo do lançamento/estado e armazenamento DPAPI CurrentUser com ACL de usuário + SYSTEM. A inspeção confirmou expiração válida, fingerprint compatível com o Client ID e ausência dos tokens em texto puro nos blobs cifrados. A flag OAuth foi restaurada para `false`, `MERCADO_LIVRE_ENABLED=false`, `SHOPEE_ENABLED=false` e `PRICE_PROVIDER=simulated`; nenhuma consulta comercial ou publicação foi executada. A suíte completa posterior aprovou **699 testes em 64,61 segundos**, incluindo quatro testes PostgreSQL reais em schemas isolados de `ofertas_bot_test`, com um `StarletteDeprecationWarning`. Ruff e formatação aprovaram os 88 arquivos Python. O [guia OAuth](docs/OAUTH_MERCADOLIVRE.md) preserva as evidências e os limites dessa validação.
 
+A proteção dos processos do túnel também passou em 19 verificações PowerShell isoladas: propriedade da porta, filho Python legítimo, rejeição de serviço alheio e encerramento aguardado da árvore gerenciada. Execute `./tests/test_oauth_tunnel_processes.ps1` para repetir essa verificação sem criar túnel nem carregar credenciais.
+
 ## Próximo avanço
 
 O [`ROADMAP.md`](ROADMAP.md) registra a aprovação da fase 3 e a pendência de acesso comercial. Configure as credenciais opcionais obtidas oficialmente, confirme permissões com um produto por loja e registre horário/origem/preço sem publicar. A fase continua **parcial/bloqueada por acesso** até essa validação. A Fase 4 não foi iniciada e depende de novo aceite explícito antes de qualquer publicação real.

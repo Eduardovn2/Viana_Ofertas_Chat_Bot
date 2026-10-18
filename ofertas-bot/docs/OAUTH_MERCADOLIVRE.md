@@ -114,6 +114,7 @@ O roteiro automatizado pode ser executado sem credenciais comerciais reais:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q -k oauth
+.\tests\test_oauth_tunnel_processes.ps1
 ```
 
 Os testes controlados verificam configuração desativada, autenticação administrativa, validade/uso único das tentativas, associação com cookie e PKCE, respostas sanitizadas, proteção do armazenamento e isolamento do gateway. Eles não substituem consentimento no navegador nem comprovam permissões comerciais de uma conta real.
@@ -128,5 +129,7 @@ Os testes controlados verificam configuração desativada, autenticação admini
 Após a validação, `MERCADOLIVRE_OAUTH_ENABLED` foi restaurada para `false`. `MERCADO_LIVRE_ENABLED=false`, `SHOPEE_ENABLED=false` e `PRICE_PROVIDER=simulated` foram preservados. A autorização não foi seguida por consulta comercial nem publicação. Os tokens permanecem fora do provedor de preços; o uso comercial autorizado e a renovação/rotação de refresh token continuam pendentes.
 
 A suíte completa final aprovou **699 testes em 64,61 segundos**, incluindo quatro testes PostgreSQL reais em schemas isolados de `ofertas_bot_test`, com um `StarletteDeprecationWarning`. O aviso conhecido de terceiros não causou falhas. Ruff e formatação aprovaram os **88 arquivos Python**, e `git diff --check` passou. Esse resultado abrange a aplicação e o acréscimo OAuth, sem substituir o registro de consentimento real acima.
+
+A revisão complementar aprovou **19 verificações nativas PowerShell** com processos sintéticos e portas dinâmicas. O script verifica que o listener pertence ao gateway antes de criar o túnel; aceita o filho Python legítimo da `.venv`, rejeita serviços alheios e encerra/aguarda somente a árvore de processos validada. O teste não inicia Quick Tunnel, não lê o `.env` e preserva o túnel real existente.
 
 O manifesto `.runtime/oauth-tunnel.json` e a variável local `MERCADOLIVRE_REDIRECT_URI` são as referências da URI efetivamente preparada. O hostname temporário, códigos, tickets, tokens e identificadores privados não são fixados neste registro.

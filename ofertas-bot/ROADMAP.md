@@ -113,6 +113,7 @@ Evidências e limites detalhados em [docs/VALIDACAO_FASE_3.md](docs/VALIDACAO_FA
 - [x] Flag OAuth restaurada para `false`; comerciais Mercado Livre/Shopee `false` e `PRICE_PROVIDER=simulated` preservados. Nenhuma consulta comercial ou publicação executada.
 - [x] Suíte completa posterior: **699 testes aprovados em 64,61 segundos**, incluindo quatro PostgreSQL reais em schemas isolados de `ofertas_bot_test`, com um `StarletteDeprecationWarning`.
 - [x] Ruff e formatação finais aprovados em **88 arquivos Python**; `git diff --check` aprovado.
+- [x] Proteção adicional dos scripts: gateway e proprietário do listener verificados antes do túnel, encerramento aguardado de launcher/filhos e rejeição de processos alheios. **19 verificações PowerShell isoladas aprovadas**, sem recriar o túnel real.
 - [ ] Conectar os tokens OAuth ao provedor de preços e demonstrar uma consulta comercial autorizada; o token armazenado ainda não é usado por esse provedor.
 - [ ] Implementar e testar renovação com rotação de refresh token antes de assumir operação contínua autenticada.
 

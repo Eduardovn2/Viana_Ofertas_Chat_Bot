@@ -137,6 +137,30 @@ A URI temporária permanece somente no `.env` e no manifesto `.runtime/oauth-tun
 
 Se for necessário novo consentimento, iniciar outro Quick Tunnel, usar a nova URI HTTPS real no `.env` e cadastrar exatamente essa URI no DevCenter antes do fluxo. A URL anterior deixou de ser utilizável após o encerramento; não reutilizá-la nem inventar endereço. Tokens permanecem no armazenamento Windows privado fora do Git; `.env`, `.runtime` e `.tools` continuam ignorados. O briefing preexistente `FASE_3.md` foi preservado sem alterações e permanece não rastreado.
 
+### Fase 3.2 — retomada autorizada
+
+**Retomada explicitamente autorizada em 18/10/2026.** O checkpoint de pausa acima permanece como registro do encerramento anterior. Esta autorização abrange integração OAuth → conector Mercado Livre, renovação segura e concorrente e validação pontual do item `MLB3810190843`, associado ao link manual informado pelo proprietário. Não autoriza Shopee, mineração automática ou publicação real.
+
+- [x] Revisar fontes oficiais de refresh, identidade, metadados e preços, distinguindo documentação de permissão efetiva da conta.
+- [x] Sondagem real em **18/10/2026 às 21:27:01 America/Sao_Paulo**: token válido, `/users/me` HTTP 200 com identidade/site MLB compatíveis; `/items/MLB3810190843` HTTP 403 sem causa específica comprovada, sem metadados/preços obtidos.
+- [x] Conectar o armazenamento OAuth protegido ao conector Mercado Livre sem copiar tokens para código, `.env`, logs ou respostas administrativas; gerenciador e conector implementados e testados.
+- [x] Testar refresh de uso único e rotação protegida, concorrência e falhas em cenários controlados: oito threads, três processos e falha de processo. Nenhum refresh real foi forçado; o token utilizado estava válido.
+- [x] Runner pontual executado em **18/10/2026 às 21:32:48.703151 America/Sao_Paulo**: `FAILED / AUTHORIZATION_DENIED / HTTP 403` em `/items/MLB3810190843`; `/sale_price` e `/prices` não foram chamados. Causa específica não comprovada.
+- [x] Evento `manual_commercial_check` com estado `FAILED` e configuração manual do link persistidos no PostgreSQL, sem criar produto, preço, oferta ou fila presumidos. Seis testes unitários do runner e dois novos casos PostgreSQL aprovados na suíte completa.
+- [x] Reteste em **18/10/2026 às 21:35:43 America/Sao_Paulo**, após revisão de permissões pelo proprietário: HTTP 403 persistiu, sem preços obtidos.
+- [ ] Obter acesso apropriado no DevCenter e demonstrar metadados/preços reais do único item autorizado, sem presumir que a autenticação já concede essa permissão.
+- [ ] Verificar a persistência PostgreSQL, categorização, histórico e resultado da fila dry-run, respeitando elegibilidade e deduplicação existentes.
+- [x] Suíte final: **755 testes aprovados, sem falhas/skips, em 136,34 segundos**, com um `StarletteDeprecationWarning`. Seis testes PostgreSQL reais em schemas exclusivos de `ofertas_bot_test`: quatro anteriores e dois novos do runner, usando contratos sintéticos para preços/produtos.
+- [x] Ruff e formatação aprovados em 94 arquivos Python; Alembic `current/check` confirmou PostgreSQL real na revisão 0004 sem divergências.
+- [x] Novo consentimento Authorization Code concluído aproximadamente às **21:40–21:41 America/Sao_Paulo** após cadastro da URI e revisão de permissões pelo proprietário; tokens DPAPI atualizados e registros de `state`/PKCE consumidos. Isso não foi uma execução do grant de refresh.
+- [x] Reteste com o novo token em **18/10/2026 às 21:41:28.303381 America/Sao_Paulo**: `FAILED / AUTHORIZATION_DENIED / HTTP 403` persistiu no item; sem chamadas de preços, preço legado ou scraping.
+- [x] Prova final: `/users/me` HTTP 200 com novo token/identidade compatível, tokens ausentes em texto puro no SQLite, zero tentativas OAuth pendentes e refresh em estado pronto. PostgreSQL confirmou evento recusado, configuração manual preservada e zero produto/histórico do item.
+- [x] Registrar configuração final e próximos passos no [relatório da Fase 3.2](docs/VALIDACAO_FASE_3_2.md), preservando as evidências anteriores.
+- [x] Parser final aprovou 31 blocos PowerShell de README, guia OAuth e relatório da Fase 3.2.
+- [ ] Comprovar permissão funcional e condições do programa Mercado Livre, ou esclarecer a recusa via suporte oficial, antes de outra tentativa comercial; não repetir OAuth sem mudança de acesso identificada.
+
+**Estado desta retomada:** integração OAuth/conector implementada e testada; consulta comercial **não operacional por HTTP 403**, inclusive com novo token, sem causa exata atribuída. PostgreSQL conectado na revisão 0004, scheduler persistido em pausa, OAuth e flags comerciais Mercado Livre/Shopee desativados e provedor simulado preservado. O runner ativa Mercado Livre somente em memória para a consulta explícita. Os tokens usados estavam válidos; refresh real não foi exercitado. Novo consentimento concluído por uma API temporária atualizada em `8001`, já encerrada; a instância preexistente `8000` foi preservada. Novo gateway `8787`/Quick Tunnel seguem ativos, com URI somente no `.env` e no manifesto local. Shopee permanece sem credenciais. Os 699 testes e o OAuth real descritos acima pertencem à execução anterior; a suíte nova de 755 testes está registrada nesta seção. A Fase 4 não foi iniciada.
+
 ## Fase 4 — Publicação Telegram
 
 - Implementar `MessageTemplateService`, omitindo campos ausentes e usando identificação publicitária aplicável.

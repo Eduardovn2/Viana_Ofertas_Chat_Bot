@@ -125,11 +125,16 @@ class OAuthContext:
 
     def status(self):
         settings = self.settings
-        metadata = {"configured": False, "expires_at": None}
+        metadata = {
+            "configured": False,
+            "expires_at": None,
+            "refresh_state": None,
+            "retry_at": None,
+        }
         if self._store is not None:
-            metadata = self._store.status()
+            metadata = self._store.refresh_metadata()
         elif settings.app_env != "test" and os.name == "nt" and default_store_path().is_file():
-            metadata = self.store.status()
+            metadata = self.store.refresh_metadata()
         return {
             "oauth_enabled": settings.mercadolivre_oauth_enabled,
             "client_id_configured": bool(
@@ -144,6 +149,9 @@ class OAuthContext:
             "pkce_enabled": settings.mercadolivre_pkce_enabled,
             "tokens_stored": metadata["configured"],
             "expires_at": metadata["expires_at"],
+            "refresh_state": metadata["refresh_state"],
+            "refresh_retry_at": metadata["retry_at"],
+            "reauthorization_required": metadata["refresh_state"] in {"REVOKED", "UNCERTAIN"},
             "commercial_integration_activated": False,
             "publication_mode": "dry-run",
         }

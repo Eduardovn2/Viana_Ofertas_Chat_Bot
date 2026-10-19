@@ -15,7 +15,7 @@ from app.services.oauth_store import OAuthStorageError
 _DWORD = ctypes.c_uint32
 _POINTER = ctypes.c_void_p
 _HASHLESS_SID = re.compile(r"S-1-[0-9-]+\Z")
-_SQLITE_FILE = re.compile(r".+\.sqlite3(?:-(?:journal|wal|shm))?\Z", re.IGNORECASE)
+_SQLITE_FILE = re.compile(r".+\.sqlite3(?:-(?:journal|wal|shm)|\.refresh-lock)?\Z", re.IGNORECASE)
 _DACL_SECURITY_INFORMATION = 0x00000004
 _PROTECTED_DACL_SECURITY_INFORMATION = 0x80000000
 

@@ -1,5 +1,6 @@
 """End-to-end synthetic official snapshots. No real prices or external API requests."""
 
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
@@ -194,6 +195,39 @@ def test_successful_controlled_check_clears_block_after_valid_snapshot(client, a
     assert result.status_code == 200, result.text
     assert connector.calls == 1
     assert not registry.is_blocked(Platform.MERCADO_LIVRE)
+
+
+def test_partial_price_permission_denial_keeps_durable_block(client, application, monkeypatch):
+    connector, _ = synthetic(application)
+    product = create(client)
+    registry = application.state.integrations
+    original_fetch = connector.fetch_product
+
+    def partial(ref):
+        return replace(
+            original_fetch(ref),
+            current_price=None,
+            previous_price=None,
+            price_access=PriceAccess.UNKNOWN,
+            evidence_metadata={
+                "price_access_reason": "price_permission_denied",
+                "price_http_status": 403,
+            },
+        )
+
+    monkeypatch.setattr(connector, "fetch_product", partial)
+    registry.block(Platform.MERCADO_LIVRE)
+    result = client.post(
+        "/api/v1/integrations/MERCADO_LIVRE/check",
+        headers=HEADERS,
+        json={"product_id": product["id"]},
+    )
+    assert result.status_code == 200, result.text
+    assert result.json()["current_price"] is None
+    assert registry.is_blocked(Platform.MERCADO_LIVRE)
+    with application.state.session_factory() as session:
+        event = session.scalar(select(IntegrationEvent))
+        assert event.status == "PARTIAL" and event.error_code == "PRICE_PERMISSION_DENIED"
 
 
 @pytest.mark.parametrize("code", ["TIMEOUT", "UPSTREAM_ERROR"])

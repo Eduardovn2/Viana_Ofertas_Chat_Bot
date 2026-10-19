@@ -288,12 +288,17 @@ class MonitoringRuntime:
                     now=utc_now(self.clock),
                 )
                 if not history.is_simulated:
+                    partial = (
+                        history.evidence_metadata.get("price_access_reason")
+                        == "price_permission_denied"
+                    )
                     session.add(
                         IntegrationEvent(
                             product_id=product.id,
                             platform=product.platform,
                             operation="fetch_product",
-                            status="SUCCEEDED",
+                            status="PARTIAL" if partial else "SUCCEEDED",
+                            error_code="PRICE_PERMISSION_DENIED" if partial else None,
                             observed_at=utc_now(self.clock),
                             source_reference=history.source_reference,
                         )

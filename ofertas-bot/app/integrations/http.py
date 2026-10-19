@@ -102,6 +102,7 @@ class JsonTransport:
         body: bytes | None = None,
         cache_key: str | None = None,
         retry: bool = True,
+        notify_auth_failure: bool = True,
     ) -> JsonResponse:
         try:
             parsed = urlsplit(url)
@@ -148,9 +149,12 @@ class JsonTransport:
                     error = IntegrationError("NETWORK_ERROR", "API temporariamente inacessível.")
                 else:
                     if response.status_code in {401, 403}:
-                        if self.on_auth_failure is not None:
+                        self._cache.clear()
+                        if notify_auth_failure and self.on_auth_failure is not None:
                             self.on_auth_failure()
-                        raise AuthorizationDenied() from None
+                        error = AuthorizationDenied()
+                        error.status_code = response.status_code
+                        raise error from None
                     if 200 <= response.status_code < 300:
                         if len(response.content) > 2_000_000:
                             raise InvalidPayload("Resposta excede o limite permitido.")

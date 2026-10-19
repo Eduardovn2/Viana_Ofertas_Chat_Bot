@@ -6,15 +6,19 @@ for PKCE verifiers and token payloads. DPAPI is scoped to the current Windows us
 """
 
 import ctypes
+import errno
+import hashlib
 import hmac
 import json
+import math
 import os
 import re
 import sqlite3
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Protocol
 
@@ -24,11 +28,13 @@ _MESSAGES = {
     "PROTECTION_FAILED": "OAuth data could not be protected or recovered.",
     "INVALID_PAYLOAD": "OAuth storage input is invalid.",
     "INVALID_STATE": "OAuth attempt is invalid or expired.",
+    "REFRESH_BUSY": "OAuth refresh is busy.",
 }
 _HASH = re.compile(r"[a-f0-9]{64}\Z")
 _MAX_PAYLOAD_BYTES = 262_144
 _MAX_CIPHERTEXT_BYTES = 1_000_000
 _CLEANUP_LIMIT = 100
+_REFRESH_STATES = {"IN_PROGRESS", "UNCERTAIN", "REVOKED", "CONFIGURATION", "RATE_LIMITED"}
 
 
 class OAuthStorageError(RuntimeError):
@@ -51,6 +57,16 @@ class OAuthAttempt:
     redirect_uri: str
     client_id_fingerprint: str
     expires_at: datetime
+
+
+@dataclass(frozen=True, repr=False)
+class OAuthTokenSnapshot:
+    payload: dict
+    version: str
+    refresh_state: str | None
+    attempt_id: str | None
+    credential_fingerprint: str | None
+    retry_at: datetime | None
 
 
 class Protector(Protocol):
@@ -142,13 +158,13 @@ def _aware(value: datetime | str) -> datetime:
 
 
 def _timestamp(value: datetime | str) -> int:
-    return int(_aware(value).timestamp() * 1_000_000)
+    return (_aware(value) - datetime(1970, 1, 1, tzinfo=UTC)) // timedelta(microseconds=1)
 
 
 def _iso_timestamp(value: int | None) -> str | None:
     if value is None:
         return None
-    return datetime.fromtimestamp(value / 1_000_000, UTC).isoformat()
+    return (datetime(1970, 1, 1, tzinfo=UTC) + timedelta(microseconds=value)).isoformat()
 
 
 def _valid_text(value, maximum: int, *, required: bool = True) -> bool:
@@ -179,6 +195,10 @@ class OAuthStore:
                     "CREATE TABLE IF NOT EXISTS oauth_tokens ("
                     "slot INTEGER PRIMARY KEY CHECK (slot = 1), payload BLOB NOT NULL, "
                     "expires_at INTEGER, updated_at INTEGER NOT NULL);"
+                    "CREATE TABLE IF NOT EXISTS oauth_refresh_state ("
+                    "slot INTEGER PRIMARY KEY CHECK (slot = 1), token_version TEXT NOT NULL, "
+                    "attempt_id TEXT NOT NULL, status TEXT NOT NULL, "
+                    "credential_fingerprint TEXT NOT NULL, retry_at INTEGER, updated_at INTEGER NOT NULL);"
                 )
             if os.name != "nt":
                 self.path.chmod(0o600)
@@ -192,6 +212,7 @@ class OAuthStore:
             connection = sqlite3.connect(self.path, timeout=5, isolation_level=None)
             connection.execute("PRAGMA busy_timeout=5000")
             connection.execute("PRAGMA secure_delete=ON")
+            connection.execute("PRAGMA synchronous=FULL")
             yield connection
         except sqlite3.Error:
             raise OAuthStorageError() from None
@@ -367,7 +388,7 @@ class OAuthStore:
         except (ValueError, TypeError, OverflowError):
             raise OAuthStorageError("INVALID_PAYLOAD") from None
 
-    def save_tokens(self, payload: dict) -> None:
+    def _prepare_tokens(self, payload: dict) -> tuple[bytes, int | None]:
         normalized = self._normalize_tokens(payload)
         try:
             serialized = json.dumps(normalized, ensure_ascii=True, separators=(",", ":")).encode(
@@ -379,14 +400,24 @@ class OAuthStore:
             expires = _timestamp(normalized["expires_at"]) if normalized.get("expires_at") else None
         except (ValueError, TypeError, OverflowError):
             raise OAuthStorageError("INVALID_PAYLOAD") from None
+        return encrypted, expires
+
+    @staticmethod
+    def _write_tokens(connection, encrypted: bytes, expires: int | None):
+        connection.execute(
+            "INSERT INTO oauth_tokens (slot, payload, expires_at, updated_at) VALUES (1, ?, ?, ?) "
+            "ON CONFLICT(slot) DO UPDATE SET payload=excluded.payload, "
+            "expires_at=excluded.expires_at, updated_at=excluded.updated_at",
+            (encrypted, expires, _timestamp(datetime.now(UTC))),
+        )
+
+    def save_tokens(self, payload: dict) -> None:
+        """Save a newly authorized grant and clear any previous refresh block atomically."""
+        encrypted, expires = self._prepare_tokens(payload)
         with self._connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
-            connection.execute(
-                "INSERT INTO oauth_tokens (slot, payload, expires_at, updated_at) VALUES (1, ?, ?, ?) "
-                "ON CONFLICT(slot) DO UPDATE SET payload=excluded.payload, "
-                "expires_at=excluded.expires_at, updated_at=excluded.updated_at",
-                (encrypted, expires, _timestamp(datetime.now(UTC))),
-            )
+            self._write_tokens(connection, encrypted, expires)
+            connection.execute("DELETE FROM oauth_refresh_state WHERE slot=1")
             connection.commit()
 
     def load_tokens(self) -> dict:
@@ -413,3 +444,212 @@ class OAuthStore:
 
     def status(self) -> dict:
         return self.metadata()
+
+    def refresh_metadata(self) -> dict:
+        """Public operational metadata; never decrypts the credential payload."""
+        with self._connection() as connection:
+            row = connection.execute(
+                "SELECT t.expires_at, r.status, r.retry_at FROM oauth_tokens t "
+                "LEFT JOIN oauth_refresh_state r ON r.slot=t.slot WHERE t.slot=1"
+            ).fetchone()
+        try:
+            if row is not None and row[1] is not None and row[1] not in _REFRESH_STATES:
+                raise ValueError
+            return {
+                "configured": row is not None,
+                "expires_at": None if row is None else _iso_timestamp(row[0]),
+                "refresh_state": None if row is None else row[1],
+                "retry_at": None if row is None else _iso_timestamp(row[2]),
+            }
+        except (ValueError, TypeError, OverflowError):
+            raise OAuthStorageError() from None
+
+    def load_token_snapshot(self) -> OAuthTokenSnapshot | None:
+        with self._connection() as connection:
+            row = connection.execute(
+                "SELECT t.payload, r.token_version, r.status, r.attempt_id, "
+                "r.credential_fingerprint, r.retry_at FROM oauth_tokens t "
+                "LEFT JOIN oauth_refresh_state r ON r.slot=t.slot WHERE t.slot=1"
+            ).fetchone()
+        if row is None:
+            return None
+        try:
+            version = hashlib.sha256(row[0]).hexdigest()
+            if row[1] is not None and (
+                row[1] != version
+                or row[2] not in _REFRESH_STATES
+                or not isinstance(row[3], str)
+                or not _HASH.fullmatch(row[3])
+                or not isinstance(row[4], str)
+                or not _HASH.fullmatch(row[4])
+            ):
+                raise ValueError
+            payload = self._normalize_tokens(json.loads(self._decrypt(row[0]).decode("utf-8")))
+            return OAuthTokenSnapshot(
+                _TokenPayload(payload),
+                version,
+                row[2],
+                row[3],
+                row[4],
+                None if row[5] is None else _aware(_iso_timestamp(row[5])),
+            )
+        except (ValueError, TypeError, UnicodeError, OverflowError):
+            raise OAuthStorageError("PROTECTION_FAILED") from None
+
+    @staticmethod
+    def _is_current(connection, version: str, attempt_id: str | None = None) -> bool:
+        row = connection.execute("SELECT payload FROM oauth_tokens WHERE slot=1").fetchone()
+        if row is None or not hmac.compare_digest(hashlib.sha256(row[0]).hexdigest(), version):
+            return False
+        if attempt_id is not None:
+            marker = connection.execute(
+                "SELECT attempt_id FROM oauth_refresh_state WHERE slot=1"
+            ).fetchone()
+            return marker is not None and hmac.compare_digest(marker[0], attempt_id)
+        return True
+
+    def begin_refresh(
+        self, version: str, attempt_id: str, credential_fingerprint: str, now: datetime
+    ) -> bool:
+        try:
+            if not all(
+                isinstance(value, str) and _HASH.fullmatch(value)
+                for value in (version, attempt_id, credential_fingerprint)
+            ):
+                raise ValueError
+            instant = _timestamp(now)
+        except (ValueError, TypeError, OverflowError):
+            raise OAuthStorageError("INVALID_PAYLOAD") from None
+        with self._connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if not self._is_current(connection, version):
+                return False
+            previous = connection.execute(
+                "SELECT status FROM oauth_refresh_state WHERE slot=1"
+            ).fetchone()
+            if previous is not None and previous[0] not in {"CONFIGURATION", "RATE_LIMITED"}:
+                return False
+            connection.execute(
+                "INSERT INTO oauth_refresh_state VALUES (1, ?, ?, 'IN_PROGRESS', ?, NULL, ?) "
+                "ON CONFLICT(slot) DO UPDATE SET token_version=excluded.token_version, "
+                "attempt_id=excluded.attempt_id, status=excluded.status, "
+                "credential_fingerprint=excluded.credential_fingerprint, retry_at=NULL, "
+                "updated_at=excluded.updated_at",
+                (version, attempt_id, credential_fingerprint, instant),
+            )
+            connection.commit()  # FULL durability before a refresh token can leave this process.
+            return True
+
+    def finish_refresh(self, version: str, attempt_id: str, payload: dict) -> bool:
+        encrypted, expires = self._prepare_tokens(payload)
+        with self._connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if not self._is_current(connection, version, attempt_id):
+                return False
+            self._write_tokens(connection, encrypted, expires)
+            connection.execute("DELETE FROM oauth_refresh_state WHERE slot=1")
+            connection.commit()
+            return True
+
+    def block_refresh(
+        self,
+        version: str,
+        attempt_id: str,
+        state: str,
+        now: datetime,
+        retry_at: datetime | None = None,
+    ) -> bool:
+        try:
+            if state not in _REFRESH_STATES - {"IN_PROGRESS"}:
+                raise ValueError
+            instant = _timestamp(now)
+            retry = None if retry_at is None else _timestamp(retry_at)
+        except (ValueError, TypeError, OverflowError):
+            raise OAuthStorageError("INVALID_PAYLOAD") from None
+        with self._connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if not self._is_current(connection, version, attempt_id):
+                return False
+            connection.execute(
+                "UPDATE oauth_refresh_state SET status=?, retry_at=?, updated_at=? WHERE slot=1",
+                (state, retry, instant),
+            )
+            connection.commit()
+            return True
+
+    @contextmanager
+    def refresh_lock(self, *, timeout_seconds: float = 5) -> Iterator[None]:
+        """OS byte lock shared across threads/processes; a crash releases the lock only.
+
+        The separately committed refresh marker deliberately survives a crash.
+        The one-byte file contains no identifiers or credentials and is never deleted.
+        """
+        lock_path = self.path.with_name(self.path.name + ".refresh-lock")
+        descriptor, acquired = None, False
+        try:
+            if (
+                isinstance(timeout_seconds, bool)
+                or not isinstance(timeout_seconds, (int, float))
+                or not math.isfinite(timeout_seconds)
+                or not 0 <= timeout_seconds <= 30
+            ):
+                raise OAuthStorageError("INVALID_PAYLOAD")
+            try:
+                info = lock_path.lstat()
+                if lock_path.is_symlink() or getattr(info, "st_file_attributes", 0) & 0x400:
+                    raise OAuthStorageError()
+            except FileNotFoundError:
+                pass
+            flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(lock_path, flags, 0o600)
+            if os.fstat(descriptor).st_size == 0:
+                os.write(descriptor, b"\0")
+                os.fsync(descriptor)
+            if os.fstat(descriptor).st_size != 1:
+                raise OAuthStorageError()
+            if os.name == "nt":
+                import msvcrt
+
+                def lock():
+                    os.lseek(descriptor, 0, os.SEEK_SET)
+                    msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+
+                def unlock():
+                    os.lseek(descriptor, 0, os.SEEK_SET)
+                    msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+
+                def lock():
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+                def unlock():
+                    fcntl.flock(descriptor, fcntl.LOCK_UN)
+
+            deadline = time.monotonic() + timeout_seconds
+            while True:
+                try:
+                    lock()
+                    acquired = True
+                    break
+                except OSError as error:
+                    if error.errno not in {errno.EACCES, errno.EAGAIN, errno.EDEADLK}:
+                        raise OAuthStorageError() from None
+                    if time.monotonic() >= deadline:
+                        raise OAuthStorageError("REFRESH_BUSY") from None
+                    time.sleep(0.02)
+            yield
+        except (OSError, TypeError, ValueError):
+            raise OAuthStorageError() from None
+        finally:
+            if descriptor is not None:
+                try:
+                    if acquired:
+                        unlock()
+                except OSError:
+                    pass  # Closing the descriptor still releases the OS lock.
+                finally:
+                    try:
+                        os.close(descriptor)
+                    except OSError:
+                        raise OAuthStorageError() from None

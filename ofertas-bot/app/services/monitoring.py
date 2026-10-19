@@ -189,6 +189,7 @@ _EVIDENCE_FIELDS = {
     "variant_status",
     "request_context",
     "price_access_reason",
+    "price_http_status",
     "variant_resolved",
     "quantity_is_referential",
     "commission_amount",

@@ -9,6 +9,7 @@ import re
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from typing import Protocol
 from urllib.parse import parse_qsl, urlsplit
 
 from pydantic import SecretStr
@@ -20,7 +21,13 @@ from app.integrations.contracts import (
     ProductSnapshot,
     fingerprint,
 )
-from app.integrations.errors import ConnectorDisabled, InvalidPayload, UnsupportedCapability
+from app.integrations.errors import (
+    AuthorizationDenied,
+    ConnectorDisabled,
+    IntegrationError,
+    InvalidPayload,
+    UnsupportedCapability,
+)
 from app.integrations.http import JsonResponse, JsonTransport
 from app.models import Availability, Platform, PriceAccess, SourceType
 from app.services.products import normalize_product_identity
@@ -154,6 +161,12 @@ def _image(data: dict) -> str | None:
     return None
 
 
+class AccessTokenProvider(Protocol):
+    def get_access_token(self) -> SecretStr: ...
+
+    def refresh_after_rejection(self, rejected_token: SecretStr) -> SecretStr: ...
+
+
 class MercadoLivreConnector:
     platform = Platform.MERCADO_LIVRE
 
@@ -163,16 +176,23 @@ class MercadoLivreConnector:
         token: SecretStr | None = None,
         enabled: bool = False,
         clock: Callable[[], datetime] | None = None,
+        *,
+        token_provider: AccessTokenProvider | None = None,
+        credential_scope: str | None = None,
     ):
         self.transport = transport
         self.token = token
+        self.token_provider = token_provider
+        self.credential_scope = credential_scope
         self.enabled = enabled
         self.clock = clock or (lambda: datetime.now(UTC))
 
     @property
     def credentials_configured(self) -> bool:
-        return isinstance(self.token, SecretStr) and bool(
-            re.fullmatch(r"[A-Za-z0-9._~-]+", self.token.get_secret_value())
+        return (
+            self.token_provider is not None
+            or isinstance(self.token, SecretStr)
+            and bool(re.fullmatch(r"[A-Za-z0-9._~-]+", self.token.get_secret_value()))
         )
 
     def capabilities(self) -> list[Capability]:
@@ -226,20 +246,78 @@ class MercadoLivreConnector:
         )
 
     def _request(self, path: str) -> JsonResponse:
-        secret = self.token.get_secret_value()
-        namespace = hashlib.sha256(secret.encode()).hexdigest()[:20]
-        response = self.transport.request(
-            "GET",
-            f"{_API}{path}",
-            headers={"Authorization": f"Bearer {secret}"},
-            cache_key=f"mercado_livre:{namespace}:{path}",
+        token = self._managed_token() if self.token_provider is not None else self.token
+        namespace = self.credential_scope or (
+            "oauth"
+            if self.token_provider is not None
+            else hashlib.sha256(token.get_secret_value().encode()).hexdigest()[:20]
         )
+
+        def send(access_token):
+            options = {"notify_auth_failure": False} if self.token_provider is not None else {}
+            return self.transport.request(
+                "GET",
+                f"{_API}{path}",
+                headers={"Authorization": f"Bearer {access_token.get_secret_value()}"},
+                cache_key=f"mercado_livre:{namespace}:{path}",
+                **options,
+            )
+
+        try:
+            response = send(token)
+        except AuthorizationDenied as error:
+            if self.token_provider is None:
+                raise
+            if getattr(error, "status_code", None) != 401:
+                self._report_auth_failure()
+                raise
+            # A rejected access token invalidates all cached evidence for this connector.
+            self.transport.clear_cache()
+            fresh = self._managed_token(rejected=token)
+            try:
+                response = send(fresh)
+            except AuthorizationDenied:
+                self._report_auth_failure()
+                raise
         if not isinstance(response.data, dict):
             raise InvalidPayload()
         fetched_at = _utc(response.fetched_at)
         if fetched_at > _utc(self.clock()) + timedelta(seconds=60):
             raise InvalidPayload("O instante de consulta oficial está no futuro.")
         return JsonResponse(response.data, fetched_at)
+
+    def _report_auth_failure(self):
+        callback = getattr(self.transport, "on_auth_failure", None)
+        if callback is not None:
+            callback()
+
+    def _managed_token(self, *, rejected: SecretStr | None = None) -> SecretStr:
+        try:
+            token = (
+                self.token_provider.get_access_token()
+                if rejected is None
+                else self.token_provider.refresh_after_rejection(rejected)
+            )
+        except IntegrationError as error:
+            if error.code == "OAUTH_REAUTHORIZATION_REQUIRED":
+                self._report_auth_failure()
+                denied = AuthorizationDenied("A autorização OAuth deve ser concedida novamente.")
+                status = getattr(error, "status_code", None)
+                denied.status_code = (
+                    status if type(status) is int and 100 <= status <= 599 else None
+                )
+                raise denied from None
+            raise
+        except Exception:
+            raise IntegrationError(
+                "OAUTH_STORAGE_ERROR", "Credencial OAuth indisponível."
+            ) from None
+        if not isinstance(token, SecretStr) or not re.fullmatch(
+            r"[A-Za-z0-9._~-]+",
+            token.get_secret_value(),
+        ):
+            raise ConnectorDisabled("Credencial OAuth ausente ou inválida.")
+        return token
 
     def _price_access(
         self, sale: dict, prices: dict, item_id: str, current: Decimal, now: datetime
@@ -354,25 +432,35 @@ class MercadoLivreConnector:
         current = previous = None
         dates = [response.fetched_at]
         price_id = None
+        price_http_status = None
         if not unresolved and availability != Availability.UNAVAILABLE:
-            sale_response = self._request(f"/items/{item_id}/sale_price?context={_CONTEXT}")
-            dates.append(sale_response.fetched_at)
-            sale = sale_response.data
-            if sale.get("currency_id") != "BRL":
-                raise InvalidPayload("A moeda do preço oficial não é BRL.")
-            current = _money(sale.get("amount"))
-            price_id = _identifier(sale.get("price_id"))
-            prices_response = self._request(f"/items/{item_id}/prices")
-            dates.append(prices_response.fetched_at)
-            access, reason = self._price_access(
-                sale, prices_response.data, item_id, current, _utc(self.clock())
-            )
-            if access == PriceAccess.PUBLIC and sale.get("regular_amount") is not None:
-                try:
-                    old = _money(sale["regular_amount"])
-                except InvalidPayload:
-                    old = None
-                previous = old if old is not None and old > current else None
+            try:
+                sale_response = self._request(f"/items/{item_id}/sale_price?context={_CONTEXT}")
+                dates.append(sale_response.fetched_at)
+                sale = sale_response.data
+                if sale.get("currency_id") != "BRL":
+                    raise InvalidPayload("A moeda do preço oficial não é BRL.")
+                current = _money(sale.get("amount"))
+                price_id = _identifier(sale.get("price_id"))
+                prices_response = self._request(f"/items/{item_id}/prices")
+                dates.append(prices_response.fetched_at)
+                access, reason = self._price_access(
+                    sale, prices_response.data, item_id, current, _utc(self.clock())
+                )
+                if access == PriceAccess.PUBLIC and sale.get("regular_amount") is not None:
+                    try:
+                        old = _money(sale["regular_amount"])
+                    except InvalidPayload:
+                        old = None
+                    previous = old if old is not None and old > current else None
+            except AuthorizationDenied as error:
+                if getattr(error, "status_code", None) != 403:
+                    raise
+                # A successful sale_price is real evidence even when its conditions are denied.
+                # UNKNOWN access keeps the amount out of scoring/publication.
+                previous = None
+                access, reason = PriceAccess.UNKNOWN, "price_permission_denied"
+                price_http_status = 403
         elif unresolved and availability != Availability.UNAVAILABLE:
             availability = Availability.UNKNOWN
         category_id = item.get("category_id")
@@ -389,6 +477,8 @@ class MercadoLivreConnector:
             "quantity_is_referential": True,
             "price_id": price_id,
         }
+        if price_http_status is not None:
+            evidence["price_http_status"] = price_http_status
         normalized = {
             "platform": self.platform.value,
             "external_item_id": item_id,

@@ -31,7 +31,22 @@ def test_auth_refusal_never_retries_or_leaks_body(status):
     with pytest.raises(AuthorizationDenied) as error:
         client.request("GET", URL, headers={"Authorization": "Bearer private-secret"})
     assert len(calls) == 1
+    assert error.value.status_code == status
     assert "private-secret" not in str(error.value)
+
+
+def test_auth_notification_can_be_deferred_and_denial_invalidates_existing_cache():
+    notifications = []
+    responses = iter([httpx.Response(200, json={"synthetic": True}), httpx.Response(401)])
+    client = transport(
+        lambda _: next(responses), on_auth_failure=lambda: notifications.append(True)
+    )
+    client.request("GET", URL, cache_key="previous")
+    assert client._cache
+    with pytest.raises(AuthorizationDenied) as raised:
+        client.request("GET", URL, notify_auth_failure=False)
+    assert raised.value.status_code == 401
+    assert notifications == [] and client._cache == {}
 
 
 @pytest.mark.parametrize("status", [429, 500, 503])

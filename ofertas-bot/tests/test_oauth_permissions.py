@@ -38,6 +38,7 @@ def test_only_directory_and_recognized_sqlite_files_are_restricted(tmp_path, rec
         "mercadolivre.sqlite3-journal",
         "mercadolivre.sqlite3-wal",
         "mercadolivre.sqlite3-shm",
+        "mercadolivre.sqlite3.refresh-lock",
         "synthetic-test.sqlite3",
     ]
     for name in names:
@@ -71,7 +72,7 @@ def test_unknown_entries_abort_before_any_acl_change(tmp_path, recording_acl, un
     assert recording_acl.calls == []
 
 
-@pytest.mark.parametrize("target_kind", ["directory", "ancestor", "sqlite", "sidecar"])
+@pytest.mark.parametrize("target_kind", ["directory", "ancestor", "sqlite", "sidecar", "lock"])
 def test_reparse_points_abort_before_any_acl_change(
     tmp_path, recording_acl, monkeypatch, target_kind
 ):
@@ -80,12 +81,15 @@ def test_reparse_points_abort_before_any_acl_change(
     sqlite_file = directory / "synthetic.sqlite3"
     sqlite_file.write_bytes(b"SYNTHETIC")
     sidecar = directory / "synthetic.sqlite3-wal"
+    refresh_lock = directory / "synthetic.sqlite3.refresh-lock"
     sidecar.write_bytes(b"SYNTHETIC")
+    refresh_lock.write_bytes(b"\0")
     targets = {
         "directory": directory,
         "ancestor": tmp_path,
         "sqlite": sqlite_file,
         "sidecar": sidecar,
+        "lock": refresh_lock,
     }
     original = permissions._is_reparse
     monkeypatch.setattr(
@@ -224,19 +228,22 @@ def test_windows_exact_acl_removes_old_grants_and_protects_existing_sqlite(tmp_p
     directory.mkdir()
     database = directory / "synthetic.sqlite3"
     sidecar = directory / "synthetic.sqlite3-wal"
+    refresh_lock = directory / "synthetic.sqlite3.refresh-lock"
     database.write_bytes(b"SYNTHETIC-ENCRYPTED-PAYLOAD")
     sidecar.write_bytes(b"SYNTHETIC-ENCRYPTED-JOURNAL")
+    refresh_lock.write_bytes(b"\0")
     acl = permissions._WindowsACL()
     # Seed a broad explicit grant on this temporary directory and its files only.
     broad = f"D:P(A;OICI;FA;;;{acl._sid})(A;OICI;FA;;;WD)"
     acl._apply_sddl(directory, broad)
-    for file in (database, sidecar):
+    for file in (database, sidecar, refresh_lock):
         acl._apply_sddl(file, broad.replace("OICI", ""))
     assert not _native_acl_is_exact(directory, acl._sid, directory=True)
     secure_directory(directory)
     assert _native_acl_is_exact(directory, acl._sid, directory=True)
     assert _native_acl_is_exact(database, acl._sid, directory=False)
     assert _native_acl_is_exact(sidecar, acl._sid, directory=False)
+    assert _native_acl_is_exact(refresh_lock, acl._sid, directory=False)
     created_later = directory / "later.sqlite3"
     created_later.write_bytes(b"SYNTHETIC-LATER-PAYLOAD")
     assert _native_acl_is_exact(created_later, acl._sid, directory=False, inherited=True)

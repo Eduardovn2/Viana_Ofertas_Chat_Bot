@@ -30,7 +30,15 @@ class ConnectorProvider:
 
 
 class ConnectorRegistry:
-    def __init__(self, settings: Settings, *, session_factory=None, clock=None):
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        session_factory=None,
+        clock=None,
+        mercado_livre_tokens=None,
+        mercado_livre_store_present=None,
+    ):
         self.settings = settings
         self.session_factory = session_factory
         self.clock = clock or (lambda: datetime.now(UTC))
@@ -38,9 +46,60 @@ class ConnectorRegistry:
         self._transports = []
         self._lock = RLock()
         self.blocked = set()
+        self._ml_tokens = mercado_livre_tokens
+        self._owns_ml_tokens = mercado_livre_tokens is None
+        self._ml_store_selected = mercado_livre_tokens is not None
+        self._ml_store_probe = mercado_livre_store_present
+        self._ml_context = None
+
+    def _prefer_ml_store(self) -> bool:
+        if self._ml_store_selected:
+            return True
+        if self._ml_store_probe is not None:
+            present = bool(self._ml_store_probe())
+        elif self.settings.app_env == "test":
+            return False
+        else:
+            from app.services.oauth_context import default_store_path
+            from app.services.oauth_store import OAuthStorageError
+
+            try:
+                present = default_store_path().is_file()
+            except OAuthStorageError:
+                return False
+        # Once selected, revoked/unreadable OAuth never falls back to an old static token.
+        self._ml_store_selected = present
+        return present
+
+    def _ml_token_manager(self):
+        if self._ml_tokens is None:
+            from app.services.mercado_livre_tokens import MercadoLivreTokens
+            from app.services.oauth_context import OAuthContext
+
+            self._ml_context = OAuthContext(self.settings)
+            self._ml_tokens = MercadoLivreTokens(
+                self.settings,
+                lambda: self._ml_context.store,
+                clock=self.clock,
+            )
+        return self._ml_tokens
 
     def configured(self, platform: Platform) -> bool:
         if platform == Platform.MERCADO_LIVRE:
+            if self._prefer_ml_store():
+                if not (
+                    self.settings.mercadolivre_client_id
+                    and self.settings.mercadolivre_client_secret
+                    and self.settings.mercadolivre_client_id.get_secret_value().strip()
+                    and self.settings.mercadolivre_client_secret.get_secret_value().strip()
+                ):
+                    return False
+                from app.services.oauth_store import OAuthStorageError
+
+                try:
+                    return bool(self._ml_token_manager().configured())
+                except (IntegrationError, OAuthStorageError):
+                    return False
             return bool(
                 self.settings.mercado_livre_access_token
                 and self.settings.mercado_livre_access_token.get_secret_value().strip()
@@ -116,6 +175,11 @@ class ConnectorRegistry:
             session.commit()
 
     def credential_scope(self, platform: Platform) -> str:
+        if platform == Platform.MERCADO_LIVRE and self.settings.mercadolivre_client_id:
+            # Conservatively share quota/block across accounts of one app; rotation cannot reset it.
+            return hashlib.sha256(
+                ("ml-client:" + self.settings.mercadolivre_client_id.get_secret_value()).encode()
+            ).hexdigest()[:24]
         secret = (
             self.settings.mercado_livre_access_token
             if platform == Platform.MERCADO_LIVRE
@@ -141,6 +205,15 @@ class ConnectorRegistry:
 
     def get(self, platform: Platform):
         with self._lock:
+            if (
+                platform == Platform.MERCADO_LIVRE
+                and platform in self._connectors
+                and self._prefer_ml_store()
+                and self._connectors[platform].token_provider is None
+            ):
+                # A grant created after startup supersedes an already materialized legacy connector.
+                # Use a fresh cache/client; the old transport lives until close for any in-flight read.
+                del self._connectors[platform]
             if platform not in self._connectors:
                 transport = JsonTransport(
                     timeout=self.settings.integration_timeout_seconds,
@@ -160,6 +233,10 @@ class ConnectorRegistry:
                     connector = MercadoLivreConnector(
                         transport,
                         token=self.settings.mercado_livre_access_token,
+                        token_provider=self._ml_token_manager()
+                        if self._prefer_ml_store()
+                        else None,
+                        credential_scope=self.credential_scope(platform),
                         enabled=self.settings.mercado_livre_enabled,
                         clock=self.clock,
                     )
@@ -187,3 +264,5 @@ class ConnectorRegistry:
     def close(self):
         for transport in self._transports:
             transport.close()
+        if self._owns_ml_tokens and self._ml_tokens is not None:
+            self._ml_tokens.close()

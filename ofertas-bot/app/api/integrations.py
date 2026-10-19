@@ -179,7 +179,8 @@ def check(platform: Platform, data: ProductCheck, request: Request, session: Db)
     if hasattr(connector, "transport"):
         connector.transport.clear_cache()
     result = _refresh(product.id, request, session, check=True)
-    request.app.state.integrations.unblock(platform)
+    if result.evidence_metadata.get("price_access_reason") != "price_permission_denied":
+        request.app.state.integrations.unblock(platform)
     return result
 
 

@@ -1,5 +1,6 @@
 """Synthetic contract fixtures only: no captured prices, credentials or live API calls."""
 
+import json
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -418,6 +419,177 @@ def test_transport_failure_propagates_without_returning_empty_success():
     with pytest.raises(IntegrationError) as error:
         source.fetch_product(ref())
     assert error.value.code == "TIMEOUT"
+
+
+class SyntheticTokenManager:
+    def __init__(self):
+        self.token = SecretStr("SYNTHETIC_OLD_ACCESS")
+        self.refresh_calls = []
+        self.get_calls = 0
+        self.failure = None
+
+    def get_access_token(self):
+        self.get_calls += 1
+        return self.token
+
+    def refresh_after_rejection(self, rejected_token):
+        self.refresh_calls.append(rejected_token)
+        if self.failure is not None:
+            raise self.failure
+        self.token = SecretStr("SYNTHETIC_NEW_ACCESS")
+        return self.token
+
+
+def oauth_source(handler, manager):
+    blocked = []
+    calls = []
+
+    def respond(request):
+        calls.append(request)
+        return handler(request)
+
+    transport = JsonTransport(
+        client=httpx.Client(transport=httpx.MockTransport(respond)),
+        min_interval=0,
+        max_retries=0,
+        clock=lambda: NOW,
+        on_auth_failure=lambda: blocked.append(True),
+    )
+    source = MercadoLivreConnector(
+        transport,
+        token=SecretStr("SYNTHETIC_LEGACY_MUST_NOT_BE_USED"),
+        token_provider=manager,
+        credential_scope="synthetic-stable-app",
+        enabled=True,
+        clock=lambda: NOW,
+    )
+    return source, calls, blocked
+
+
+def synthetic_response(data):
+    return httpx.Response(200, content=json.dumps(data, default=str).encode())
+
+
+def test_oauth_401_rotates_once_and_keeps_cache_scope_without_blocking(payloads):
+    manager = SyntheticTokenManager()
+
+    def handler(request):
+        if request.headers["authorization"] == "Bearer SYNTHETIC_OLD_ACCESS":
+            return httpx.Response(401, text="SYNTHETIC_PRIVATE_ERROR")
+        index = (
+            1
+            if request.url.path.endswith("/sale_price")
+            else 2
+            if request.url.path.endswith("/prices")
+            else 0
+        )
+        return synthetic_response(payloads[index])
+
+    source, calls, blocked = oauth_source(handler, manager)
+    result = source.fetch_product(ref())
+    assert result.current_price == Decimal("80.00")
+    assert result.price_access is PriceAccess.PUBLIC
+    assert len(calls) == 4 and len(manager.refresh_calls) == 1
+    assert manager.refresh_calls[0].get_secret_value() == "SYNTHETIC_OLD_ACCESS"
+    assert blocked == []
+    assert all("synthetic-stable-app" in key for key in source.transport._cache)
+    assert all("ACCESS" not in key for key in source.transport._cache)
+    assert all("LEGACY" not in request.headers["authorization"] for request in calls)
+
+
+@pytest.mark.parametrize("final_status", [401, 403])
+def test_oauth_final_denial_blocks_once_without_another_refresh(final_status):
+    manager = SyntheticTokenManager()
+    responses = iter([httpx.Response(401), httpx.Response(final_status)])
+    source, calls, blocked = oauth_source(lambda _: next(responses), manager)
+    with pytest.raises(AuthorizationDenied) as raised:
+        source.fetch_product(ref())
+    assert raised.value.status_code == final_status
+    assert len(calls) == 2 and len(manager.refresh_calls) == 1 and blocked == [True]
+
+
+def test_oauth_initial_403_is_not_refreshed():
+    manager = SyntheticTokenManager()
+    source, calls, blocked = oauth_source(lambda _: httpx.Response(403), manager)
+    with pytest.raises(AuthorizationDenied) as raised:
+        source.fetch_product(ref())
+    assert raised.value.status_code == 403
+    assert len(calls) == 1 and manager.refresh_calls == [] and blocked == [True]
+
+
+@pytest.mark.parametrize(
+    "code", ["OAUTH_REFRESH_UNCERTAIN", "OAUTH_REFRESH_BUSY", "OAUTH_RATE_LIMITED"]
+)
+def test_nondefinitive_refresh_failure_does_not_block_or_use_static_fallback(code):
+    manager = SyntheticTokenManager()
+    manager.failure = IntegrationError(code, "Falha OAuth controlada.")
+    source, calls, blocked = oauth_source(lambda _: httpx.Response(401), manager)
+    with pytest.raises(IntegrationError) as raised:
+        source.fetch_product(ref())
+    assert raised.value.code == code
+    assert len(calls) == len(manager.refresh_calls) == 1 and blocked == []
+    assert calls[0].headers["authorization"] == "Bearer SYNTHETIC_OLD_ACCESS"
+
+
+def test_definitive_refresh_revocation_blocks_without_using_legacy_token():
+    manager = SyntheticTokenManager()
+    manager.failure = IntegrationError(
+        "OAUTH_REAUTHORIZATION_REQUIRED", "Nova autorização necessária."
+    )
+    source, calls, blocked = oauth_source(lambda _: httpx.Response(401), manager)
+    with pytest.raises(AuthorizationDenied):
+        source.fetch_product(ref())
+    assert len(calls) == 1 and blocked == [True]
+
+
+@pytest.mark.parametrize("failed_endpoint", ["sale_price", "prices"])
+def test_price_403_preserves_official_metadata_without_legacy_prices(payloads, failed_endpoint):
+    manager = SyntheticTokenManager()
+
+    def handler(request):
+        if request.url.path.endswith("/" + failed_endpoint):
+            return httpx.Response(403)
+        return synthetic_response(
+            payloads[1] if request.url.path.endswith("/sale_price") else payloads[0]
+        )
+
+    source, calls, blocked = oauth_source(handler, manager)
+    result = source.fetch_product(ref())
+    assert result.current_price == (Decimal("80.00") if failed_endpoint == "prices" else None)
+    assert result.previous_price is None
+    assert result.price_access is PriceAccess.UNKNOWN
+    assert result.name == payloads[0]["title"]
+    assert result.seller_id == str(payloads[0]["seller_id"])
+    assert result.category_external_id == payloads[0]["category_id"]
+    assert result.image_url == payloads[0]["pictures"][0]["secure_url"]
+    assert result.evidence_metadata["price_access_reason"] == "price_permission_denied"
+    assert result.evidence_metadata["price_http_status"] == 403
+    assert result.source_reference.endswith(
+        "/sale_price?context=channel_marketplace"
+        if failed_endpoint == "prices"
+        else "/items/" + ITEM_ID
+    )
+    assert blocked == [True] and manager.refresh_calls == []
+    assert len(calls) == (2 if failed_endpoint == "sale_price" else 3)
+
+
+def test_recovery_clears_evidence_cached_before_rejected_endpoint(payloads):
+    manager = SyntheticTokenManager()
+    sale_calls = 0
+
+    def handler(request):
+        nonlocal sale_calls
+        if request.url.path.endswith("/sale_price"):
+            sale_calls += 1
+            return httpx.Response(401) if sale_calls == 1 else synthetic_response(payloads[1])
+        return synthetic_response(
+            payloads[2] if request.url.path.endswith("/prices") else payloads[0]
+        )
+
+    source, calls, blocked = oauth_source(handler, manager)
+    source.fetch_product(ref())
+    assert not any(key.endswith("/items/" + ITEM_ID) for key in source.transport._cache)
+    assert sale_calls == 2 and len(calls) == 4 and blocked == []
 
 
 @pytest.mark.parametrize("suffix", ["?variation_id=1234", "#searchVariation=1234"])

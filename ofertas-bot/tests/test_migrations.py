@@ -69,8 +69,21 @@ EXPECTED_TABLES = {
     "integration_events",
     "manual_offer_details",
     "telegram_publications",
+    "telegram_technical_publications",
+    "telegram_technical_audit",
+    "simulation_products",
+    "simulation_policies",
+    "telegram_simulations",
+    "simulation_audit",
 }
 PHASE4_TABLES = {"manual_offer_details", "telegram_publications"}
+PHASE46_TABLES = {"telegram_technical_publications", "telegram_technical_audit"}
+PHASE47_TABLES = {
+    "simulation_products",
+    "simulation_policies",
+    "telegram_simulations",
+    "simulation_audit",
+}
 
 
 @pytest.fixture
@@ -1010,9 +1023,9 @@ def test_marketplace_downgrade_refuses_data_loss_before_any_schema_change(migrat
         session.commit()
     with pytest.raises(RuntimeError, match="without data loss"):
         command.downgrade(config, "0003_category_routing")
-    assert set(inspect(engine).get_table_names()) == EXPECTED_TABLES - PHASE4_TABLES | {
-        "alembic_version"
-    }
+    assert set(
+        inspect(engine).get_table_names()
+    ) == EXPECTED_TABLES - PHASE4_TABLES - PHASE46_TABLES - PHASE47_TABLES | {"alembic_version"}
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
@@ -1251,6 +1264,7 @@ def test_telegram_foreign_keys_restrict_parent_deletion(migration_database, pare
 
 
 @pytest.mark.parametrize("table", ["manual_offer_details", "telegram_publications"])
+@pytest.mark.parametrize("migration_database", ["0005_telegram_outbox"], indirect=True)
 def test_telegram_downgrade_refuses_any_audit_data_before_dropping_tables(
     migration_database, table
 ):

@@ -1,0 +1,63 @@
+{
+  "mode": "SIMULATED",
+  "database": "ofertas_bot_test",
+  "retained_schema": "ofertas_bot_simulation_test_448cba87f06349f394555d36ecea9163",
+  "scheduler": "existing APScheduler, actual bounded background execution",
+  "scheduler_stopped": true,
+  "products": [
+    {
+      "name": "[SIMULATED] PlayStation 5",
+      "baseline": "3000.00",
+      "current": "2700.00"
+    },
+    {
+      "name": "[SIMULATED] Smartphone iPhone 15",
+      "baseline": "4000.00",
+      "current": "3600.00"
+    },
+    {
+      "name": "[SIMULATED] Ferramentas furadeira",
+      "baseline": "500.00",
+      "current": "450.00"
+    },
+    {
+      "name": "[SIMULATED] PlayStation 4",
+      "baseline": "1500.00",
+      "current": "1300.00"
+    },
+    {
+      "name": "[SIMULATED] Sofá casa",
+      "baseline": "1000.00",
+      "current": "800.00"
+    },
+    {
+      "name": "[SIMULATED] Mouse sem queda",
+      "baseline": "100.00",
+      "current": "100.00"
+    }
+  ],
+  "opportunities": 5,
+  "filtered_products": 2,
+  "enqueued_products": 3,
+  "simulated_products": 3,
+  "automatic_approvals": 5,
+  "deduplications": 1,
+  "mock_calls": 3,
+  "real_telegram_calls": 0,
+  "duplicate_dispatch": {
+    "result": "SIMULATED",
+    "mock_calls_before": 3,
+    "mock_calls_after": 3,
+    "extra_calls": 0
+  },
+  "auto_approval_audit_ids": [
+    2,
+    4,
+    9,
+    11,
+    16
+  ],
+  "real_publisher_enabled": false,
+  "real_sends_authorized": false,
+  "no_live_telegram_calls": true
+}

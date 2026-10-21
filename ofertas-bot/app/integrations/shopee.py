@@ -312,7 +312,13 @@ class ShopeeConnector:
         if raw_categories is None:
             categories = []
         elif isinstance(raw_categories, list) and len(raw_categories) <= 20:
-            categories = [_category_id(category_id) for category_id in raw_categories]
+            # Integer zero means no classification; all other values still
+            # pass through the existing strict positive-ID validator.
+            categories = [
+                _category_id(category_id)
+                for category_id in raw_categories
+                if not (type(category_id) is int and category_id == 0)
+            ]
         else:
             raise InvalidPayload("Categorias Shopee incompatíveis com o esquema.")
         evidence = {"category_external_ids": categories}

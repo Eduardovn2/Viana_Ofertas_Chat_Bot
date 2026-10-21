@@ -38,8 +38,21 @@ from app.models.enums import (
     SourceType,
     TelegramPublicationStatus,
 )
+from app.models.simulation import (
+    SimulationAudit,
+    SimulationPolicy,
+    SimulationProduct,
+    TelegramSimulation,
+)
+from app.models.telegram_technical import TelegramTechnicalAudit, TelegramTechnicalPublication
 
 __all__ = [
+    "SimulationAudit",
+    "SimulationPolicy",
+    "SimulationProduct",
+    "TelegramSimulation",
+    "TelegramTechnicalAudit",
+    "TelegramTechnicalPublication",
     "AffiliateLink",
     "AppSetting",
     "Availability",

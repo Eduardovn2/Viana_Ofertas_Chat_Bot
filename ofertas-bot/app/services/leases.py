@@ -49,15 +49,19 @@ def acquire_lease(
             conflict_insert(session, MonitoringLease)
             .values(name=name, owner=owner, expires_at=expires_at, updated_at=now)
             .on_conflict_do_nothing(index_elements=[MonitoringLease.name])
+            .returning(MonitoringLease.owner)
         )
-        inserted = session.execute(statement).rowcount
-        if not inserted:
+        # psycopg can report -1 for INSERT ON CONFLICT, even when no row was inserted.
+        # RETURNING proves ownership without treating an unknown count as success.
+        inserted = session.execute(statement).scalar_one_or_none()
+        if inserted is None:
             claimed = session.execute(
                 update(MonitoringLease)
                 .where(MonitoringLease.name == name, MonitoringLease.expires_at <= now)
                 .values(owner=owner, expires_at=expires_at, updated_at=now)
-            ).rowcount
-            if not claimed:
+                .returning(MonitoringLease.owner)
+            ).scalar_one_or_none()
+            if claimed is None:
                 session.rollback()
                 return None
         session.commit()

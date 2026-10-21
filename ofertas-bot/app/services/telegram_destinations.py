@@ -15,6 +15,8 @@ from app.models import (
     PublicationDestination,
     TelegramPublication,
     TelegramPublicationStatus,
+    TelegramTechnicalAudit,
+    TelegramTechnicalPublication,
 )
 
 TEST_GROUP_NAME = "Viana Ofertas"
@@ -47,6 +49,27 @@ def invalidate_reviews(session, destination_id):
         entry.active_slot = None
         entry.approved_by = entry.approved_at = None
         entry.last_error_code = "DESTINATION_CHANGED"
+    for entry in session.scalars(
+        select(TelegramTechnicalPublication)
+        .where(
+            TelegramTechnicalPublication.destination_id == destination_id,
+            TelegramTechnicalPublication.status.in_(
+                (TelegramPublicationStatus.PENDING, TelegramPublicationStatus.APPROVED)
+            ),
+        )
+        .with_for_update()
+    ):
+        entry.status = TelegramPublicationStatus.EXPIRED
+        entry.approved_by = entry.approved_at = None
+        entry.last_error_code = "DESTINATION_CHANGED"
+        session.add(
+            TelegramTechnicalAudit(
+                publication_id=entry.id,
+                event="REVIEW_INVALIDATED",
+                preview_hash=entry.preview_hash,
+                error_code="DESTINATION_CHANGED",
+            )
+        )
     session.flush()
 
 

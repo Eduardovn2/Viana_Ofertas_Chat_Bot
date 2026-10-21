@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     mock_availability: Availability = Availability.AVAILABLE
     mock_price_access: PriceAccess = PriceAccess.PUBLIC
     scheduler_enabled: bool = True
+    simulation_automation_enabled: bool = False
+    simulation_batch_limit: int = Field(default=3, ge=1, le=5)
     scheduler_tick_seconds: int = Field(default=1, ge=1, le=60)
     priority_interval_seconds: int = Field(default=60, ge=1, le=86400)
     general_interval_seconds: int = Field(default=300, ge=1, le=86400)

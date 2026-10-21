@@ -1,6 +1,7 @@
-"""SYNTHETIC offline contracts, constructed from the official public schema.
+"""Offline contracts, constructed from the official public schema.
 
-These fixtures are not captured Shopee responses and assert no account access.
+Most fixtures are synthetic. The explicitly observed product node is sanitized
+from the single authorized query of 2026-10-21; pagination envelopes are synthetic.
 Every HTTP request uses a fake transport or httpx.MockTransport.
 """
 
@@ -9,6 +10,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 
 import httpx
 import pytest
@@ -31,6 +33,7 @@ APP_ID = "SYNTHETIC_APP"
 SECRET = "synthetic-secret-not-a-live-credential"
 URL = "https://shopee.com.br/product/101/202"
 REF = ProductRef(Platform.SHOPEE, "101:202", URL)
+OBSERVED_NODE_PATH = Path(__file__).parent / "fixtures" / "shopee_product_offer_observed.json"
 SYNTHETIC_NODE = {
     "itemId": 202,
     "shopId": 101,
@@ -154,6 +157,92 @@ def test_snapshot_preserves_decimal_provenance_and_unknown_commercial_conditions
     assert after["fetch_product"] == CapabilityStatus.SUPPORTED
     assert after["fetch_coupons"] == CapabilityStatus.UNVERIFIED
     assert after["discover_offers"] == CapabilityStatus.REQUIRES_CREDENTIALS
+
+
+def test_sanitized_observed_product_normalizes_without_inventing_commercial_conditions():
+    node = json.loads(OBSERVED_NODE_PATH.read_text(encoding="utf-8"))
+    original = copy.deepcopy(node)
+    result = connector(FakeTransport(payload(node))).discover_offers("PlayStation 5", limit=1)
+    snapshot = result.items[0]
+    assert snapshot.name == node["productName"]
+    assert snapshot.external_item_id == "1018042820:22293101052"
+    assert snapshot.current_price == Decimal("59.00")
+    assert snapshot.previous_price is None
+    assert snapshot.availability is Availability.UNKNOWN
+    assert snapshot.price_access is PriceAccess.UNKNOWN
+    assert snapshot.category_external_id == "100583"
+    assert snapshot.evidence_metadata == {
+        "category_external_ids": ["100535", "100583"],
+        "commission_rate": "0.38",
+        "commission_amount": "22.42",
+    }
+    assert snapshot.canonical_url == node["productLink"]
+    assert snapshot.image_url == node["imageUrl"]
+    assert node == original
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ([100535, 100583, 0], ["100535", "100583"]),
+        ([0, 100535, 0, "100583", 0], ["100535", "100583"]),
+        ([100583, 0, 100535, 100583], ["100583", "100535", "100583"]),
+        ([0], []),
+        ([0, 0], []),
+        ([], []),
+        (None, []),
+        (["100535", 2147483647, 0], ["100535", "2147483647"]),
+    ],
+)
+def test_only_integer_zero_is_omitted_and_positive_category_order_is_preserved(raw, expected):
+    node = {**SYNTHETIC_NODE, "productCatIds": raw}
+    snapshot = connector(FakeTransport(payload(node))).fetch_product(REF)
+    assert snapshot.evidence_metadata["category_external_ids"] == expected
+    assert snapshot.category_external_id == (expected[-1] if expected else None)
+    assert snapshot.current_price == Decimal("99.90")
+    assert (
+        snapshot.raw_fingerprint
+        == connector(FakeTransport(payload({**node, "productCatIds": expected})))
+        .fetch_product(REF)
+        .raw_fingerprint
+    )
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        [False],
+        [True],
+        [0.0],
+        [1.0],
+        [Decimal(0)],
+        [-1],
+        ["-1"],
+        ["0"],
+        ["00"],
+        [None],
+        [{}],
+        [[]],
+        [(1,)],
+        [""],
+        ["1.0"],
+        [" 1 "],
+        [2147483648],
+        ["2147483648"],
+        [0, 100535, -1],
+        [0] * 21,
+        0,
+        False,
+        {},
+        "100535",
+        (100535,),
+    ],
+)
+def test_category_zero_does_not_allow_invalid_types_values_or_shapes(raw):
+    with pytest.raises(InvalidPayload):
+        connector(FakeTransport(payload({**SYNTHETIC_NODE, "productCatIds": raw}))).fetch_product(
+            REF
+        )
 
 
 @pytest.mark.parametrize(

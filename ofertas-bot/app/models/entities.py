@@ -43,6 +43,7 @@ from app.models.enums import (
     PublicationStatus,
     QueueStatus,
     SourceType,
+    TelegramPublicationStatus,
 )
 
 
@@ -276,6 +277,87 @@ class Offer(TimestampMixin, Base):
         server_default=OfferStatus.PENDING_REVIEW.value,
     )
     expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+
+
+class ManualOfferDetails(TimestampMixin, Base):
+    __tablename__ = "manual_offer_details"
+
+    offer_id: Mapped[int] = mapped_column(
+        ForeignKey("offers.id", ondelete="RESTRICT"), primary_key=True
+    )
+    verified_by: Mapped[str] = mapped_column(String(200))
+    verified_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    image_url: Mapped[str | None] = mapped_column(String(2048))
+
+
+class TelegramPublication(TimestampMixin, Base):
+    """Independent outbox; uncertainty holds the product/destination slot indefinitely."""
+
+    __tablename__ = "telegram_publications"
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "destination_id",
+            "active_slot",
+            name="uq_telegram_publications_product_destination_active_slot",
+        ),
+        CheckConstraint(
+            "(status IN ('PENDING', 'APPROVED', 'SENDING', 'UNCERTAIN') "
+            "AND active_slot IS NOT NULL AND active_slot = 1) "
+            "OR (status IN ('SENT', 'FAILED', 'EXPIRED', 'REJECTED') AND active_slot IS NULL)",
+            name="active_slot_matches_status",
+        ),
+        CheckConstraint("attempt_number >= 0", name="attempt_number_nonnegative"),
+        CheckConstraint("length(preview_hash) = 64", name="preview_hash_length"),
+        Index("ix_telegram_publications_status_created_at", "status", "created_at"),
+        Index(
+            "ix_telegram_publications_destination_status_retry_at",
+            "destination_id",
+            "status",
+            "retry_at",
+        ),
+        Index(
+            "ix_telegram_publications_product_destination_sent_at",
+            "product_id",
+            "destination_id",
+            "sent_at",
+        ),
+        Index("ix_telegram_publications_offer_id", "offer_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    offer_id: Mapped[int] = mapped_column(ForeignKey("offers.id", ondelete="RESTRICT"))
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="RESTRICT"))
+    destination_id: Mapped[int] = mapped_column(
+        ForeignKey("publication_destinations.id", ondelete="RESTRICT")
+    )
+    status: Mapped[TelegramPublicationStatus] = mapped_column(
+        state_enum(TelegramPublicationStatus, "telegram_publication_status"),
+        default=TelegramPublicationStatus.PENDING,
+        server_default=TelegramPublicationStatus.PENDING.value,
+    )
+    active_slot: Mapped[int | None] = mapped_column(
+        Integer().evaluates_none(), default=1, server_default="1"
+    )
+    preview_payload: Mapped[dict[str, Any]] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"),
+        default=dict,
+        server_default="{}",
+        nullable=False,
+    )
+    preview_hash: Mapped[str] = mapped_column(String(64))
+    approved_by: Mapped[str | None] = mapped_column(String(200))
+    approved_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    attempt_number: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    last_error_code: Mapped[str | None] = mapped_column(String(100))
+    retry_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    claimed_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    message_id: Mapped[str | None] = mapped_column(String(200))
+    resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    resolved_by: Mapped[str | None] = mapped_column(String(200))
+    resolution: Mapped[str | None] = mapped_column(String(50))
+    resolution_evidence: Mapped[str | None] = mapped_column(Text)
 
 
 class PublicationDestination(TimestampMixin, Base):

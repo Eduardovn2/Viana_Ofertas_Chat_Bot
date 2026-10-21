@@ -1,8 +1,8 @@
-# Ofertas Bot — MVP pessoal, fase 3 parcial
+# Ofertas Bot — fase 4 validada, envios desativados
 
 Backend local para cadastrar produtos, guardar links de afiliado e acompanhar preços simulados ou APIs oficiais explicitamente habilitadas, com comparação histórica, pontuação e fila dry-run. A aplicação usa Python 3.12+, FastAPI, SQLAlchemy, PostgreSQL, Alembic e APScheduler 3.11 em um monólito modular.
 
-A fase 3 preserva as fases anteriores e adiciona conectores independentes Mercado Livre/Shopee, proveniência, variantes e evidências de cupom. Ambos ficam desativados por padrão. **FASE 3 PARCIAL / BLOQUEADA POR ACESSO:** não há credenciais comerciais configuradas e nenhuma consulta real a produto foi executada. A fila registra uma **simulação**, inclusive quando seu estado se chama `PUBLISHED`; ela não envia mensagens externas. A [matriz oficial de capacidades](docs/INTEGRACOES_FASE_3.md) distingue documentação, configuração e acesso comprovado.
+A fase 3 preserva as fases anteriores e adiciona conectores independentes Mercado Livre/Shopee, proveniência, variantes e evidências de cupom. **Estado atual:** consulta automática Mercado Livre suspensa após HTTP 403; OAuth e tokens protegidos preservados; Shopee aguarda liberação oficial. A fase 4 acrescenta cadastro, prévia e aprovação administrativa de ofertas manuais, com envios desativados. A fila simulada anterior mantém seus controles, inclusive quando seu estado se chama `PUBLISHED`; isso não representa uma mensagem externa. A [matriz oficial de capacidades](docs/INTEGRACOES_FASE_3.md) distingue documentação, configuração e acesso comprovado. As seções de validação abaixo preservam os resultados históricos das fases anteriores.
 
 ## O que já pode ser usado
 
@@ -584,6 +584,39 @@ A verificação final com o novo token confirmou `/users/me` HTTP 200 e identida
 
 A suíte final desta retomada aprovou **755 testes em 136,34 segundos, sem falhas ou skips**, incluindo seis casos PostgreSQL reais em schemas isolados de `ofertas_bot_test`. Concorrência com oito threads, três processos e falha de processo foi verificada em cenários controlados com mocks/dados temporários; a rotação real continua não exercitada. Houve um `StarletteDeprecationWarning`. Ruff e formatação aprovaram 94 arquivos Python; Alembic `current/check` confirmou a revisão 0004 sem divergências no PostgreSQL real.
 
-## Próximo avanço
+## Fase 4 — ofertas manuais, destinos e outbox Telegram
 
-O [`ROADMAP.md`](ROADMAP.md) registra a aprovação da fase 3 e a pendência de acesso comercial. Configure as credenciais opcionais obtidas oficialmente, confirme permissões com um produto por loja e registre horário/origem/preço sem publicar. A fase continua **parcial/bloqueada por acesso** até essa validação. A Fase 4 não foi iniciada e depende de novo aceite explícito antes de qualquer publicação real.
+A retomada de 20/10/2026 preserva a branch `codex/fase-3` e os componentes anteriores do Telegram. O fluxo manual está integrado à outbox e ao publisher, com despacho administrativo pontual bloqueado por padrão e sem publicação automática. Mantenha `TELEGRAM_PUBLISHER_ENABLED=false` e `TELEGRAM_REAL_SENDS_AUTHORIZED=false`. Não é necessário fornecer token ou reautorizar OAuth para testar o fluxo com mocks. Veja o [guia Telegram da Fase 4](docs/TELEGRAM_FASE_4.md).
+
+Primeiro cadastre o produto pelas rotas existentes e seu link próprio gerado pelo Link Builder oficial. No `PUT /api/v1/products/{id}/affiliate-link`, informe `operationally_verified=true` somente após conferir a própria conta e a associação ao produto. Links sem essa confirmação são recusados no fluxo manual real. O monitoramento do produto pode continuar desativado.
+
+| Rota administrativa | Comportamento |
+|---|---|
+| `POST /api/v1/manual-offers` | Registra preço e evidência manuais, sem consultar lojas. |
+| `GET /api/v1/manual-offers` | Lista com `product_id`, `limit` e `offset` opcionais. |
+| `GET /api/v1/manual-offers/{id}` | Consulta o registro preservado, inclusive após vencer. |
+| `POST /api/v1/manual-offers/{id}/preview` | Recebe `destination_id` e `include_image` opcional; devolve mensagem exata, estado e `preview_hash`. |
+| `GET /api/v1/telegram/publications` | Lista prévias/aprovações com `destination_id`, `limit` e `offset`. |
+| `POST /api/v1/telegram/publications/{id}/approve` | Recebe `preview_hash`, `actor` e `confirmed=true`; revalida antes de aprovar. |
+
+Todas exigem administração local por `X-API-Key`. Cadastro exige `product_id`, `current_price`, `actor`, `verified=true`, `availability="AVAILABLE"` e `price_access="PUBLIC"`. Informe valores efetivamente conferidos pelo administrador; preços são `Decimal`, positivos, em BRL, com precisão de centavos. `previous_price`, `coupon_id`, `installment_text`, `image_url`, `verified_at` e `expires_at` são opcionais. Datas informadas exigem fuso; verificação futura/vencida é recusada. O padrão de frescor é `PRICE_MAX_AGE_SECONDS=600`; a validade efetiva também respeita o cupom e qualquer vencimento anterior informado.
+
+O preço anterior anunciado fica separado do histórico próprio, que utiliza somente observações manuais comparáveis. Sem referência não há desconto presumido. Cupom informado precisa ter confirmação pública, vínculo ao produto, condições satisfeitas e validade/verificação recentes; seu cadastro continua nas rotas existentes de evidência de cupom. Sem cupom a oferta continua válida. Imagem deve ser URL HTTPS pública válida; o cadastro rejeita uma URL insegura. Parcelamento e demais textos são escapados na mensagem, que inclui identificação publicitária.
+
+A prévia exige destino Telegram cadastrado, habilitado para avaliação local e aceito pelos filtros existentes (`all` ou `selected`, com categoria ativa). `unconfigured`, destino pausado ou categoria incompatível bloqueiam a prévia. As novas rotas `POST/GET /api/v1/telegram/destinations` e `GET/PATCH /api/v1/telegram/destinations/{id}` administram cadastro, pausa, filtros e limites, sempre com aprovação obrigatória. O Chat ID é imutável e duplicatas são recusadas. `Ofertas de Casa` não é ativado automaticamente.
+
+O perfil **Viana Ofertas — Chat ID -5309308689** pode ser preparado por `POST /api/v1/telegram/destinations/prepare-test-group` ou `python -m app.services.telegram_destinations prepare-test-group`. É idempotente e mantém o grupo pausado, sem modificar allowlist/token/flags. **Após iniciar Docker, o cadastro foi persistido no PostgreSQL como destino id 2, `enabled=false` e aprovação obrigatória.** O filtro continua `unconfigured`. Não se confirmou acesso do bot nem se chamou a API real do Telegram.
+
+A aprovação pertence à oferta e ao destino e não autoriza envio. A oferta continua `PENDING_REVIEW`; o registro independente `TelegramPublication` passa de `PENDING` para `APPROVED`. Preço, link, cupom, categorias, destino ou conteúdo alterados exigem nova revisão. Repetir o pedido de aprovação preserva o auditor original. Repetir cadastro com nova verificação cria outra observação/oferta; a prévia da nova versão remove a aprovação anterior no mesmo slot. O histórico não é sobrescrito. Prévia e aprovação não escrevem logs de envio nem disparam a fila simulada anterior.
+
+A janela mínima de três horas exige nova observação manual posterior ao sucesso e nova aprovação. `POST /api/v1/telegram/publications/{id}/dispatch` recebe `confirmed=true` e o hash aprovado, revalida as condições e exige ambas as flags, destino permitido e token configurado. Nesta etapa fica bloqueado. Não existe job de despacho automático. A prévia pode omitir a imagem com `include_image=false`; a mudança exige aprovação nova e não provoca fallback depois de uma tentativa incerta.
+
+A outbox confirma `SENDING` e log `PENDING` antes do HTTP. Confirmação válida resulta em `SENT`; rejeição comprovada, em `FAILED`; timeout, transporte, HTTP 5xx ou resposta incompatível, em `UNCERTAIN`, com slot reservado. Não há retry automático. Nova tentativa após falha definitiva exige prévia/aprovação e limites respeitados. `GET /api/v1/telegram/publications/{id}/logs` consulta auditoria; `POST .../{id}/recover` marca tentativa abandonada como incerta, mesmo com flags desativadas; `POST .../{id}/resolve` exige confirmação, ator e evidência (`SENT` com identificador conferido ou `NOT_SENT`). Veja os contratos no guia.
+
+Os testes desta retomada usam preços/atores/destinos sintéticos, SQLite temporário e HTTP mockado. A regressão pertinente aprovou **424 testes, com cinco casos PostgreSQL ignorados**. O conjunto final de serviço/API manual aprovou **57 testes**, incluindo o limite de validade do cupom e o frescor configurado no banco; há sobreposição entre as execuções. Ruff e formatação passaram nos 106 arquivos Python. Os 755 testes aprovados na fase anterior permanecem históricos; a suíte integral não foi repetida nesta retomada limitada.
+
+Os casos PostgreSQL exigem `TEST_DATABASE_URL` exclusivamente para banco `_test` e usam schemas UUID descartáveis; nunca aponte essa variável para o banco principal. A primeira tentativa local retornou `OperationalError`; após iniciar Docker, **12 testes PostgreSQL reais passaram**, incluindo fluxo de API, prévias concorrentes, despacho único concorrente com mocks e preparação do grupo. Docker Engine 29.8.2 e Compose PostgreSQL saudável foram confirmados. Alembic `upgrade head/current/check` passou na revisão **0005_telegram_outbox**, sem drift e preservando os dados existentes.
+
+O [`ROADMAP.md`](ROADMAP.md) registra os resultados separados por execução. Antes de iniciar Docker, a regressão pertinente aprovou 334 testes com sete PostgreSQL ignorados; o conjunto final Telegram/manual aprovou 205 testes, com sobreposição. A pendência PostgreSQL e o cadastro do grupo foram resolvidos. **A suíte integral final aprovou 982 testes em 268,29 s, sem falhas/skips, incluindo os 755 anteriores e os 12 PostgreSQL reais.** Ruff, formatação e `git diff --check` passaram. Houve 17 avisos de depreciação de dependências, sem falha funcional. Não somar os resultados de execuções sobrepostas.
+
+O código da Fase 4 está validado com mocks e PostgreSQL real; nenhuma mensagem foi enviada e a outbox principal permanece vazia. O scheduler está pausado, nove categorias foram preservadas e `Ofertas de Casa` continua desativado. O grupo Viana Ofertas permanece pausado e `unconfigured`, para seleção explícita dos filtros. Verificação do acesso real do bot e qualquer envio exigem autorização posterior. Fases 5/6 não foram iniciadas e nenhum commit final foi criado nesta execução.

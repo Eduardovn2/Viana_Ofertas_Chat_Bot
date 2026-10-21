@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     shopee_short_links_enabled: bool = False
     shopee_discovery_enabled: bool = False
     shopee_discovery_query: str | None = Field(default=None, min_length=1, max_length=100)
+    telegram_publisher_enabled: bool = False
+    telegram_real_sends_authorized: bool = False
+    telegram_bot_token: SecretStr | None = Field(default=None, repr=False)
+    telegram_allowed_chat_ids: tuple[str, ...] = Field(default=(), repr=False)
     integration_timeout_seconds: float = Field(default=5, ge=1, le=15)
     integration_max_retries: int = Field(default=1, ge=0, le=2)
     integration_min_interval_seconds: float = Field(default=1, ge=0.1, le=3600)
@@ -63,6 +67,25 @@ class Settings(BaseSettings):
     score_discount_percent: Decimal = Field(default=Decimal("1"), ge=0, le=100000)
     score_availability: Decimal = Field(default=Decimal("5"), ge=0, le=100000)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    @field_validator("telegram_bot_token", mode="before")
+    @classmethod
+    def validate_telegram_token(cls, value):
+        if value is None or value == "":
+            return None
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if not isinstance(raw, str) or len(raw) > 256 or any(ord(c) <= 32 for c in raw):
+            raise ValueError("Token Telegram inválido; configure-o somente no ambiente local.")
+        return value
+
+    @field_validator("telegram_allowed_chat_ids")
+    @classmethod
+    def validate_telegram_chats(cls, value):
+        if any(not re.fullmatch(r"-[1-9][0-9]{0,15}", v) or abs(int(v)) > 2**52 - 1 for v in value):
+            raise ValueError(
+                "Use somente IDs numéricos negativos de grupos explicitamente permitidos."
+            )
+        return tuple(dict.fromkeys(value))
 
     @field_validator("mercadolivre_redirect_uri", mode="before")
     @classmethod

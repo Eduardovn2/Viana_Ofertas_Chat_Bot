@@ -9,6 +9,7 @@ from app.models.entities import (
     CouponEvidence,
     DestinationCategory,
     IntegrationEvent,
+    ManualOfferDetails,
     MonitoringJob,
     MonitoringLease,
     Offer,
@@ -18,6 +19,7 @@ from app.models.entities import (
     PublicationDestination,
     PublicationLog,
     PublicationQueueItem,
+    TelegramPublication,
 )
 from app.models.enums import (
     Availability,
@@ -34,6 +36,7 @@ from app.models.enums import (
     PublicationStatus,
     QueueStatus,
     SourceType,
+    TelegramPublicationStatus,
 )
 
 __all__ = [
@@ -52,6 +55,7 @@ __all__ = [
     "DestinationChannel",
     "DestinationCategory",
     "IntegrationEvent",
+    "ManualOfferDetails",
     "MonitoringJob",
     "MonitoringJobStatus",
     "MonitoringLease",
@@ -68,6 +72,8 @@ __all__ = [
     "PublicationQueueItem",
     "QueueStatus",
     "SourceType",
+    "TelegramPublication",
+    "TelegramPublicationStatus",
     "UTCDateTime",
     "utcnow",
 ]

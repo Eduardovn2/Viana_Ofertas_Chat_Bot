@@ -1,6 +1,6 @@
 # Roadmap do Ofertas Bot
 
-Fases 1, 2 e 2.1 aprovadas e preservadas. A Fase 3 foi autorizada em 18/10/2026; conectores oficiais e pipeline dry-run implementados, com validação comercial pendente de credenciais/permissões. Estado: **FASE 3 PARCIAL / BLOQUEADA POR ACESSO**. A verificação do CLI Docker/Compose permanece separada do PostgreSQL real validado. Não iniciar a Fase 4 sem novo aceite.
+Fases 1, 2 e 2.1 aprovadas e preservadas. Conectores, OAuth e pipeline da Fase 3 implementados e preservados. **Estado atual: consulta automática de preços Mercado Livre temporariamente suspensa; operação manual autorizada; Shopee aguardando liberação da Open API. Fase 4 implementada e validada com Telegram mockado e PostgreSQL real: 982 testes aprovados.** Envios reais continuam sem autorização, com `telegram_publisher_enabled=false` e `telegram_real_sends_authorized=false`. Docker/Compose e PostgreSQL foram validados na continuação de 20/10/2026. Os registros abaixo conservam o histórico das decisões e validações anteriores.
 
 ## Fase 1 — Fundação
 
@@ -161,15 +161,95 @@ Se for necessário novo consentimento, iniciar outro Quick Tunnel, usar a nova U
 
 **Estado desta retomada:** integração OAuth/conector implementada e testada; consulta comercial **não operacional por HTTP 403**, inclusive com novo token, sem causa exata atribuída. PostgreSQL conectado na revisão 0004, scheduler persistido em pausa, OAuth e flags comerciais Mercado Livre/Shopee desativados e provedor simulado preservado. O runner ativa Mercado Livre somente em memória para a consulta explícita. Os tokens usados estavam válidos; refresh real não foi exercitado. Novo consentimento concluído por uma API temporária atualizada em `8001`, já encerrada; a instância preexistente `8000` foi preservada. Novo gateway `8787`/Quick Tunnel seguem ativos, com URI somente no `.env` e no manifesto local. Shopee permanece sem credenciais. Os 699 testes e o OAuth real descritos acima pertencem à execução anterior; a suíte nova de 755 testes está registrada nesta seção. A Fase 4 não foi iniciada.
 
-## Fase 4 — Publicação Telegram
+### Fase 3.2 — diagnóstico de acesso em 18/10/2026
 
-- Implementar `MessageTemplateService`, omitindo campos ausentes e usando identificação publicitária aplicável.
-- Implementar Telegram pela API oficial com token no ambiente, destinos e modo de teste.
-- Bloquear publicação sem link de afiliado próprio, preço válido ou informação atualizada.
-- Adicionar aprovação manual, registro de envio, erros e limites por destino.
-- Publicar mensagens ou imagens somente após configuração e autorização do responsável.
+- [x] Conferir permissões efetivas por leituras oficiais de aplicativo e grant: ambos HTTP 200, coerentes com o token, incluindo `urn:ml:all:publish-sync:/read-only` e `urn:ml:mktp:publish-sync:/read-only`. Aplicação ativa, `sandbox_mode=false`, sem scopes `urn:mp:`.
+- [x] Confirmar token válido e identidade MLB por `/users/me` HTTP 200, sem renovar tokens ou repetir OAuth.
+- [x] Consultar anúncios do próprio usuário com `limit=1`: HTTP 200, sem itens retornados. Comparação com anúncio próprio indisponível; nenhum anúncio foi criado para o diagnóstico.
+- [x] Identificar a recusa do alvo: `/items/MLB3810190843` HTTP 403, `error=access_denied`, em 18/10/2026 às 21:56:25 America/Sao_Paulo. Request ID sanitizado registrado no relatório; não foi identificado o código `PA_UNAUTHORIZED_RESULT_FROM_POLICIES`.
+- [x] Preparar [relatório técnico para suporte](docs/DIAGNOSTICO_403_MERCADOLIVRE.md), sem enviar mensagens externamente. Consultas restritas a GET, sem scraping ou tentativas de contorno.
+- [ ] Obter do Mercado Livre a política específica que nega o recurso. A permissão funcional de leitura foi confirmada; propriedade do anúncio e regras de acesso de afiliados continuam sem comprovação conclusiva. Não há fonte oficial localizada que estabeleça proibição ou autorização geral para afiliados consultarem terceiros.
 
-**Critério de avanço:** conteúdo revisado no modo de teste e aprovação explícita antes do primeiro envio real.
+Nenhuma funcionalidade, migração, configuração ou teste aprovado foi alterado nesta rodada. Os **755 testes anteriores** permanecem como última validação da implementação; não foram repetidos no diagnóstico documental. Garimpo, integrações comerciais e publicações continuam desativados. Fase 4 não iniciada.
+
+### Decisão operacional — suspensão comercial temporária em 18/10/2026
+
+- [x] Registrar a suspensão temporária da consulta automática de preços Mercado Livre: HTTP 403 persistente e autorização não confirmada para ler anúncios de terceiros. Não confundir a leitura funcional `publish-sync` concedida com autorização demonstrada para esse recurso.
+- [x] Preservar integralmente conector, OAuth, armazenamento protegido e renovação de tokens, migrações, testes, diagnósticos e histórico de implementação. Nenhuma funcionalidade será excluída para aplicar esta decisão.
+- [x] Definir Mercado Livre em modo manual: cadastro de produtos, preços informados pelo responsável, cupons opcionais e links próprios gerados no Link Builder oficial. Não gerar links por métodos não autorizados nem completar campos ausentes por suposição.
+- [x] Manter a Shopee desativada e aguardando liberação da Open API e credenciais oficiais; não executar descoberta, consultas comerciais ou geração de links automaticamente.
+- [x] Permitir o planejamento da Fase 4 com ofertas manuais, independentemente da liberação da integração comercial automática. O critério antigo de avanço da Fase 3 aplica-se à retomada comercial automática, não bloqueia esse planejamento manual.
+- [ ] Retomar a consulta automática Mercado Livre somente depois de comprovar o acesso autorizado, esclarecer o HTTP 403 e receber nova autorização operacional do responsável. Não repetir OAuth ou consultas de diagnóstico sem necessidade.
+
+As pendências comerciais anteriores permanecem em espera, sem declarar a Fase 3.2 comercial concluída. O scheduler continua em pausa e as integrações comerciais desativadas. Esta atualização altera somente o planejamento; não modifica credenciais, tokens, dados ou configurações de execução. A última suíte aprovada permanece em **755 testes**, incluindo seis PostgreSQL reais; nenhuma suíte foi repetida nesta atualização documental.
+
+## Fase 4 — Publicação no Telegram com ofertas manuais
+
+**Implementação autorizada, com destinos administrativos, fluxo manual, outbox e publisher integrados. Envios reais bloqueados até autorização explícita.** Os componentes anteriores foram preservados; os checkpoints abaixo distinguem a primeira retomada limitada de cadastro/prévia/aprovação da continuação do publisher e da validação PostgreSQL. A primeira publicação futura deve usar somente o grupo de testes definido pelo responsável. Implementar ou aprovar uma oferta não autoriza seu envio.
+
+### 4.1 — Entrada manual e preparação da oferta
+
+- [x] Reutilizar produtos, histórico, cupons, categorias e links manuais existentes. Serviço `create_manual_offer` registra origem `MANUAL`, valor `Decimal` e responsável/data da verificação; não converte preços simulados em reais nem consulta provedores.
+- [x] Exigir nome, preço atual válido e link de afiliado próprio operacionalmente verificado. Disponibilidade e acesso público exigem confirmação explícita; verificação recente e preço anterior anunciado permanecem separados do histórico próprio.
+- [x] Manter cupom, preço anterior, imagem e parcelamento opcionais. Ausências não geram condições inventadas. Cupom informado precisa estar confirmado, público, elegível e vigente; preços VIP/exclusivos/condicionais/desconhecidos são recusados. Reverificação acrescenta nova oferta/observação, preservando os registros anteriores.
+
+### 4.2 — Templates dinâmicos e prévia
+
+- [x] Integrar o renderizador determinístico existente com nome, preço atual, link próprio e identificação publicitária; incluir somente os campos opcionais disponíveis e válidos.
+- [x] Omitir integralmente blocos de cupom e preço anterior quando ausentes; desconto anunciado usa somente os valores informados e histórico próprio usa observações manuais comparáveis.
+- [x] Preparar variantes com texto e imagem do produto. URL insegura é recusada no cadastro; imagem ausente usa texto. A opção explícita `include_image=false` permite omitir uma imagem antes do envio e exige nova aprovação se o conteúdo mudar; não há fallback após resultado incerto.
+- [x] Escapar conteúdo dinâmico, validar URLs e tratar limites de texto/legenda. Prévia persistida com hash por destino; aprovação exige esse hash e confirmação explícita. Mudança válida do conteúdo exige nova revisão; evidência vencida/inválida ou filtro incompatível expira a entrada ao revalidar. Repetir a aprovação não sobrescreve o responsável original.
+
+### 4.3 — Grupo de testes e publisher Telegram
+
+- [x] Integrar publisher pela API oficial, desativado por padrão; token somente na configuração local `SecretStr`, sem exposição em logs, respostas ou versionamento. Testes com `httpx.MockTransport`, sem broadcast pago.
+- [x] Cadastrar explicitamente **Viana Ofertas, Chat ID -5309308689**, pausado e com aprovação obrigatória. Preparação idempotente por API/CLI, filtros conservadores e limites de 60 s/20 tentativas por hora. Não altera allowlist, credenciais, outros destinos nem cria grupos no Telegram.
+- [x] Separar simulação, prévia e despacho efetivo. A rota pontual `/dispatch` exige confirmação, hash aprovado, duas flags globais, allowlist, token e revalidação; não há publicação automática. Flags reais continuam `false`.
+- [x] Suportar foto/texto e diagnósticos sanitizados; timeout, erro de transporte, HTTP 5xx ou resposta incompatível mantêm `UNCERTAIN` e slot reservado, sem retry/fallback automático.
+
+### 4.4 — Categorias, filtros e fila
+
+- [x] Reutilizar categorias inteligentes, correções manuais e preferências por destino, com categorias ativas e modos conservadores. `Ofertas de Casa` não é ativado. Rotas novas e antigas invalidam aprovações ao alterar o destino/filtros.
+- [x] Revalidar categoria, filtros, preço, link, frescor, cupom e aprovação antes do despacho. Preservar fila simulada e usar a outbox Telegram independente já modelada na revisão 0005.
+- [x] Preservar deduplicação por produto (identidade de plataforma/variante) e destino, inclusive em concorrência SQLite e PostgreSQL. Republicar exige **três horas**, observação manual posterior ao sucesso e aprovação nova. Tentativas e limites são persistidos antes do HTTP.
+- [x] Nenhuma etapa consulta lojas: Mercado Livre automático suspenso, Shopee e conectores comerciais desativados. Scheduler não aciona publisher.
+
+### 4.5 — Auditoria e testes
+
+- [x] Registrar mensagem aprovada, ator, destino, hash, número/horário da tentativa, resultado e ID confirmado, sem credenciais. `recover` preserva claims abandonados; `resolve` exige ator/evidência/resultado explícito e conserva o aprovador original.
+- [x] Testar templates, opcionais, escape, URLs, limites, escolha explícita de texto e alterações posteriores à aprovação.
+- [x] Testar categorias/filtros, gates, aprovação por destino, concorrência, janela de três horas, expiração, HTTP 400/401/403/429, timeout, resposta incerta, falha de processo/persistência e recuperação sem enviar.
+- [x] Mockar a API Telegram, sem mensagens reais ou chamadas comerciais externas. Preservar os 755 testes anteriores; suíte integral atual com **982 aprovados**, incluindo **12 PostgreSQL reais**, zero falhas/skips. Ruff e formatação aprovados; detalhes e avisos no fechamento abaixo.
+
+**Critério de entrega:** fluxo manual → prévia → aprovação → fila → registro demonstrado em testes/simulação; envio pontual no grupo de testes somente após autorização explícita do responsável. Expansão para outros destinos ou operação sem aprovação inicial exige decisão posterior. A integração comercial automática suspensa não é requisito para essa entrega manual.
+
+### Checkpoint da retomada — 20/10/2026
+
+Rotas locais protegidas por `X-API-Key`: `POST/GET /api/v1/manual-offers`, `GET /api/v1/manual-offers/{id}`, `POST /api/v1/manual-offers/{id}/preview`, `GET /api/v1/telegram/publications` e `POST /api/v1/telegram/publications/{id}/approve`. Listagens possuem paginação e filtros por produto/destino. Oferta permanece `PENDING_REVIEW`; a aprovação é registrada separadamente em `TelegramPublication.APPROVED`, por destino. Prévia reutiliza um único slot ativo e não cria logs de envio ou itens na fila simulada anterior.
+
+Nesta retomada não há endpoint de envio, alteração de credenciais, ativação do scheduler ou alteração dos conectores suspensos. O `.env` foi lido sem exposição de segredos e confirmou ambas as flags Telegram em `false`. Nenhum destino real foi cadastrado/habilitado e nenhuma mensagem foi enviada. A revisão 0005 existente é exercitada somente em bancos temporários; o banco principal não recebeu migrações nesta execução.
+
+**Validação concluída deste escopo:** regressão pertinente com **424 testes aprovados e cinco casos PostgreSQL ignorados** (203,71 s), cobrindo APIs anteriores, domínio, categorias/filtros, histórico/ofertas, fila simulada, migrações e templates/publisher com mocks. Após os ajustes finais de validade do cupom e configuração persistida de frescor, os **57 testes de ofertas manuais/API passaram** (65,03 s); esse conjunto sobrepõe a regressão e os números não devem ser somados. Os avisos são de depreciação de dependências (Starlette/httpx e adaptador datetime SQLite). Ruff e formatação passaram nos 106 arquivos Python; `git diff --check` passou. Nenhum teste existente foi excluído.
+
+A primeira tentativa isolada de Pytest encontrou bloqueio de criação de temporários no sandbox; a execução autorizada fora dele, com temporários na pasta `.pytest_cache` do projeto, passou. A conexão exclusiva a `ofertas_bot_test` falhou com `OperationalError`, antes de iniciar os casos reais; os cinco skips não representam validação PostgreSQL. Foram preparados dois testes novos para serviço/API e concorrência de prévias no PostgreSQL, além dos contratos da revisão 0005 já existentes. Os **755 testes anteriores** permanecem como evidência histórica; a suíte integral não foi repetida neste escopo limitado.
+
+**Pendências da Fase 4:** concluir configuração administrativa dos destinos Telegram e validar o publisher/outbox completo (envio confirmado, falhas, resultado incerto e recuperação), além da regressão integral e PostgreSQL real. Os componentes existentes de envio foram preservados; ainda não constituem uma entrega operacional completa. Não criar commit final da Fase 4 com essas pendências. Fases 5 e 6 não iniciadas.
+
+### Continuação com Docker iniciado — 20/10/2026
+
+Código anterior preservado, sem recriar cadastro/prévia/aprovação. Rotas de destinos, status, despacho pontual, logs, recuperação e resolução integradas ao publisher. Configuração do destino invalida revisões pendentes e nunca libera `SENDING/UNCERTAIN`; bloqueios seguem destino → produto → outbox. Falha de persistência após o HTTP conserva a reserva para resolução manual.
+
+**Infraestrutura efetivamente validada após o responsável iniciar o Docker:** Docker Engine **29.8.2**; Compose `postgres` **running/healthy**; PostgreSQL principal conectado. Alembic `upgrade head`, `current` e `check` passaram na revisão **0005_telegram_outbox**, sem drift. Contagens dos dados existentes conferidas antes/depois da migração e preservadas. Banco `ofertas_bot_test` já existente confirmado, sem excluir bancos/volumes/tabelas existentes.
+
+**Grupo persistido:** preparação CLI retornou destino **id 2**, nome **Viana Ofertas**, Chat ID **-5309308689**, `enabled=false`, `manual_approval_required=true`. O grupo permanece sem filtro habilitado e sem permissão global de envio. Nenhum contato com a API Telegram real ocorreu. `.env` e credenciais não foram modificados; as duas flags Telegram, Mercado Livre e Shopee foram confirmadas em `false`.
+
+**Testes desta continuação, sem somar execuções sobrepostas:** regressão pertinente **334 aprovados, sete PostgreSQL ignorados** antes da disponibilidade do banco; conjunto final Telegram/manual **205 aprovados**. Após iniciar Docker, **12 testes PostgreSQL reais aprovados**, zero falhas/skips, incluindo migração, metadados/constraints, cadastro pausado, prévias concorrentes e um único despacho concorrente com publisher oficial mockado. Cada caso usou schemas temporários em `ofertas_bot_test`. As antigas pendências de conexão/migração/preparação foram resolvidas.
+
+**Fechamento técnico da Fase 4, código e mocks:** a suíte integral `pytest -q --tb=short` aprovou **982 testes em 268,29 s**, **zero falhas e zero skips**, incluindo os 755 anteriores e os 12 PostgreSQL reais. `TEST_DATABASE_URL` existiu somente no subprocesso e apontou exclusivamente para `ofertas_bot_test`. Os 17 avisos são de depreciação de dependências (Starlette/httpx e adaptador datetime SQLite), sem falhas funcionais. Ruff, formatação e `git diff --check` aprovados. O banco principal preserva nove categorias, `Ofertas de Casa` desativado, scheduler pausado e outbox Telegram vazia; somente o destino Viana Ofertas foi preparado, sem ativação.
+
+Não há autorização para mensagens reais, inclusive no grupo de testes. Acesso real do bot, token/allowlist quando necessários, seleção de filtros e envio pontual permanecem para uma operação futura explicitamente autorizada. Isso não foi presumido pela validação com mocks. Nenhum avanço às Fases 5/6 e nenhum commit final criado nesta execução. Contratos e recuperação em [docs/TELEGRAM_FASE_4.md](docs/TELEGRAM_FASE_4.md).
+
+**Salvamento Git — 20/10/2026:** após a validação integral, o responsável solicitou um commit local para salvar o progresso na branch `codex/fase-3`. Inclui implementação, migração, testes e documentação, preservando os diagnósticos anteriores. Credenciais, `.env`, bancos e arquivos de runtime continuam fora do versionamento. Não há autorização para push ou publicação real; as flags e pausas permanecem preservadas.
 
 ## Fase 5 — Ampliar cupons e operação da fila
 

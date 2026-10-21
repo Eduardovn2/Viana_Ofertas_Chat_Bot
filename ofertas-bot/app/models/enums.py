@@ -89,6 +89,17 @@ class PublicationStatus(StrEnum):
     FAILED = "FAILED"
 
 
+class TelegramPublicationStatus(StrEnum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    SENDING = "SENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+    UNCERTAIN = "UNCERTAIN"
+    EXPIRED = "EXPIRED"
+    REJECTED = "REJECTED"
+
+
 class MonitoringJobStatus(StrEnum):
     IDLE = "IDLE"
     RUNNING = "RUNNING"

@@ -10,16 +10,20 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.categories import router as categories_router
 from app.api.integrations import router as integrations_router
+from app.api.manual_offers import router as manual_offers_router
 from app.api.monitoring import router as monitoring_router
 from app.api.oauth import admin_router as oauth_admin_router
 from app.api.oauth import callback_router as oauth_callback_router
 from app.api.products import router as products_router
+from app.api.telegram import router as telegram_router
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging, protect_oauth_access_logs
 from app.db import build_engine, build_session_factory
 from app.integrations.registry import ConnectorRegistry
+from app.integrations.telegram import TelegramPublisher
 from app.jobs.runtime import MonitoringRuntime
 from app.services.oauth_context import OAuthContext
+from app.services.telegram_publication import TelegramPublicationService
 
 logger = logging.getLogger("ofertas_bot")
 
@@ -39,6 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
         finally:
             application.state.monitoring.shutdown()
+            application.state.telegram_publisher.close()
             engine.dispose()
 
     application = FastAPI(title="Ofertas Bot", version="0.3.0", lifespan=lifespan)
@@ -46,6 +51,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.mercadolivre_oauth = OAuthContext(fixed_oauth_settings)
     application.state.engine = engine
     application.state.session_factory = build_session_factory(engine)
+    application.state.telegram_publisher = TelegramPublisher(settings)
+    application.state.telegram_publications = TelegramPublicationService(
+        settings, publisher=application.state.telegram_publisher
+    )
     application.state.integrations = ConnectorRegistry(
         settings, session_factory=application.state.session_factory
     )
@@ -99,6 +108,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(monitoring_router)
     application.include_router(categories_router)
     application.include_router(integrations_router)
+    application.include_router(manual_offers_router)
+    application.include_router(telegram_router)
     application.include_router(oauth_admin_router)
     application.include_router(oauth_callback_router)
     return application

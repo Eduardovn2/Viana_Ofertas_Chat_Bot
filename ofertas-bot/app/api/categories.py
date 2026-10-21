@@ -97,7 +97,11 @@ def category_or_404(session, category_id):
 
 
 def destination_or_404(session, destination_id):
-    destination = session.get(PublicationDestination, destination_id)
+    destination = session.scalar(
+        select(PublicationDestination)
+        .where(PublicationDestination.id == destination_id)
+        .with_for_update()
+    )
     if destination is None:
         raise HTTPException(404, "Destino não encontrado")
     return destination
@@ -248,6 +252,11 @@ def set_destination_categories(destination_id: int, data: DestinationPreferences
     for category_id in data.category_ids:
         session.add(DestinationCategory(destination_id=destination.id, category_id=category_id))
     destination.category_mode = data.mode
+    from app.models import DestinationChannel
+    from app.services.telegram_destinations import invalidate_reviews
+
+    if destination.channel == DestinationChannel.TELEGRAM:
+        invalidate_reviews(session, destination.id)
     session.flush()
     session.expire(destination, ["category_links"])
     invalidate_ineligible_queue(session, destination_id=destination.id)

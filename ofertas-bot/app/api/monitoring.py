@@ -308,6 +308,19 @@ def update_destination(destination_id: int, data: DestinationUpdate, session: Db
     destination = session.get(PublicationDestination, destination_id)
     if destination is None:
         raise HTTPException(404, "Destino não encontrado")
+    if destination.channel == DestinationChannel.TELEGRAM:
+        from app.services.telegram_destinations import configure_destination, destination_or_error
+
+        try:
+            destination = configure_destination(
+                session,
+                destination=destination_or_error(session, destination_id),
+                **data.model_dump(exclude_unset=True),
+            )
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
+        commit(session)
+        return destination
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(destination, key, value)
     session.flush()

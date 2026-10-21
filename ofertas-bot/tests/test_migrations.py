@@ -31,6 +31,7 @@ from app.models import (
     DestinationCategory,
     DestinationChannel,
     IntegrationEvent,
+    ManualOfferDetails,
     MonitoringLease,
     Offer,
     OfferStatus,
@@ -43,6 +44,8 @@ from app.models import (
     PublicationQueueItem,
     QueueStatus,
     SourceType,
+    TelegramPublication,
+    TelegramPublicationStatus,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +67,10 @@ EXPECTED_TABLES = {
     "destination_categories",
     "coupon_evidence",
     "integration_events",
+    "manual_offer_details",
+    "telegram_publications",
 }
+PHASE4_TABLES = {"manual_offer_details", "telegram_publications"}
 
 
 @pytest.fixture
@@ -219,6 +225,10 @@ def test_initial_revision_compiles_for_postgresql(monkeypatch):
     assert "CREATE TABLE destination_categories" in sql
     assert "CREATE TABLE coupon_evidence" in sql
     assert "CREATE TABLE integration_events" in sql
+    assert "CREATE TABLE manual_offer_details" in sql
+    assert "CREATE TABLE telegram_publications" in sql
+    assert "ck_telegram_publications_active_slot_matches_status" in sql
+    assert "UNCERTAIN" in sql
     assert "FREE_SHIPPING" in sql
     assert "CONDITIONAL" in sql
     assert "JSONB" in sql
@@ -955,6 +965,7 @@ def test_integration_events_preserve_errors_without_changing_valid_prices(migrat
         "integration_event",
     ],
 )
+@pytest.mark.parametrize("migration_database", ["0004_marketplace_provenance"], indirect=True)
 def test_marketplace_downgrade_refuses_data_loss_before_any_schema_change(migration_database, risk):
     config, engine = migration_database
     ids = _seed_legacy_data(engine)
@@ -999,7 +1010,9 @@ def test_marketplace_downgrade_refuses_data_loss_before_any_schema_change(migrat
         session.commit()
     with pytest.raises(RuntimeError, match="without data loss"):
         command.downgrade(config, "0003_category_routing")
-    assert set(inspect(engine).get_table_names()) == EXPECTED_TABLES | {"alembic_version"}
+    assert set(inspect(engine).get_table_names()) == EXPECTED_TABLES - PHASE4_TABLES | {
+        "alembic_version"
+    }
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
@@ -1020,6 +1033,260 @@ def test_marketplace_downgrade_offline_postgresql_emits_guard_before_drop(monkey
     assert sql.index("Cannot downgrade marketplace provenance without data loss") < sql.index(
         "DROP TABLE integration_events"
     )
+
+
+def _seed_telegram_rows(engine):
+    """A verified manual observation, independent of the simulated queue and all networks."""
+    now = datetime(2026, 10, 18, 12, tzinfo=UTC)
+    with Session(engine) as session:
+        product = Product(
+            platform=Platform.MERCADO_LIVRE,
+            name="SYNTHETIC oferta manual",
+            original_url="https://example.test/synthetic-product",
+            monitoring_enabled=False,
+        )
+        session.add(product)
+        session.flush()
+        history = ProductPriceHistory(
+            product_id=product.id,
+            current_price=Decimal("89.90"),
+            previous_price=Decimal("99.90"),
+            currency="BRL",
+            availability=Availability.AVAILABLE,
+            price_access=PriceAccess.PUBLIC,
+            source="manual_verified",
+            source_type=SourceType.MANUAL,
+            is_simulated=False,
+            observed_at=now,
+            installment_text="3x sem juros",
+        )
+        destination = PublicationDestination(
+            name="SYNTHETIC Telegram sem envio",
+            channel=DestinationChannel.TELEGRAM,
+            external_id="synthetic:telegram:outbox",
+            enabled=False,
+            manual_approval_required=True,
+            category_mode=CategoryMode.ALL,
+        )
+        session.add_all([history, destination])
+        session.flush()
+        offer = Offer(
+            product_id=product.id,
+            price_history_id=history.id,
+            current_price=Decimal("89.90"),
+            previous_price=Decimal("99.90"),
+            status=OfferStatus.PENDING_REVIEW,
+        )
+        session.add(offer)
+        session.flush()
+        session.add(
+            ManualOfferDetails(
+                offer_id=offer.id,
+                verified_by="synthetic-admin",
+                verified_at=now,
+                image_url="https://images.example.test/synthetic.jpg",
+            )
+        )
+        session.commit()
+        return {
+            "product_id": product.id,
+            "offer_id": offer.id,
+            "destination_id": destination.id,
+            "history_id": history.id,
+        }
+
+
+def _telegram_entry(ids, **changes):
+    return TelegramPublication(
+        product_id=ids["product_id"],
+        offer_id=ids["offer_id"],
+        destination_id=ids["destination_id"],
+        preview_payload={
+            "text": "SYNTHETIC Oferta R$ 89,90",
+            "price": "89.90",
+            "evidence": {"source_type": "MANUAL", "history_id": ids["history_id"]},
+        },
+        preview_hash="a" * 64,
+        **changes,
+    )
+
+
+@pytest.mark.parametrize("migration_database", ["0004_marketplace_provenance"], indirect=True)
+def test_telegram_upgrade_preserves_phase3_rows_and_simulated_queue_constraints(migration_database):
+    config, engine = migration_database
+    ids = _seed_legacy_data(engine)
+    queue_checks = inspect(engine).get_check_constraints("publication_queue_items")
+    command.upgrade(config, "head")
+    _assert_legacy_data_intact(engine, ids)
+    assert inspect(engine).get_check_constraints("publication_queue_items") == queue_checks
+    with engine.connect() as connection:
+        for table in PHASE4_TABLES:
+            assert connection.scalar(text(f"SELECT count(*) FROM {table}")) == 0
+    command.downgrade(config, "0004_marketplace_provenance")
+    _assert_legacy_data_intact(engine, ids)
+    assert not PHASE4_TABLES & set(inspect(engine).get_table_names())
+    command.upgrade(config, "head")
+    _assert_legacy_data_intact(engine, ids)
+
+
+def test_telegram_approval_uncertainty_holds_slot_until_audited_terminal_transition(
+    migration_database,
+):
+    _, engine = migration_database
+    ids = _seed_telegram_rows(engine)
+    _assert_telegram_active_slot_lifecycle(engine, ids)
+
+
+def _assert_telegram_active_slot_lifecycle(engine, ids):
+    """Run identically on migrated SQLite and isolated real PostgreSQL."""
+    now = datetime(2026, 10, 18, 12, tzinfo=UTC)
+    with Session(engine, expire_on_commit=False) as session:
+        entry = _telegram_entry(ids)
+        session.add(entry)
+        session.commit()
+        assert entry.status == TelegramPublicationStatus.PENDING
+        assert entry.active_slot == 1 and entry.attempt_number == 0
+        entry.status, entry.approved_by, entry.approved_at = (
+            TelegramPublicationStatus.APPROVED,
+            "synthetic-reviewer",
+            now,
+        )
+        session.commit()
+        entry.status, entry.claimed_at, entry.attempt_number = (
+            TelegramPublicationStatus.SENDING,
+            now,
+            1,
+        )
+        session.commit()
+        entry.status = TelegramPublicationStatus.UNCERTAIN
+        entry.last_error_code = "SYNTHETIC_TIMEOUT"
+        session.commit()
+        session.expire_all()
+        entry = session.get(TelegramPublication, entry.id)
+        assert entry.active_slot == 1 and entry.retry_at is None
+        assert entry.approved_at.tzinfo is UTC and entry.claimed_at.tzinfo is UTC
+        assert entry.preview_payload["evidence"] == {
+            "source_type": "MANUAL",
+            "history_id": ids["history_id"],
+        }
+        assert entry.preview_payload["price"] == "89.90"
+        session.add(_telegram_entry(ids))
+        with pytest.raises(IntegrityError):
+            session.commit()
+        session.rollback()
+        entry = session.get(TelegramPublication, entry.id)
+        assert entry.status == TelegramPublicationStatus.UNCERTAIN and entry.active_slot == 1
+        entry.status, entry.active_slot = TelegramPublicationStatus.SENT, None
+        entry.resolved_at, entry.resolved_by, entry.resolution = (
+            now,
+            "synthetic-auditor",
+            "CONFIRMED_SENT",
+        )
+        entry.resolution_evidence = "SYNTHETIC auditor confirmed message in a fixture channel"
+        entry.message_id, entry.sent_at = "synthetic-message-1", now
+        session.add(_telegram_entry(ids))
+        session.commit()
+        assert session.scalar(select(func.count()).select_from(TelegramPublication)) == 2
+        assert entry.active_slot is None and entry.resolved_at.tzinfo is UTC
+        assert entry.resolution_evidence.startswith("SYNTHETIC auditor")
+        manual = session.get(ManualOfferDetails, ids["offer_id"])
+        history = session.get(ProductPriceHistory, ids["history_id"])
+        assert manual.verified_at.tzinfo is UTC and manual.verified_by == "synthetic-admin"
+        assert history.source_type == SourceType.MANUAL and not history.is_simulated
+        assert history.current_price == Decimal("89.90")
+        assert not session.get(Product, ids["product_id"]).monitoring_enabled
+        assert session.scalar(select(func.count()).select_from(PublicationQueueItem)) == 0
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"status": "UNCERTAIN", "active_slot": None},
+        {"status": "APPROVED", "active_slot": None},
+        {"status": "SENDING", "active_slot": 2},
+        {"status": "SENT", "active_slot": 1},
+        {"status": "FAILED", "active_slot": 1},
+        {"status": "UNKNOWN", "active_slot": 1},
+        {"attempt_number": -1},
+        {"preview_hash": "short"},
+    ],
+)
+def test_telegram_database_rejects_invalid_publication_states(migration_database, values):
+    _, engine = migration_database
+    ids = _seed_telegram_rows(engine)
+    raw = {
+        "offer_id": ids["offer_id"],
+        "product_id": ids["product_id"],
+        "destination_id": ids["destination_id"],
+        "preview_hash": "b" * 64,
+        "created_at": datetime(2026, 10, 18, 12, tzinfo=UTC),
+        "updated_at": datetime(2026, 10, 18, 12, tzinfo=UTC),
+        **values,
+    }
+    # Raw SQL bypasses the ORM enum validator: the migrated DB must enforce it.
+    columns = ", ".join(raw)
+    parameters = ", ".join(f":{column}" for column in raw)
+    with engine.begin() as connection:
+        with pytest.raises(IntegrityError):
+            connection.execute(
+                text(f"INSERT INTO telegram_publications ({columns}) VALUES ({parameters})"), raw
+            )
+
+
+@pytest.mark.parametrize("parent", ["products", "offers", "publication_destinations"])
+def test_telegram_foreign_keys_restrict_parent_deletion(migration_database, parent):
+    _, engine = migration_database
+    ids = _seed_telegram_rows(engine)
+    with Session(engine) as session:
+        session.add(_telegram_entry(ids))
+        session.commit()
+    key = {
+        "products": "product_id",
+        "offers": "offer_id",
+        "publication_destinations": "destination_id",
+    }[parent]
+    with engine.begin() as connection:
+        with pytest.raises(IntegrityError):
+            connection.execute(text(f"DELETE FROM {parent} WHERE id=:id"), {"id": ids[key]})
+
+
+@pytest.mark.parametrize("table", ["manual_offer_details", "telegram_publications"])
+def test_telegram_downgrade_refuses_any_audit_data_before_dropping_tables(
+    migration_database, table
+):
+    config, engine = migration_database
+    ids = _seed_telegram_rows(engine)
+    if table == "telegram_publications":
+        with Session(engine) as session:
+            session.execute(ManualOfferDetails.__table__.delete())
+            session.add(_telegram_entry(ids))
+            session.commit()
+    with pytest.raises(RuntimeError, match="without data loss"):
+        command.downgrade(config, "0004_marketplace_provenance")
+    assert PHASE4_TABLES <= set(inspect(engine).get_table_names())
+    with engine.connect() as connection:
+        assert (
+            connection.scalar(text("SELECT version_num FROM alembic_version"))
+            == "0005_telegram_outbox"
+        )
+        assert connection.scalar(text(f"SELECT count(*) FROM {table}")) == 1
+
+
+def test_telegram_downgrade_postgresql_offline_guards_precede_table_removal(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://test@localhost/test")
+    get_settings.cache_clear()
+    output = StringIO()
+    config = Config(str(PROJECT_ROOT / "alembic.ini"), output_buffer=output)
+    try:
+        command.downgrade(config, "0005_telegram_outbox:0004_marketplace_provenance", sql=True)
+    finally:
+        get_settings.cache_clear()
+    sql = output.getvalue()
+    assert sql.index("Cannot downgrade Telegram outbox without data loss") < sql.index(
+        "DROP TABLE telegram_publications"
+    )
+    assert "EXISTS (SELECT 1 FROM manual_offer_details)" in sql
+    assert "EXISTS (SELECT 1 FROM telegram_publications)" in sql
 
 
 @pytest.mark.postgres

@@ -52,7 +52,7 @@ def test_technical_postgres_schema_constraints_and_non_destructive_downgrade(cat
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0007_simulated_automation"
+            == "0009_shopee_discovery"
         )
         assert connection.scalar(select(func.count()).select_from(Technical)) == 1
         assert connection.scalar(select(func.count()).select_from(Audit)) == 1

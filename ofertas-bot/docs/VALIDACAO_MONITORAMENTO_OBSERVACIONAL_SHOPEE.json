@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-26",
+  "mode": "OFFLINE_OBSERVATIONAL_ONLY",
+  "tests": {
+    "targeted_passed": 287,
+    "offline_passed": 1500,
+    "postgres_passed": 93,
+    "unique_passed": 1593,
+    "new_offline_tests": 78,
+    "new_postgres_tests": 13,
+    "failures": 0,
+    "skipped": 0,
+    "targeted_overlaps_final_suites": true,
+    "offline_dependency_warnings": 17
+  },
+  "ruff_check": "PASSED",
+  "ruff_format_check": {
+    "status": "PASSED",
+    "python_files": 175
+  },
+  "alembic": {
+    "heads": "0009_shopee_discovery",
+    "current_check": "PASSED_IN_UUID_TEST_SCHEMA",
+    "test_database": "ofertas_bot_test",
+    "operational_migrations": 0
+  },
+  "preservation": {
+    "operational_product_2_and_histories_2_3_unchanged": true,
+    "operational_settings_and_destinations_unchanged": true,
+    "test_public_tables_and_preexisting_schemas_unchanged": true,
+    "protected_files_unchanged": 5,
+    "flags": {
+      "shopee_enabled": false,
+      "shopee_short_links_enabled": false,
+      "mercado_livre_enabled": false,
+      "telegram_publisher_enabled": false,
+      "telegram_real_sends_authorized": false,
+      "simulation_automation_enabled": false
+    },
+    "group_enabled": false,
+    "persisted_scheduler_enabled": false
+  },
+  "http_guards": {
+    "targeted": {
+      "real_http_allowed": false,
+      "blocked_requests": 0
+    },
+    "offline": {
+      "real_http_allowed": false,
+      "blocked_requests": 0
+    },
+    "postgres": {
+      "real_http_allowed": false,
+      "blocked_requests": 0
+    }
+  },
+  "real_shopee_calls": 0,
+  "real_mutations": 0,
+  "real_telegram_calls": 0,
+  "operational_scheduler_started": false,
+  "operational_database_writes": 0,
+  "existing_authorizations_reused": false,
+  "env_changed": false,
+  "credentials_changed": false,
+  "commit_or_push": false,
+  "commercial_eligibility": "BLOCKED",
+  "future_real_observation_endpoint": "BLOCKED_409_REGARDLESS_OF_FLAGS",
+  "future_payload": "docs/PAYLOAD_OBSERVACIONAL_COCKPIT_SHOPEE.json",
+  "remaining_gates": [
+    "official_account_quotas_and_permissions",
+    "period_units_and_semantics",
+    "new_bounded_read_authorization",
+    "real_observational_adapter_and_recovery_review",
+    "separate_operational_persistence_authorization",
+    "official_commercial_conditions_and_link_trust_policy",
+    "separate_recurring_operation_and_publication_authorizations"
+  ]
+}

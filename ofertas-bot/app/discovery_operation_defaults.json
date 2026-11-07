@@ -1,0 +1,42 @@
+{
+  "timezone": "America/Sao_Paulo",
+  "working_days": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "windows": [
+    {
+      "start": "00:00",
+      "end": "24:00"
+    }
+  ],
+  "discovery_interval_seconds": 900,
+  "monitor_interval_seconds": 900,
+  "evaluation_interval_seconds": 900,
+  "normal_min_discount": "0",
+  "normal_min_score": "100",
+  "exceptional_enabled": false,
+  "exceptional_min_discount": "30",
+  "exceptional_min_score": "100",
+  "enabled_category_ids": [],
+  "priority_category_ids": [],
+  "priority_product_ids": [],
+  "quota_period_seconds": 3600,
+  "max_queries_per_period": 12,
+  "max_queries_per_category_per_period": 4,
+  "max_requests_per_run": 2,
+  "max_predictions_per_period": 10,
+  "max_predictions_per_category_per_period": 2,
+  "max_predictions_per_destination_per_period": 1,
+  "max_results_per_evaluation": 100,
+  "backoff_initial_seconds": 900,
+  "backoff_max_seconds": 86400,
+  "lease_seconds": 120,
+  "affiliate_links_simulation_enabled": false,
+  "max_affiliate_links_per_evaluation": 1
+}

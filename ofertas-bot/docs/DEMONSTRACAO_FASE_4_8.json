@@ -1,0 +1,168 @@
+{
+  "mode": "OFFLINE",
+  "input": "sanitized observed Shopee node of 2026-10-21",
+  "price_scenarios": [
+    {
+      "price": "59.00",
+      "provenance": "replay_of_observed_response"
+    },
+    {
+      "price": "55.00",
+      "provenance": "SYNTHETIC_HYPOTHETICAL_CHANGE_NOT_LIVE"
+    }
+  ],
+  "database": ".runtime/shopee-phase48-offline-6801f6698276493ebb47584db5e31e6a.simulation.db",
+  "products": 1,
+  "observations": 2,
+  "runs": [
+    {
+      "id": "07f99d53-d957-44c6-86cf-859069c772cb",
+      "mode": "OFFLINE",
+      "status": "SUCCEEDED",
+      "requests_reserved": 1,
+      "error_code": null,
+      "result": {
+        "products": 1,
+        "http_calls": 1,
+        "candidates": [
+          {
+            "id": 1,
+            "product_id": 1,
+            "history_id": 1,
+            "status": "INITIAL",
+            "reported_change": {
+              "previous_historical_price": null,
+              "current_price": "59.00",
+              "direction": "INITIAL",
+              "amount": null,
+              "percentage": null
+            },
+            "verified_change": {
+              "previous_historical_price": null,
+              "current_price": "59.00",
+              "direction": "UNAVAILABLE",
+              "amount": null,
+              "percentage": null
+            },
+            "reasons": [],
+            "categories": [
+              "games"
+            ],
+            "requires_manual_approval": true,
+            "publication_authorized": false
+          }
+        ],
+        "has_next_not_followed": true,
+        "publication_calls": 0
+      },
+      "actor": "offline reviewer",
+      "publication_mode": "dry-run",
+      "automatic_monitoring": false
+    },
+    {
+      "id": "3098709e-54b3-44eb-8a35-1a76069a2d3c",
+      "mode": "OFFLINE",
+      "status": "SUCCEEDED",
+      "requests_reserved": 1,
+      "error_code": null,
+      "result": {
+        "products": 1,
+        "http_calls": 1,
+        "candidates": [
+          {
+            "id": 2,
+            "product_id": 1,
+            "history_id": 2,
+            "status": "UNVERIFIED",
+            "reported_change": {
+              "previous_historical_price": "59.00",
+              "current_price": "55.00",
+              "direction": "DROP",
+              "amount": "-4.00",
+              "percentage": "-6.78"
+            },
+            "verified_change": {
+              "previous_historical_price": null,
+              "current_price": "55.00",
+              "direction": "UNAVAILABLE",
+              "amount": null,
+              "percentage": null
+            },
+            "reasons": [],
+            "categories": [
+              "games"
+            ],
+            "requires_manual_approval": true,
+            "publication_authorized": false
+          }
+        ],
+        "has_next_not_followed": true,
+        "publication_calls": 0
+      },
+      "actor": "offline reviewer",
+      "publication_mode": "dry-run",
+      "automatic_monitoring": false
+    },
+    {
+      "id": "b25ecd74-bf99-434c-963a-f3a03e16eda6",
+      "mode": "OFFLINE",
+      "status": "SUCCEEDED",
+      "requests_reserved": 1,
+      "error_code": null,
+      "result": {
+        "products": 1,
+        "http_calls": 1,
+        "candidates": [
+          {
+            "id": 3,
+            "product_id": 1,
+            "history_id": 2,
+            "status": "FILTERED",
+            "reported_change": {
+              "previous_historical_price": "59.00",
+              "current_price": "55.00",
+              "direction": "DROP",
+              "amount": "-4.00",
+              "percentage": "-6.78"
+            },
+            "verified_change": {
+              "previous_historical_price": null,
+              "current_price": "55.00",
+              "direction": "UNAVAILABLE",
+              "amount": null,
+              "percentage": null
+            },
+            "reasons": [
+              "PRODUCT_FILTER_OR_AMBIGUOUS_INTENT"
+            ],
+            "categories": [
+              "games"
+            ],
+            "requires_manual_approval": true,
+            "publication_authorized": false
+          }
+        ],
+        "has_next_not_followed": true,
+        "publication_calls": 0
+      },
+      "actor": "offline reviewer",
+      "publication_mode": "dry-run",
+      "automatic_monitoring": false
+    }
+  ],
+  "offers": 0,
+  "outbox_entries": 0,
+  "mock_http_calls": 3,
+  "real_commercial_calls": 0,
+  "telegram_calls": 0,
+  "duplicate_run_extra_calls": 0,
+  "schedule": {
+    "status": "PAUSED",
+    "interval_seconds": 900,
+    "requests_per_run": 1,
+    "max_products": 5,
+    "commercial_polling_authorized": false
+  },
+  "real_flags_enabled": false,
+  "scheduler_started": false
+}

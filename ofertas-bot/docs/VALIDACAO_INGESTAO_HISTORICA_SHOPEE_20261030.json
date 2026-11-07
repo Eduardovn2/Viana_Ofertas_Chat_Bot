@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-30",
+  "offline_passed": 85,
+  "postgres_passed": 17,
+  "total_selected_passed": 102,
+  "failures": 0,
+  "new_offline_tests": 7,
+  "new_postgres_tests": 4,
+  "full_suite_repeated": false,
+  "ruff": "PASSED",
+  "format": "PASSED",
+  "alembic_head": "0009_shopee_discovery",
+  "operational_migrations": 0,
+  "preservation": {
+    "operational_product_2_and_histories_2_3_unchanged": true,
+    "operational_settings_and_destinations_unchanged": true,
+    "test_public_tables_and_preexisting_schemas_unchanged": true,
+    "protected_files_unchanged": 7,
+    "flags": {
+      "shopee_enabled": false,
+      "shopee_short_links_enabled": false,
+      "mercado_livre_enabled": false,
+      "telegram_publisher_enabled": false,
+      "telegram_real_sends_authorized": false,
+      "simulation_automation_enabled": false
+    },
+    "group_enabled": false,
+    "persisted_scheduler_enabled": false
+  },
+  "operational_ingestion": "BLOCKED_PENDING_NEW_EXPLICIT_AUTHORIZATION",
+  "additional_real_shopee_calls": 0,
+  "mutations": 0,
+  "telegram_calls": 0,
+  "operational_database_writes": 0,
+  "commit_or_push": false
+}

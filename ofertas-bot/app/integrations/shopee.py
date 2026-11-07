@@ -9,9 +9,10 @@ import json
 import math
 import re
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
-from urllib.parse import parse_qsl, unquote, urlsplit
+from urllib.parse import unquote, urlsplit
 from uuid import uuid4
 
 from pydantic import SecretStr
@@ -21,6 +22,7 @@ from app.integrations.contracts import (
     Capability,
     CapabilityStatus,
     DiscoveryPage,
+    PriceContext,
     ProductRef,
     ProductSnapshot,
     fingerprint,
@@ -33,18 +35,18 @@ from app.integrations.errors import (
 )
 from app.integrations.http import JsonResponse, JsonTransport
 from app.models import Availability, Platform, PriceAccess, SourceType
-from app.services.products import normalize_product_identity, validate_affiliate_url
+from app.services.products import validate_affiliate_url
+from app.services.shopee_identity import url_identity, validate_target
 
 ENDPOINT = "https://open-api.affiliate.shopee.com.br/graphql"
 _PRODUCT_FIELDS = (
     "itemId shopId productName productLink imageUrl price priceMin priceMax "
-    "productCatIds commissionRate commission"
+    "productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime"
 )
 _PAGE_FIELDS = "page limit hasNextPage"
+_MULTISTORE_FIELDS = _PRODUCT_FIELDS + " shopName ratingStar sales shopType"
 _NUMERIC_ID = re.compile(r"[1-9][0-9]{0,18}\Z")
 _REFERENCE_ID = re.compile(r"([1-9][0-9]{0,18}):([1-9][0-9]{0,18})\Z")
-_PRODUCT_PATH = re.compile(r"/product/([1-9][0-9]{0,18})/([1-9][0-9]{0,18})/?\Z")
-_SLUG_PATH = re.compile(r"/[^/]+-i\.([1-9][0-9]{0,18})\.([1-9][0-9]{0,18})/?\Z")
 
 
 def _positive_id(value) -> str:
@@ -58,19 +60,9 @@ def _positive_id(value) -> str:
 
 def _url_identity(url: str) -> tuple[str, str]:
     try:
-        normalize_product_identity(Platform.SHOPEE, url, None)
-        parsed = urlsplit(url)
-        if parsed.fragment:
-            raise ValueError
-        path = unquote(parsed.path)
-        match = _PRODUCT_PATH.fullmatch(path) or _SLUG_PATH.fullmatch(path)
-        if match is None:
-            raise ValueError
-        return _positive_id(match.group(1)), _positive_id(match.group(2))
-    except (ValueError, TypeError):
-        raise InvalidPayload(
-            "Use uma URL canônica de produto Shopee com loja e item identificáveis."
-        ) from None
+        return url_identity(url)
+    except ValueError:
+        raise InvalidPayload("URL Shopee não comprova uma identidade de produto válida.") from None
 
 
 def _category_id(value) -> str:
@@ -81,33 +73,17 @@ def _category_id(value) -> str:
 
 
 def _link_target_verified(long_url: str, expected: tuple[str, str]) -> bool:
-    """Require the authenticated response to identify the requested product.
+    """Validate only product identity, never account ownership or attribution.
 
-    An unfamiliar Shopee affiliate/deep-link format remains unverified. It is
-    never followed or decoded speculatively to claim ownership of a product link.
+    Only explicit product paths are accepted; no redirects or speculative deep
+    link decoding. Tracking queries remain untouched in the returned result.
     """
     try:
-        actual = _url_identity(long_url)
-    except InvalidPayload:
-        try:
-            normalize_product_identity(Platform.SHOPEE, long_url, None)
-        except (ValueError, TypeError):
-            raise InvalidPayload("O destino retornado não é uma URL Shopee permitida.") from None
-        return False
-    if actual != expected:
-        raise InvalidPayload("O link retornado aponta para outro produto Shopee.")
-    selectors = {
-        "variation",
-        "variation_id",
-        "variationid",
-        "searchvariation",
-        "attributes",
-        "modelid",
-        "model_id",
-        "sku",
-        "sku_id",
-    }
-    return not any(key.casefold() in selectors for key, _ in parse_qsl(urlsplit(long_url).query))
+        return validate_target(long_url, expected)
+    except ValueError:
+        raise InvalidPayload(
+            "O destino retornado não comprova o produto Shopee esperado."
+        ) from None
 
 
 def _money(value, *, optional: bool = True) -> Decimal | None:
@@ -138,6 +114,31 @@ def _commission(value) -> str | None:
     except InvalidOperation:
         return None
     return str(amount) if amount.is_finite() and amount >= 0 else None
+
+
+def _announced_fields(node) -> dict:
+    """Keep reported discount and opaque Int64 periods separate from verified facts."""
+    percent = node.get("priceDiscountRate")
+    if percent is not None and (type(percent) is not int or not 0 <= percent <= 100):
+        raise InvalidPayload("Percentual anunciado Shopee inválido.")
+    evidence = {
+        "advertised_discount_percent": percent,
+        "period_time_unit": "UNCONFIRMED",
+        "period_semantics": "UNCONFIRMED",
+        "commercial_verified": False,
+    }
+    for incoming, outgoing in (
+        ("periodStartTime", "offer_period_start_raw"),
+        ("periodEndTime", "offer_period_end_raw"),
+    ):
+        value = node.get(incoming)
+        # The custom Int64 scalar also accepts a lossless decimal-string encoding.
+        if isinstance(value, str) and re.fullmatch(r"-?(?:0|[1-9][0-9]{0,18})", value):
+            value = int(value)
+        if value is not None and (type(value) is not int or not -(2**63) <= value < 2**63):
+            raise InvalidPayload("Período Shopee incompatível com Int64.")
+        evidence[outgoing] = value
+    return evidence
 
 
 def _image(value) -> str | None:
@@ -321,7 +322,38 @@ class ShopeeConnector:
             ]
         else:
             raise InvalidPayload("Categorias Shopee incompatíveis com o esquema.")
-        evidence = {"category_external_ids": categories}
+        context = PriceContext(
+            origin="shopee:official_api",
+            operation="productOfferV2",
+            product_identity=f"{shop_id}:{item_id}",
+            variant_identity=variant_id or "UNKNOWN",
+            price_kind="ITEM_QUOTE" if current is not None else "UNRESOLVED_QUOTE",
+        )
+        evidence = {
+            "category_external_ids": categories,
+            **_announced_fields(node),
+            "price_context": context.model_dump(),
+            "price_basis": context.price_basis,
+            "variant_status": "UNCONFIRMED",
+        }
+        # Preserve a supplied link as a candidate only. The existing selections
+        # and signed payloads are unchanged; ownership is not inferred.
+        if node.get("offerLink"):
+            try:
+                candidate = validate_affiliate_url(Platform.SHOPEE, node["offerLink"])
+                evidence["affiliate_link_candidate"] = dict(
+                    url=candidate,
+                    ownership_verified=False,
+                    operationally_verified=False,
+                    identity_source="PROVIDER_NODE_ASSOCIATION_NOT_ACCOUNT_OWNERSHIP",
+                )
+            except ValueError:
+                evidence["affiliate_link_candidate"] = dict(
+                    url=None,
+                    status="INVALID_PROVIDER_LINK",
+                    ownership_verified=False,
+                    operationally_verified=False,
+                )
         for incoming, outgoing in (
             ("commissionRate", "commission_rate"),
             ("commission", "commission_amount"),
@@ -337,6 +369,8 @@ class ShopeeConnector:
                 "price_min": minimum,
                 "price_max": maximum,
                 "categories": categories,
+                "price_basis": context.price_basis,
+                **_announced_fields(node),
             }
         )
         return ProductSnapshot(
@@ -361,11 +395,14 @@ class ShopeeConnector:
             category_external_name=None,
             image_url=_image(node.get("imageUrl")),
             seller_id=None,
+            reported_price_min=minimum,
+            reported_price_max=maximum,
         )
 
-    def fetch_product(self, ref: ProductRef) -> ProductSnapshot:
-        self._require_access()
-        if ref.platform != self.platform or not isinstance(ref.external_item_id, str):
+    @staticmethod
+    def product_query(ref: ProductRef, *, include_offer_link: bool = False) -> str:
+        """Build the exact bounded query without signing it or performing I/O."""
+        if ref.platform != Platform.SHOPEE or not isinstance(ref.external_item_id, str):
             raise InvalidPayload("Referência de produto incompatível com Shopee.")
         match = _REFERENCE_ID.fullmatch(ref.external_item_id)
         if match is None:
@@ -379,9 +416,22 @@ class ShopeeConnector:
             or any(char.isspace() or ord(char) < 32 or ord(char) == 127 for char in ref.variant_id)
         ):
             raise InvalidPayload("Identificador de variante inválido.")
-        query = (
+        if type(include_offer_link) is not bool:
+            raise InvalidPayload("Seleção de campos exige confirmação booleana explícita.")
+        fields = _PRODUCT_FIELDS + (" offerLink" if include_offer_link else "")
+        return (
             f"query {{ productOfferV2(shopId:{shop_id},itemId:{item_id},page:1,limit:1) "
-            f"{{ nodes {{ {_PRODUCT_FIELDS} }} pageInfo {{ {_PAGE_FIELDS} }} }} }}"
+            f"{{ nodes {{ {fields} }} pageInfo {{ {_PAGE_FIELDS} }} }} }}"
+        )
+
+    def fetch_product(
+        self, ref: ProductRef, *, include_offer_link: bool = False
+    ) -> ProductSnapshot:
+        self._require_access()
+        query = (
+            self.product_query(ref, include_offer_link=True)
+            if include_offer_link
+            else self.product_query(ref)
         )
         response = self._request(query)
         nodes, _ = self._connection(response, page=1, limit=1)
@@ -392,13 +442,121 @@ class ShopeeConnector:
         snapshot = self._snapshot(nodes[0], response.fetched_at, ref=ref)
         if snapshot.external_item_id != ref.external_item_id:
             raise InvalidPayload("A API Shopee retornou outro produto.")
+        if include_offer_link:
+            link = nodes[0].get("offerLink")
+            try:
+                validate_affiliate_url(self.platform, link)
+                if self.secret and self.secret.get_secret_value() in link:
+                    raise ValueError
+                # An identifiable URL cannot point to another listing. Opaque
+                # official links remain attached to the authenticated node, not
+                # treated as independently resolved destinations.
+                if urlsplit(link).hostname in {"shopee.com.br", "www.shopee.com.br"}:
+                    if not _link_target_verified(link, _url_identity(ref.canonical_url)):
+                        raise ValueError
+            except (ValueError, TypeError):
+                raise InvalidPayload(
+                    "Campo offerLink ausente ou inválido para o anúncio."
+                ) from None
+            snapshot = replace(
+                snapshot,
+                evidence_metadata={
+                    **snapshot.evidence_metadata,
+                    "official_offer_link": link,
+                    "offer_link_source": "productOfferV2.offerLink",
+                    "offer_link_independent_resolution_performed": False,
+                    "offer_link_ownership_automatically_attested": False,
+                },
+            )
         self._verified_operations.add("fetch_product")
         return snapshot
 
     def discover_offers(
-        self, query: str, *, page: int = 1, limit: int = 20, category: str | None = None
+        self,
+        query: str,
+        *,
+        page: int = 1,
+        limit: int = 20,
+        category: str | None = None,
+        profile: str = "standard",
     ) -> DiscoveryPage:
         self._require_access()
+        graphql = self.discovery_query(
+            query, page=page, limit=limit, category=category, profile=profile
+        )
+        response = self._request(graphql, cache=profile == "standard", retry=profile == "standard")
+        nodes, has_next = self._connection(response, page=page, limit=limit)
+        snapshots = [self._snapshot(node, response.fetched_at) for node in nodes]
+        if profile == "multistore":
+            snapshots = [
+                replace(
+                    snapshot,
+                    # Only the new profile changes its evidence binding. Legacy
+                    # identity queries and approved payloads remain untouched.
+                    raw_fingerprint=fingerprint(
+                        {
+                            "quote": snapshot.raw_fingerprint,
+                            "product_name": snapshot.name,
+                            "seller_information": self._seller_information(node),
+                        }
+                    ),
+                    seller_id=snapshot.external_item_id.split(":")[0],
+                    evidence_metadata={
+                        **snapshot.evidence_metadata,
+                        "seller_information": self._seller_information(node),
+                    },
+                )
+                for snapshot, node in zip(snapshots, nodes, strict=True)
+            ]
+        if len({row.external_item_id for row in snapshots}) != len(snapshots):
+            raise InvalidPayload("A página Shopee contém produtos duplicados.")
+        self._verified_operations.add("discover_offers")
+        return DiscoveryPage(snapshots, page, has_next)
+
+    @staticmethod
+    def _seller_information(node):
+        name = node.get("shopName")
+        if name is not None and (
+            not isinstance(name, str)
+            or not name.strip()
+            or len(name) > 500
+            or any(ord(c) < 32 or ord(c) == 127 for c in name)
+        ):
+            raise InvalidPayload("Nome da loja inválido.")
+        rating = node.get("ratingStar")
+        if rating is not None:
+            if not isinstance(rating, str) or len(rating) > 32:
+                raise InvalidPayload("Avaliação anunciada inválida.")
+            try:
+                value = Decimal(rating)
+                if not value.is_finite() or value < 0:
+                    raise ValueError
+            except (InvalidOperation, ValueError):
+                raise InvalidPayload("Avaliação anunciada inválida.") from None
+        sales = node.get("sales")
+        if sales is not None and (type(sales) is not int or not 0 <= sales < 2**63):
+            raise InvalidPayload("Contador anunciado inválido.")
+        types = node.get("shopType")
+        if types is not None and (
+            not isinstance(types, list)
+            or len(types) > 20
+            or any(type(t) is not int or not 0 <= t < 2**31 for t in types)
+        ):
+            raise InvalidPayload("Tipo de loja inválido.")
+        return dict(
+            shop_name=name.strip() if name else None,
+            rating_star=rating,
+            rating_semantics="UNCONFIRMED_NOT_SELLER_REPUTATION",
+            sales=sales,
+            sales_semantics="UNCONFIRMED_NOT_REPUTATION",
+            shop_types=types,
+            shop_type_semantics="UNCONFIRMED_CODES",
+        )
+
+    @staticmethod
+    def discovery_query(query, *, page=1, limit=20, category=None, profile="standard"):
+        if profile not in {"standard", "multistore"}:
+            raise InvalidPayload("Perfil de descoberta inválido.")
         if not isinstance(query, str) or len(query) > 500:
             raise InvalidPayload("Busca Shopee inválida.")
         if type(page) is not int or page < 1 or type(limit) is not int or not 1 <= limit <= 100:
@@ -408,15 +566,9 @@ class ShopeeConnector:
             arguments += f",productCatId:{_category_id(category)}"
         graphql = (
             f"query {{ productOfferV2({arguments}) "
-            f"{{ nodes {{ {_PRODUCT_FIELDS} }} pageInfo {{ {_PAGE_FIELDS} }} }} }}"
+            f"{{ nodes {{ {_MULTISTORE_FIELDS if profile == 'multistore' else _PRODUCT_FIELDS} }} pageInfo {{ {_PAGE_FIELDS} }} }} }}"
         )
-        response = self._request(graphql)
-        nodes, has_next = self._connection(response, page=page, limit=limit)
-        snapshots = [self._snapshot(node, response.fetched_at) for node in nodes]
-        if len({row.external_item_id for row in snapshots}) != len(snapshots):
-            raise InvalidPayload("A página Shopee contém produtos duplicados.")
-        self._verified_operations.add("discover_offers")
-        return DiscoveryPage(snapshots, page, has_next)
+        return graphql
 
     def fetch_coupons(self, ref: ProductRef) -> list:
         raise UnsupportedCapability(
@@ -431,7 +583,7 @@ class ShopeeConnector:
             )
         identity = _url_identity(url)  # Existing affiliate links are not conversion input.
         parsed = urlsplit(url)
-        if parsed.query:
+        if parsed.query or unquote(parsed.path).startswith("/universal-link/"):
             raise InvalidPayload("Use uma URL canônica sem parâmetros de afiliado ou rastreamento.")
         query = (
             "mutation { generateShortLink(input:{originUrl:"
@@ -460,7 +612,13 @@ class ShopeeConnector:
                 raise ValueError
         except (ValueError, TypeError):
             raise InvalidPayload("A API Shopee não retornou um link curto permitido.") from None
-        verified = _link_target_verified(data["longLink"], identity)
-        if verified:
-            self._verified_operations.add("generate_affiliate_link")
-        return AffiliateLinkResult(short, "SHOPEE_AFFILIATE_API", account_verified=verified)
+        identity_verified = _link_target_verified(data["longLink"], identity)
+        # A successful authenticated mutation + matching path does not prove
+        # ownership or conversion attribution. Keep the association gate closed.
+        return AffiliateLinkResult(
+            short,
+            "SHOPEE_AFFILIATE_API",
+            account_verified=False,
+            product_identity_verified=identity_verified,
+            long_url=data["longLink"],
+        )

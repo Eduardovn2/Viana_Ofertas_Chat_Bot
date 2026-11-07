@@ -4,9 +4,10 @@ from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import Field, field_validator
+from pydantic import Field, StrictBool, field_validator
 from sqlalchemy import select
 
 from app.api.products import Db, commit, get_product
@@ -15,7 +16,6 @@ from app.core.security import require_admin
 from app.integrations.contracts import CapabilityStatus
 from app.integrations.errors import IntegrationError
 from app.models import (
-    AffiliateLink,
     CouponEvidence,
     CouponEvidenceType,
     CouponValidationState,
@@ -24,10 +24,120 @@ from app.models import (
     PriceAccess,
 )
 from app.services.coupon_evidence import save_manual_evidence
+from app.services.official_offer_import import OfficialExportInput
+from app.services.shopee_evidence import (
+    AccountEvidenceInput,
+    CommercialEvidenceInput,
+    LinkEvidenceInput,
+    TrustPolicyProposal,
+    account_evidence,
+    evidence_readiness,
+    preserved_link_account_readiness,
+    propose_trust_policy,
+    record_account_evidence,
+    record_commercial_evidence,
+    record_manual_link_evidence,
+)
 
 router = APIRouter(
     prefix="/api/v1", tags=["Integrações oficiais"], dependencies=[Depends(require_admin)]
 )
+
+
+class LinkBatchPrepare(InputModel):
+    authorization_id: UUID
+    actor: str = Field(pattern=r"^[\w.@-]{3,80}$")
+    not_before: datetime
+    expires_at: datetime
+    export: OfficialExportInput
+
+
+class LinkBatchApproval(InputModel):
+    scope_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    actor: str = Field(pattern=r"^[\w.@-]{3,80}$")
+    confirmed_link_generation: StrictBool
+
+
+def link_finalizer(request):
+    from app.services.affiliate_pipeline import CommercialLinkFinalizer
+
+    return CommercialLinkFinalizer(request.app.state.session_factory, request.app.state.settings)
+
+
+@router.post("/integrations/shopee/link-batches", status_code=201)
+def prepare_link_batch(data: LinkBatchPrepare, request: Request):
+    try:
+        return link_finalizer(request).prepare(
+            data.authorization_id,
+            data.export,
+            actor=data.actor,
+            not_before=data.not_before,
+            expires_at=data.expires_at,
+        )
+    except (ValueError, IntegrationError) as error:
+        raise HTTPException(422, str(error)) from None
+
+
+@router.get("/integrations/shopee/link-batches/{identifier}")
+def read_link_batch(identifier: UUID, request: Request):
+    try:
+        return link_finalizer(request).report(identifier)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+
+
+@router.post("/integrations/shopee/link-batches/{identifier}/approve")
+def approve_link_batch(identifier: UUID, data: LinkBatchApproval, request: Request):
+    try:
+        return link_finalizer(request).approve(identifier, **data.model_dump())
+    except (ValueError, IntegrationError) as error:
+        raise HTTPException(422, str(error)) from None
+
+
+@router.post("/integrations/shopee/link-batches/{identifier}/execute")
+def execute_link_batch(identifier: UUID, request: Request):
+    try:
+        return link_finalizer(request).execute(identifier)
+    except (ValueError, IntegrationError) as error:
+        raise HTTPException(422, str(error)) from None
+
+
+@router.post("/integrations/shopee/account-evidence", status_code=201)
+def create_account_evidence(data: AccountEvidenceInput, request: Request, session: Db):
+    try:
+        result = record_account_evidence(session, request.app.state.settings, data)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+    commit(session)
+    return result
+
+
+@router.get("/integrations/shopee/account-evidence/current")
+def current_account_evidence(request: Request, session: Db):
+    try:
+        proof = account_evidence(session, request.app.state.settings)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+    return dict(
+        evidence=proof,
+        status="DOCUMENTED" if proof else "ONE_ACCOUNT_PROOF_REQUIRED",
+        publication_authorized=False,
+    )
+
+
+@router.get("/products/{product_id}/shopee/preserved-link-readiness")
+def preserved_link_readiness(
+    product_id: int, generation_reference: str, request: Request, session: Db
+):
+    try:
+        return preserved_link_account_readiness(
+            session,
+            request.app.state.settings,
+            get_product(session, product_id),
+            generation_reference,
+        )
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
 
 
 class ProductCheck(InputModel):
@@ -80,6 +190,7 @@ class CouponEvidenceWrite(InputModel):
 def _failure(error: IntegrationError):
     status = {
         "CONNECTOR_DISABLED": 409,
+        "REAL_GENERATION_BLOCKED": 409,
         "UNSUPPORTED_CAPABILITY": 409,
         "AUTHORIZATION_DENIED": 403,
         "RATE_LIMITED": 429,
@@ -234,19 +345,12 @@ def generate_affiliate_link(product_id: int, request: Request, session: Db):
         raise HTTPException(
             409, "O produto já possui link cadastrado; preserve a origem existente."
         )
-    registry = request.app.state.integrations
+    from app.services.affiliate_pipeline import block_unreserved_real_generation
+
     try:
-        if registry.is_blocked(product.platform):
-            raise HTTPException(403, "Conector pausado após recusa de autorização.")
-        result = registry.get(product.platform).generate_affiliate_link(product.original_url)
+        block_unreserved_real_generation()
     except IntegrationError as error:
         _failure(error)
-    if not result.account_verified:
-        raise HTTPException(409, "Associação do link com a conta não comprovada.")
-    link = AffiliateLink(product_id=product.id, url=result.url, source="SHOPEE_OFFICIAL_API")
-    session.add(link)
-    commit(session)
-    return {"url": link.url, "source": link.source, "account_verified": True}
 
 
 @router.post("/products/{product_id}/coupon-evidence", status_code=201)
@@ -284,3 +388,49 @@ def list_coupon_evidence(
             .limit(limit)
         ).all()
     )
+
+
+# These endpoints only append documentary claims/proposals; no external I/O or approval.
+
+
+@router.post("/products/{product_id}/shopee/link-evidence", status_code=201)
+def create_link_evidence(product_id: int, data: LinkEvidenceInput, session: Db):
+    try:
+        result = record_manual_link_evidence(session, get_product(session, product_id), data)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+    commit(session)
+    return result
+
+
+@router.post("/products/{product_id}/shopee/commercial-evidence", status_code=201)
+def create_commercial_evidence(product_id: int, data: CommercialEvidenceInput, session: Db):
+    try:
+        result = record_commercial_evidence(session, get_product(session, product_id), data)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+    commit(session)
+    return result
+
+
+@router.post("/products/{product_id}/shopee/trust-proposals", status_code=201)
+def create_trust_proposal(product_id: int, data: TrustPolicyProposal, session: Db):
+    try:
+        result = propose_trust_policy(session, get_product(session, product_id), data)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+    commit(session)
+    return result
+
+
+@router.get("/products/{product_id}/shopee/evidence-readiness")
+def read_shopee_readiness(product_id: int, policy_id: str, session: Db, request: Request):
+    try:
+        return evidence_readiness(
+            session,
+            get_product(session, product_id),
+            policy_id,
+            max_age_seconds=request.app.state.settings.price_max_age_seconds,
+        )
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None

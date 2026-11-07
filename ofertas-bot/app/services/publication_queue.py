@@ -101,10 +101,17 @@ class SimulatedQueueService:
     def _cooldown_issue(
         self, session: Session, offer: Offer, destination_id: int, now: datetime
     ) -> str | None:
+        return self.candidate_cooldown_issue(
+            session, offer.product_id, offer.price_history_id, destination_id, now
+        )
+
+    def candidate_cooldown_issue(
+        self, session: Session, product_id: int, history_id: int, destination_id: int, now: datetime
+    ) -> str | None:
         published = session.scalar(
             select(PublicationQueueItem)
             .where(
-                PublicationQueueItem.product_id == offer.product_id,
+                PublicationQueueItem.product_id == product_id,
                 PublicationQueueItem.destination_id == destination_id,
                 PublicationQueueItem.status == QueueStatus.PUBLISHED,
             )
@@ -118,7 +125,7 @@ class SimulatedQueueService:
         published_at = aware_utc(published.published_at)
         if now < published_at + timedelta(seconds=self.settings.queue_republish_seconds):
             return "A janela mínima de três horas entre publicações ainda não terminou."
-        observation = session.get(ProductPriceHistory, offer.price_history_id)
+        observation = session.get(ProductPriceHistory, history_id)
         if observation is None or aware_utc(observation.observed_at) <= published_at:
             return "Republicação exige uma observação posterior à última publicação."
         return None

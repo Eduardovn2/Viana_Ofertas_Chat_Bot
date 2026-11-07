@@ -16,7 +16,7 @@ import httpx
 import pytest
 from pydantic import SecretStr
 
-from app.integrations.contracts import CapabilityStatus, ProductRef
+from app.integrations.contracts import CapabilityStatus, PriceContext, ProductRef
 from app.integrations.errors import (
     AuthorizationDenied,
     ConnectorDisabled,
@@ -47,6 +47,26 @@ SYNTHETIC_NODE = {
     "commissionRate": "0.1234",
     "commission": "12.32766",
 }
+
+
+def informational_evidence(identity="101:202"):
+    context = PriceContext(
+        origin="shopee:official_api",
+        operation="productOfferV2",
+        product_identity=identity,
+        price_kind="ITEM_QUOTE",
+    )
+    return {
+        "advertised_discount_percent": None,
+        "offer_period_start_raw": None,
+        "offer_period_end_raw": None,
+        "period_time_unit": "UNCONFIRMED",
+        "period_semantics": "UNCONFIRMED",
+        "commercial_verified": False,
+        "variant_status": "UNCONFIRMED",
+        "price_context": context.model_dump(),
+        "price_basis": context.price_basis,
+    }
 
 
 def payload(node=None, *, page=1, has_next=False):
@@ -116,13 +136,13 @@ def test_signature_matches_known_vector_over_the_exact_utf8_payload():
     expected = (
         b'{"query":"query { productOfferV2(shopId:101,itemId:202,page:1,limit:1) '
         b"{ nodes { itemId shopId productName productLink imageUrl price priceMin priceMax "
-        b'productCatIds commissionRate commission } pageInfo { page limit hasNextPage } } }"}'
+        b'productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime } pageInfo { page limit hasNextPage } } }"}'
     )
     assert request["method"] == "POST" and request["url"] == ENDPOINT
     assert request["body"] == expected
     assert request["headers"]["Authorization"] == (
         "SHA256 Credential=SYNTHETIC_APP, Timestamp=1792324801, "
-        "Signature=08b462e76ecd6f10620c9613cc9753cb420691a9227d8097c86dc817021ca678"
+        "Signature=a5813622c66d5d2054a6199df2924c1146b71faaf56ab000e331c20e8ee9126f"
     )
     assert request["headers"]["Content-Type"] == "application/json"
     assert request["retry"] is True
@@ -148,6 +168,7 @@ def test_snapshot_preserves_decimal_provenance_and_unknown_commercial_conditions
     assert snapshot.image_url == SYNTHETIC_NODE["imageUrl"]
     assert snapshot.seller_id is None
     assert snapshot.evidence_metadata == {
+        **informational_evidence(),
         "category_external_ids": ["1", "2", "3"],
         "commission_rate": "0.1234",
         "commission_amount": "12.32766",
@@ -172,6 +193,7 @@ def test_sanitized_observed_product_normalizes_without_inventing_commercial_cond
     assert snapshot.price_access is PriceAccess.UNKNOWN
     assert snapshot.category_external_id == "100583"
     assert snapshot.evidence_metadata == {
+        **informational_evidence("1018042820:22293101052"),
         "category_external_ids": ["100535", "100583"],
         "commission_rate": "0.38",
         "commission_amount": "22.42",
@@ -344,7 +366,10 @@ def test_only_safe_selected_evidence_is_kept_and_unknown_images_are_omitted():
     }
     snapshot = connector(FakeTransport(payload(node))).fetch_product(REF)
     assert snapshot.image_url is None
-    assert snapshot.evidence_metadata == {"category_external_ids": ["1", "2", "3"]}
+    assert snapshot.evidence_metadata == {
+        **informational_evidence(),
+        "category_external_ids": ["1", "2", "3"],
+    }
     serialized = str(snapshot)
     assert SECRET not in serialized and APP_ID not in serialized
     clean = connector().fetch_product(REF)
@@ -462,7 +487,10 @@ def test_authenticated_short_link_uses_only_the_official_mutation_without_cache(
     source = connector(transport, short_links_enabled=True)
     link = source.generate_affiliate_link(URL)
     assert link.url == "https://s.shopee.com.br/SYNTHETIC-LINK"
-    assert link.source == "SHOPEE_AFFILIATE_API" and link.account_verified is True
+    assert link.source == "SHOPEE_AFFILIATE_API"
+    assert link.product_identity_verified is True
+    assert link.account_verified is False
+    assert link.long_url == "https://shopee.com.br/product/101/202?synthetic-tracking=1"
     request = transport.calls[0]
     query = json.loads(request["body"])["query"]
     assert query.startswith("mutation { generateShortLink(")
@@ -491,6 +519,15 @@ def test_existing_affiliate_or_tracking_links_are_not_accepted_as_conversion_inp
     "link_data",
     [
         {"shortLink": "https://evil.test/SYNTHETIC", "longLink": URL},
+        {
+            "shortLink": "https://s.shopee.com.br/SYNTHETIC",
+            "longLink": "https://shopee.com.br/universal-link/product/101/202?synthetic-tracking=1",
+        },
+        {
+            "shortLink": "https://s.shopee.com.br/SYNTHETIC",
+            "longLink": "https://shopee.com.br/unknown-deep-link",
+        },
+        {"shortLink": "https://s.shopee.com.br/SYNTHETIC", "longLink": URL + "#context"},
         {"shortLink": URL, "longLink": URL},
         {"shortLink": "https://s.shopee.com.br/SYNTHETIC?token=secret", "longLink": URL},
         {"shortLink": "https://s.shopee.com.br/SYNTHETIC", "longLink": ""},
@@ -521,10 +558,7 @@ def test_invalid_short_link_results_never_gain_verified_ownership(link_data):
 @pytest.mark.parametrize(
     "long_url",
     [
-        "https://shopee.com.br/universal-link/product/101/202?synthetic-tracking=1",
-        "https://shopee.com.br/unknown-deep-link",
         URL + "?variation_id=SYNTHETIC-VARIANT",
-        URL + "#context",
     ],
 )
 def test_ambiguous_long_link_keeps_account_product_association_unverified(long_url):
@@ -542,6 +576,7 @@ def test_ambiguous_long_link_keeps_account_product_association_unverified(long_u
     result = source.generate_affiliate_link(URL)
     assert result.url == "https://s.shopee.com.br/SYNTHETIC"
     assert result.account_verified is False
+    assert result.product_identity_verified is False
     assert {cap.name: cap.status for cap in source.capabilities()}[
         "generate_affiliate_link"
     ] is CapabilityStatus.REQUIRES_CREDENTIALS

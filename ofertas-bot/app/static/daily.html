@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vianinha | Operação diária</title>
+<style>
+:root{color-scheme:dark;--panel:#182735;--line:#314455;--ink:#eff6fc;--accent:#61dbb2}
+body{margin:0;background:#101923;color:var(--ink);font:15px/1.5 system-ui}
+main{max-width:1120px;margin:auto;padding:24px}h1,h2{margin:.1em 0 .5em}h1{font-size:1.7rem}h2{font-size:1.15rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px}.row{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+label{display:grid;gap:4px}input,select,textarea,button{font:inherit;color:inherit;background:#111d28;border:1px solid var(--line);border-radius:7px;padding:7px;box-sizing:border-box}
+input,select,textarea{max-width:100%}button{cursor:pointer}button.primary{background:#235849;border-color:var(--accent)}button.danger{border-color:#ed8585}small{color:#b6c7d5}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}summary{cursor:pointer}.table{overflow:auto}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:8px;border-bottom:1px solid var(--line)}[hidden]{display:none!important}
+</style>
+<main>
+<h1>Vianinha · Operação diária</h1>
+<p id="notice" role="status" aria-live="polite"></p>
+<section id="login" class="card">
+<h2>Acesso administrativo</h2>
+<form id="loginForm" class="row"><label>Código local de uso único<input id="code" type="password" autocomplete="off" required></label><button class="primary">Entrar</button></form>
+<small>Gere o código com <code>python -m app.daily_admin login</code> no computador.</small>
+</section>
+<div id="app" hidden>
+<div id="metrics" class="grid"></div>
+<section class="card">
+<h2>Controle da operação</h2>
+<div class="row"><label>Autorização<select id="grants"></select></label>
+<button data-action="start" class="primary">Iniciar</button><button data-action="pause">Pausar</button>
+<button data-action="resume">Retomar</button><button data-action="stop" class="danger">STOP</button></div>
+<details><summary>Escopo para conferência</summary><pre id="scope"></pre>
+<label><span><input id="trialAck" type="checkbox"> Aceito quotas ainda não confirmadas para um teste limitado de até 30 minutos</span></label>
+<button id="approve">Confirmar escopo selecionado</button></details>
+</section>
+<section class="card"><details><summary>Preparar nova autorização</summary>
+<form id="config">
+<div class="grid">
+<label>Responsável<input name="actor" required></label><label>Destino ID<input name="destination_id" type="number" min="1" value="2" required></label>
+<label>Primeiro dia<input name="start_date" type="date" required></label><label>Último dia<input name="end_date" type="date" required></label>
+<label>Início (Brasília)<input name="start_time" type="time" value="08:00" required></label><label>Fim (Brasília)<input name="end_time" type="time" value="23:00" required></label>
+<label>Modo<select name="commercial_mode"><option>ANNOUNCEMENT_ONLY</option></select></label>
+<label>Consultas por dia<input name="max_queries" type="number" min="1" placeholder="Conforme quota confirmada"></label>
+<label>Links por dia<input name="max_links" type="number" min="0" placeholder="Conforme quota confirmada"></label>
+<label>Teto administrativo diário<input name="max_messages" type="number" min="1" placeholder="Opcional"></label>
+<label>Teto administrativo por 600 s<input name="messages_per_window" type="number" min="1" placeholder="Opcional"></label>
+<label>Teto administrativo por hora<input name="administrative_messages_per_hour" type="number" min="1" placeholder="Opcional"></label>
+<label>Telegram por minuto no grupo<input name="telegram_per_minute" type="number" min="1" max="20" value="20" required></label>
+<label>Intervalo de busca (s)<input name="query_interval_seconds" type="number" min="60" max="7200" placeholder="Conforme quota confirmada"></label>
+<label>Cooldown (s)<input name="cooldown_seconds" type="number" min="10800" max="86400" value="10800" required></label>
+<label>Quota diária Shopee confirmada<input name="shopee_daily_quota" type="number" min="1"></label>
+<label>Quota Shopee por minuto confirmada<input name="shopee_posts_per_minute" type="number" min="1"></label>
+<label>Quota diária Telegram confirmada<input name="telegram_daily_quota" type="number" min="1"></label>
+<label>Referência das quotas<input name="quota_reference"></label>
+</div>
+<div id="days" class="row"></div><label>Termos de busca (um por linha)<textarea name="terms" required rows="3"></textarea></label>
+<p><button class="primary">Preparar escopo</button></p>
+</form></details></section>
+<section class="card"><h2>Produtos aguardando envio</h2><p id="queueState"></p><ul id="queue"></ul></section>
+<section class="card"><h2>Bloqueios recentes</h2><pre id="blocks"></pre></section>
+<section class="card"><h2>Histórico e últimas mensagens</h2>
+<form id="filters" class="row"><label>Data<input name="day" type="date"></label><label>Produto<input name="product"></label>
+<label>Status<select name="state"><option value="">Todos</option><option>SENT</option><option>FAILED</option><option>UNCERTAIN</option><option>REJECTED</option><option>EXPIRED</option></select></label><button>Filtrar</button></form>
+<div class="table"><table><thead><tr><th>Hora</th><th>Produto</th><th>Destino</th><th>Estado</th><th>message_id</th></tr></thead><tbody id="history"></tbody></table></div>
+</section></div>
+</main>
+<script>
+const by = id => document.getElementById(id);
+const base = '/api/v1/daily';
+let grants = [], authenticated = false;
+function announce(value){by('notice').textContent=value;}
+async function request(path='',data){
+  const options = data ? {method:'POST',headers:{'Content-Type':'application/json','X-Daily-Panel':'1'},body:JSON.stringify(data)} : {};
+  const response = await fetch(base+path,{...options,cache:'no-store'});
+  const result = await response.json();
+  if(response.status===401){authenticated=false;by('app').hidden=true;by('login').hidden=false;}
+  if(!response.ok) throw Error(typeof result.detail==='string'?result.detail:JSON.stringify(result.detail));
+  return result;
+}
+function selected(){return grants.find(g=>g.scope.plan.authorization_id===by('grants').value);}
+function showScope(){by('scope').textContent=JSON.stringify(selected()||{},null,2);}
+async function refresh(){
+  const r=await request();
+  authenticated=true;by('app').hidden=false;by('login').hidden=true;
+  const selectedId=by('grants').value||r.control.grant_id;
+  grants=r.grants;
+  by('grants').replaceChildren(...grants.map(g=>new Option(`${g.state} · ${g.scope.plan.start_date} · ${g.scope.plan.authorization_id}`,g.scope.plan.authorization_id)));
+  if(grants.some(g=>g.scope.plan.authorization_id===selectedId)) by('grants').value=selectedId;
+  showScope();
+  const displayed = r.active || selected();
+  const stats=[['Estado',r.state],['Hora de Brasília',r.now],['Próxima abertura',r.next_at||'—'],['Próxima busca permitida',r.next_query_at||'—'],
+    ['Horário do escopo',displayed?`${displayed.scope.plan.start_time}–${displayed.scope.plan.end_time}`:'—'],
+    ['Modo e destino',displayed?`${displayed.scope.plan.commercial_mode} · ${displayed.scope.chat_id}`:'—'],
+    ['Consultas usadas / restantes',`${r.used.queries} / ${r.remaining.queries??'—'}`],['Links usados / restantes',`${r.used.links} / ${r.remaining.links??'—'}`],
+    ['Tentativas consumidas',`${r.used.messages} / ${r.publication_limit??'—'}`],['Encontrados / classificados hoje',`${r.products_found} / ${r.classified}`],
+    ['Publicados hoje',r.published_today],['Confirmados na última hora',r.sent_last_hour],['Rejeitados na fila',r.backlog?.REJECTED??'—'],['PostgreSQL',r.database],['Worker',r.worker.healthy?'OK':'Sem heartbeat recente'],
+    ['Shopee · última tentativa',r.shopee],['Telegram · última tentativa',r.telegram]];
+  by('metrics').replaceChildren(...stats.map(([k,v])=>{const card=document.createElement('div');card.className='card';const label=document.createElement('small');label.textContent=k;const value=document.createElement('div');value.textContent=v;card.append(label,value);return card;}));
+  by('blocks').textContent=JSON.stringify({candidatos:r.recent_blocks,links:r.link_attempts,worker:r.worker.error},null,2);
+  by('queueState').textContent=`${r.backlog ? (r.backlog.PENDING??0) : r.waiting_to_send.length} pendente(s)${r.message_budget_exhausted?' · envios esgotados na janela atual':''} · exibindo ${r.waiting_to_send.length}`;
+  by('queue').replaceChildren(...r.waiting_to_send.map(item=>{const li=document.createElement('li');li.textContent=`${item.name||item.identity} · ${item.identity}${item.needs_revalidation?' · revalidação pendente':''}`;return li;}));
+}
+async function loadHistory(){
+  const parameters=new URLSearchParams();for(const [k,v] of new FormData(by('filters')))if(v)parameters.set(k,v);
+  const rows=await request('/history?'+parameters);
+  by('history').replaceChildren(...rows.map(row=>{const tr=document.createElement('tr');for(const value of [row.at,row.product,row.destination,row.state,row.message_id||'—']){const td=document.createElement('td');td.textContent=value;tr.append(td);}return tr;}));
+}
+async function run(action){try{await action();}catch(error){announce(error.message);}}
+by('loginForm').onsubmit=e=>{e.preventDefault();run(async()=>{await request('/session',{code:by('code').value});by('code').value='';await refresh();await loadHistory();announce('Sessão local ativa.');});};
+by('grants').onchange=showScope;
+document.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>run(async()=>{await request('/control',{action:button.dataset.action,identifier:selected()?.scope.plan.authorization_id||null});await refresh();announce('Comando registrado.');}));
+by('approve').onclick=()=>run(async()=>{
+  const g=selected();if(!g)throw Error('Selecione um escopo.');
+  if(!confirm('Confirmar o escopo exibido?\n'+g.scope_sha256+'\n'+JSON.stringify(g.scope,null,2)))return;
+  await request('/approve',{identifier:g.scope.plan.authorization_id,scope_sha256:g.scope_sha256,actor:g.scope.plan.actor,confirmed:true,acknowledge_unconfirmed_quotas:by('trialAck').checked});await refresh();announce('Escopo aprovado. Iniciar é um comando separado.');
+});
+['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach((label,index)=>{const item=document.createElement('label');const input=document.createElement('input');input.type='checkbox';input.value=index;input.checked=true;item.append(input,label);by('days').append(item);});
+by('config').onsubmit=e=>{e.preventDefault();run(async()=>{
+  const data=Object.fromEntries(new FormData(e.target));data.authorization_id=crypto.randomUUID();
+  data.operation_version='DAILY_V3';
+  data.days=[...by('days').querySelectorAll('input:checked')].map(input=>Number(input.value));
+  data.terms=data.terms.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  for(const name of ['destination_id','max_queries','max_links','max_messages','messages_per_window','query_interval_seconds','cooldown_seconds','shopee_daily_quota','telegram_daily_quota','shopee_posts_per_minute','telegram_per_minute','administrative_messages_per_hour'])data[name]=data[name]===''?null:Number(data[name]);
+  data.quota_reference=data.quota_reference.trim()||null;
+  const result=await request('/prepare',data);await refresh();by('grants').value=result.scope.plan.authorization_id;showScope();announce('Novo escopo preparado.');
+});};
+by('filters').onsubmit=e=>{e.preventDefault();run(loadHistory);};
+refresh().then(loadHistory).catch(()=>{});
+setInterval(()=>{if(authenticated)run(async()=>{await refresh();await loadHistory();});},15000);
+</script>

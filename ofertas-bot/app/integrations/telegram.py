@@ -180,6 +180,10 @@ class TelegramPublisher:
             ):
                 parameters = data.get("parameters")
                 delay = parameters.get("retry_after") if isinstance(parameters, dict) else None
+                if error_code == 429 and type(delay) is not int:
+                    header = response.headers.get("Retry-After", "")
+                    if header.isascii() and header.isdecimal() and len(header) <= 12:
+                        delay = int(header)
                 raise TelegramPublishError(
                     _KNOWN_ERRORS[error_code],
                     status=error_code,

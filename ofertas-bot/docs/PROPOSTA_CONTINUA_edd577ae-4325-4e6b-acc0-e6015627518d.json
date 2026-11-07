@@ -1,0 +1,78 @@
+{
+  "prepared_at": "2026-11-06T17:15:19.787117-03:00",
+  "proposal": {
+    "scope": {
+      "plan": {
+        "authorization_id": "edd577ae-4325-4e6b-acc0-e6015627518d",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "start_date": "2026-11-07",
+        "end_date": "2026-12-06",
+        "start_time": "08:00:00",
+        "end_time": "23:00:00",
+        "days": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "terms": [
+          "Cockpit simulador Brave Bull",
+          "Suporte Cockpit Para Volante",
+          "Creatina 300 g",
+          "Fone bluetooth",
+          "Teclado mecanico",
+          "SSD 1 TB"
+        ],
+        "max_queries": null,
+        "max_links": null,
+        "max_messages": null,
+        "messages_per_window": null,
+        "query_interval_seconds": null,
+        "operation_version": "DAILY_V3",
+        "telegram_per_minute": 20,
+        "administrative_messages_per_hour": null,
+        "shopee_posts_per_minute": null,
+        "cooldown_seconds": 10800,
+        "quota_reference": null,
+        "shopee_daily_quota": null,
+        "telegram_daily_quota": null
+      },
+      "timezone": "America/Sao_Paulo",
+      "chat_id": "-5309308689",
+      "template": "PRO_V2",
+      "operations": [
+        "productOfferV2",
+        "Telegram",
+        "generateShortLink"
+      ],
+      "max_external_posts": null,
+      "window_seconds": 600,
+      "freshness_seconds": 600,
+      "retry": false,
+      "fallback": false,
+      "pagination": false,
+      "ranking": "OPPORTUNITY_100_V1",
+      "effective_message_limit": 18000,
+      "telegram_reference": "https://core.telegram.org/bots/faq#my-bot-is-hitting-limits-how-do-i-avoid-this",
+      "telegram_minimum_spacing_seconds": 1,
+      "revalidate_pending_by_identity": true,
+      "close_at_window_end": true
+    },
+    "scope_sha256": "0e7a9af07415129a7d2fd4daf14d85b1eb472edff2a9541a05c7d87ab25be9c7",
+    "approval": null,
+    "state": "PREPARED"
+  },
+  "approval_blockers": [
+    "SHOPEE_ACCOUNT_DAILY_QUOTA",
+    "SHOPEE_ACCOUNT_MINUTE_QUOTA",
+    "SHOPEE_QUOTA_REFERENCE",
+    "SEPARATE_DISCOVERY_AND_LINK_BUDGETS"
+  ],
+  "administrative_caps": null,
+  "external_posts": 0
+}

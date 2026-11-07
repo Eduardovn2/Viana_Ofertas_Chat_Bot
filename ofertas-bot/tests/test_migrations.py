@@ -49,7 +49,15 @@ from app.models import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_TABLES = {
+PHASE410_TABLES = {
+    "shopee_discovery_findings",
+    "shopee_discovery_runs",
+    "shopee_discovery_products",
+    "shopee_discovery_policies",
+}
+EXPECTED_TABLES = PHASE410_TABLES | {
+    "shopee_collection_runs",
+    "shopee_collection_candidates",
     "products",
     "affiliate_links",
     "product_price_history",
@@ -1025,7 +1033,10 @@ def test_marketplace_downgrade_refuses_data_loss_before_any_schema_change(migrat
         command.downgrade(config, "0003_category_routing")
     assert set(
         inspect(engine).get_table_names()
-    ) == EXPECTED_TABLES - PHASE4_TABLES - PHASE46_TABLES - PHASE47_TABLES | {"alembic_version"}
+    ) == EXPECTED_TABLES - PHASE410_TABLES - PHASE4_TABLES - PHASE46_TABLES - PHASE47_TABLES - {
+        "shopee_collection_runs",
+        "shopee_collection_candidates",
+    } | {"alembic_version"}
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))

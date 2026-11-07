@@ -23,6 +23,9 @@ from app.models import (
     TelegramPublicationStatus,
 )
 from app.services.manual_offers import create_manual_offer
+from app.services.official_offer_import import OfficialExportInput, process_export
+from app.services.product_documentation import DocumentedIdentity
+from app.services.shopee_commercial_handoff import CandidateContext
 from app.services.telegram_publication import TelegramPublicationService
 
 router = APIRouter(
@@ -45,6 +48,8 @@ class ManualOfferCreate(InputModel):
     image_url: str | None = Field(default=None, min_length=1, max_length=2048)
     verified_at: datetime | None = None
     expires_at: datetime | None = None
+    multistore_context: CandidateContext | None = None
+    documented_identity: DocumentedIdentity | None = None
 
 
 class ManualOfferRead(BaseModel):
@@ -64,6 +69,25 @@ class ManualOfferRead(BaseModel):
     verified_at: datetime
     image_url: str | None
     category_ids: list[int]
+
+
+@router.post("/manual-offers/official-exports/preview")
+def preview_official_export(data: OfficialExportInput, session: Db, request: Request):
+    try:
+        return process_export(session, request.app.state.settings, data)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+
+
+@router.post("/manual-offers/official-exports/import")
+def import_official_export(data: OfficialExportInput, session: Db, request: Request):
+    try:
+        result = process_export(session, request.app.state.settings, data, persist=True)
+        commit(session)
+        return result
+    except ValueError as error:
+        session.rollback()
+        raise HTTPException(422, str(error)) from None
 
 
 class PreviewRequest(InputModel):
@@ -201,6 +225,19 @@ def retrieve_manual_offer(offer_id: int, session: Db):
     if row is None:
         raise HTTPException(404, "Oferta manual não encontrada")
     return _offer_read(session, *row)
+
+
+@router.post("/manual-offers/{offer_id}/review-message")
+def review_manual_offer_message(offer_id: int, data: PreviewRequest, request: Request, session: Db):
+    try:
+        return TelegramPublicationService(request.app.state.settings).review_message(
+            session,
+            offer_id,
+            data.destination_id,
+            data.include_image,
+        )
+    except IntegrationError as error:
+        _raise(error)
 
 
 @router.post("/manual-offers/{offer_id}/preview", response_model=PublicationRead)

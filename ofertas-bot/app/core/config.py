@@ -1,8 +1,11 @@
+import ipaddress
 import re
 from decimal import Decimal
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
+from uuid import UUID
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,7 +19,12 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", extra="ignore", hide_input_in_errors=True
     )
 
-    app_env: Literal["development", "test"] = "development"
+    app_env: Literal["development", "test", "production"] = "development"
+    admin_allowed_networks: tuple[str, ...] = ()
+    auto_pilot_id: UUID | None = None
+    auto_pilot_scope_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    auto_pilot_worker_tick_seconds: int = Field(default=30, ge=30, le=30)
+    auto_pilot_health_file: Path = Path(".runtime/auto-pilot-worker-health.json")
     database_url: str = Field(
         default="postgresql+psycopg://ofertas_bot@127.0.0.1:5432/ofertas_bot", repr=False
     )
@@ -69,6 +77,17 @@ class Settings(BaseSettings):
     score_discount_percent: Decimal = Field(default=Decimal("1"), ge=0, le=100000)
     score_availability: Decimal = Field(default=Decimal("5"), ge=0, le=100000)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    @field_validator("admin_allowed_networks")
+    @classmethod
+    def private_admin_sources(cls, values):
+        for value in values:
+            network = ipaddress.ip_network(value, strict=True)
+            if not network.is_private or network.prefixlen != network.max_prefixlen:
+                raise ValueError(
+                    "Permita somente IPs privados individuais /32 ou /128 para acesso administrativo."
+                )
+        return values
 
     @field_validator("telegram_bot_token", mode="before")
     @classmethod

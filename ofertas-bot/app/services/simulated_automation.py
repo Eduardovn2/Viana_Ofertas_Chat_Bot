@@ -21,12 +21,13 @@ from app.models import (
     SimulationProduct,
     TelegramSimulation,
 )
-from app.services.categories import CategoryService, normalize_text
+from app.services.categories import CategoryService
 from app.services.category_routing import destination_accepts
 from app.services.comparison import aware_utc
 from app.services.leases import acquire_lease, release_lease, renew_lease
 from app.services.message_templates import MessageData, RenderedMessage, render_message
 from app.services.offers import has_own_affiliate_link, latest_observation
+from app.services.product_filters import matches_product
 from app.services.publication_queue import SimulatedQueueService
 from app.services.simulation_safety import require_simulation_scope
 from app.services.telegram_publication import _hash, _row, _text
@@ -121,12 +122,7 @@ class SimulatedAutomation:
         CategoryService().classify(session, product)
         if not destination_accepts(session, product, destination):
             return None, "CATEGORY_FILTER"
-        name = " " + normalize_text(product.name) + " "
-        if (
-            (policy.product_ids or policy.terms)
-            and product.id not in policy.product_ids
-            and not any(" " + term + " " in name for term in policy.terms)
-        ):
+        if not matches_product(product.id, product.name, policy.product_ids, policy.terms):
             return None, "PRODUCT_TERM_FILTER"
         if policy.max_price is not None and offer.current_price > policy.max_price:
             return None, "MAX_PRICE_FILTER"

@@ -1,0 +1,27 @@
+{
+  "data_kind": "SYNTHETIC_ONLY",
+  "product": {
+    "brand": "Orion", "model": "RX-500", "quantity": 1,
+    "kit": ["estrutura", "assento"], "variant": "preto"
+  },
+  "documented_facts": {
+    "brand": "Orion", "model": "RX-500", "quantity": 1,
+    "condition": "novo", "packaging": "caixa original lacrada",
+    "kit": ["estrutura", "assento"], "variant": "preto",
+    "price_conditions": "preço anunciado sem cupom; à vista; região SP; elegibilidade pública"
+  },
+  "listings": [
+    {"shop_id": 101, "item_id": 1001, "name": "Orion RX-500 cockpit preto", "price": "1299.90", "evidence_overrides": {}},
+    {"shop_id": 102, "item_id": 1002, "name": "Orion RX-500 cockpit preto", "price": "1199.90", "evidence_overrides": {}},
+    {"shop_id": 102, "item_id": 1003, "name": "Orion RX-500 cockpit preto", "price": "1099.90", "evidence_overrides": {}},
+    {"shop_id": 103, "item_id": 1004, "name": "Orion RX-500 cockpit preto", "price": "1099.90", "rating_star": null, "evidence_overrides": {}},
+    {"shop_id": 104, "item_id": 1005, "name": "Orion RX-500 somente estrutura", "price": "799.90", "evidence_overrides": {"kit": ["estrutura"]}},
+    {"shop_id": 105, "item_id": 1006, "name": "Outra Marca RX-500 cockpit", "price": "899.90", "evidence_overrides": {"brand": "Outra Marca"}},
+    {"shop_id": 106, "item_id": 1007, "name": "Orion RX-500 pacote duas unidades", "price": "999.90", "evidence_overrides": {"quantity": 2}},
+    {"shop_id": 107, "item_id": 1008, "name": "Orion RX-500 variante não informada", "price": "499.90", "evidence_overrides": {"variant": null}},
+    {"shop_id": 108, "item_id": 1009, "name": "Orion RX-500 cockpit branco", "price": "599.90", "evidence_overrides": {"variant": "branco"}},
+    {"shop_id": 109, "item_id": 1010, "name": "Capa para Orion RX-500", "price": "10.00", "evidence_overrides": null},
+    {"shop_id": 110, "item_id": 1011, "name": "Orion RX-500 escolha a opção", "price": "1200.00", "price_min": "900.00", "price_max": "1500.00", "evidence_overrides": {}},
+    {"shop_id": 111, "item_id": 1012, "name": "Orion RX-500+ cockpit", "price": "999.90", "evidence_overrides": {"model": "RX-500+"}}
+  ]
+}

@@ -8,6 +8,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from app.api.auto_pilot import router as auto_pilot_router
+from app.api.auto_pilot_real import router as auto_pilot_real_router
 from app.api.categories import router as categories_router
 from app.api.integrations import router as integrations_router
 from app.api.manual_offers import router as manual_offers_router
@@ -15,6 +17,8 @@ from app.api.monitoring import router as monitoring_router
 from app.api.oauth import admin_router as oauth_admin_router
 from app.api.oauth import callback_router as oauth_callback_router
 from app.api.products import router as products_router
+from app.api.shopee_collection import router as shopee_collection_router
+from app.api.shopee_discovery import router as shopee_discovery_router
 from app.api.simulated_automation import router as simulated_automation_router
 from app.api.telegram import router as telegram_router
 from app.api.telegram_technical import router as telegram_technical_router
@@ -26,6 +30,8 @@ from app.integrations.telegram import TelegramPublisher
 from app.jobs.runtime import MonitoringRuntime
 from app.jobs.simulation import SimulationMonitoringRuntime
 from app.services.oauth_context import OAuthContext
+from app.services.shopee_collection import ShopeeCollectionService
+from app.services.shopee_discovery import ShopeeDiscoveryService
 from app.services.simulated_automation import SimulatedAutomation
 from app.services.telegram_publication import TelegramPublicationService
 from app.services.telegram_technical import TelegramTechnicalService
@@ -33,7 +39,9 @@ from app.services.telegram_technical import TelegramTechnicalService
 logger = logging.getLogger("ofertas_bot")
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, *, background_monitoring_allowed: bool = True
+) -> FastAPI:
     fixed_oauth_settings = settings
     settings = settings or get_settings()
     configure_logging(settings.log_level)
@@ -44,7 +52,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(application: FastAPI):
         logger.info("application_started")
         try:
-            application.state.monitoring.start()
+            if application.state.background_monitoring_allowed:
+                application.state.monitoring.start()
             yield
         finally:
             application.state.monitoring.shutdown()
@@ -54,6 +63,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application = FastAPI(title="Ofertas Bot", version="0.3.0", lifespan=lifespan)
     application.state.settings = settings
+    application.state.background_monitoring_allowed = background_monitoring_allowed
     application.state.mercadolivre_oauth = OAuthContext(fixed_oauth_settings)
     application.state.engine = engine
     application.state.session_factory = build_session_factory(engine)
@@ -68,6 +78,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         settings, session_factory=application.state.session_factory
     )
     application.state.simulated_pipeline = SimulatedAutomation(
+        application.state.session_factory, settings
+    )
+    application.state.shopee_collection = ShopeeCollectionService(
+        application.state.session_factory, settings
+    )
+    application.state.shopee_discovery = ShopeeDiscoveryService(
         application.state.session_factory, settings
     )
     application.state.monitoring = MonitoringRuntime(
@@ -91,6 +107,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             local = (
                 request.client is not None and ipaddress.ip_address(request.client.host).is_loopback
             )
+            if not local and request.client is not None:
+                peer = ipaddress.ip_address(request.client.host)
+                local = any(
+                    peer in ipaddress.ip_network(network)
+                    for network in settings.admin_allowed_networks
+                )
         except ValueError:
             local = False
         if not local:
@@ -125,11 +147,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(products_router)
     application.include_router(monitoring_router)
     application.include_router(categories_router)
+    application.include_router(auto_pilot_router)
+    application.include_router(auto_pilot_real_router)
     application.include_router(integrations_router)
     application.include_router(manual_offers_router)
     application.include_router(telegram_router)
     application.include_router(telegram_technical_router)
     application.include_router(simulated_automation_router)
+    application.include_router(shopee_collection_router)
+    application.include_router(shopee_discovery_router)
     application.include_router(oauth_admin_router)
     application.include_router(oauth_callback_router)
     return application

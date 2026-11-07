@@ -1,0 +1,80 @@
+{
+  "prepared": {
+    "authorization_id": "5fb07bef-0935-410d-a07c-5c140fdce2e1",
+    "mode": "REAL_MULTISTORE_SEARCH",
+    "status": "PREPARED",
+    "stored_state": "PREPARED",
+    "scope_sha256": "d8182e88c09246cf7bb033911c6210d24e0a03b4ce95d5bfff06a8465d54d27a",
+    "consumed": false,
+    "requests_reserved": 0,
+    "approval": null,
+    "result": {},
+    "error_code": null,
+    "publication_authorized": false,
+    "price_history_writes": 0,
+    "scope": {
+      "authorization_id": "5fb07bef-0935-410d-a07c-5c140fdce2e1",
+      "actor": "eduardo.viana.3",
+      "operation": "productOfferV2",
+      "keyword": "Cockpit simulador Brave Bull",
+      "page": 1,
+      "limit": 3,
+      "not_before": "2026-11-03T02:21:43.439242Z",
+      "expires_at": "2026-11-03T02:41:43.439242Z",
+      "mode": "REAL_MULTISTORE_SEARCH",
+      "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "credential_scope": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+      "payload_sha256": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709",
+      "profile": "multistore",
+      "max_http_calls": 1,
+      "retry": false,
+      "fallback": false,
+      "pagination": false,
+      "history_writes": 0,
+      "publication_authorized": false
+    },
+    "payload": {
+      "query": "query { productOfferV2(keyword:\"Cockpit simulador Brave Bull\",page:1,limit:3) { nodes { itemId shopId productName productLink imageUrl price priceMin priceMax productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime shopName ratingStar sales shopType } pageInfo { page limit hasNextPage } } }"
+    }
+  },
+  "readiness": {
+    "health": {
+      "status": "ok",
+      "database": "connected",
+      "price_provider": "simulated"
+    },
+    "ready": {
+      "status": "ready",
+      "legacy_scheduler_started": false,
+      "checks": "database_schema_persisted_pause_and_admin_configuration"
+    },
+    "worker": {
+      "at": "2026-11-03T02:17:04.240528+00:00",
+      "worker_id": "8ae320ccd0a24877ad8206ef2be4d3ee",
+      "pilot_id": "d80879af-27e3-47fc-b47b-01e3499a3006",
+      "phase": "WAITING",
+      "process_id": 11004,
+      "state": "PREPARED",
+      "error_type": null
+    },
+    "destination_enabled": false,
+    "legacy_scheduler_running": false,
+    "protected_states_preserved": true,
+    "credentials_configured": true,
+    "credential_authentication_validated": false,
+    "authenticated_shopee_requests": 0,
+    "telegram_requests": 0,
+    "authorization_id": "5fb07bef-0935-410d-a07c-5c140fdce2e1",
+    "state": "PREPARED",
+    "unauthenticated_connectivity": {
+      "method": "GET",
+      "http_status": 200,
+      "tls_verified": true,
+      "json_response": true,
+      "attempts": 1,
+      "authentication_sent": false
+    }
+  },
+  "approval_required": true,
+  "authenticated_query_executed": false
+}

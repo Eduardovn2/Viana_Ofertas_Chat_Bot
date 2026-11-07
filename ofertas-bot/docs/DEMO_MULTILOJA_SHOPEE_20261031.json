@@ -1,0 +1,197 @@
+{
+  "mode": "OFFLINE_SYNTHETIC",
+  "real_http_calls": 0,
+  "result": {
+    "query": "Cockpit simulador Brave Bull",
+    "candidates": [
+      {
+        "identity": "101:202",
+        "shop_id": "101",
+        "item_id": "202",
+        "name": "FICTICIO Cockpit simulador Brave Bull",
+        "announced_price": "1100.00",
+        "currency": "BRL",
+        "observed_at": "2026-10-31 23:06:16.788275+00:00",
+        "seller": {
+          "shop_name": "Loja FICTICIA 101",
+          "rating_star": null,
+          "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+          "sales": null,
+          "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+          "shop_types": null,
+          "shop_type_semantics": "UNCONFIRMED_CODES"
+        },
+        "status": "EQUIVALENT",
+        "reason": "DOCUMENTED_EQUIVALENCE",
+        "attributes": {
+          "brand": "brave bull",
+          "model": "modelo ficticio",
+          "quantity": 1,
+          "condition": "novo",
+          "kit": [
+            "banco",
+            "estrutura"
+          ],
+          "variant": "azul",
+          "price_conditions": "anunciado sem cupom mesmas condicoes atestadas em fixture ficticia"
+        },
+        "evidence_reference": "DOCUMENTO FICTICIO DE TESTE",
+        "evidence_actor": "mock_admin",
+        "evidence_source": "MANUAL_DOCUMENTED",
+        "group": "90e34ba22c2a00010e102fa279318454cb244103d62d9c9882de46ac8372af14",
+        "rank": 2,
+        "difference_from_lowest": "100.00"
+      },
+      {
+        "identity": "102:203",
+        "shop_id": "102",
+        "item_id": "203",
+        "name": "FICTICIO Cockpit simulador Brave Bull",
+        "announced_price": "1000.00",
+        "currency": "BRL",
+        "observed_at": "2026-10-31 23:06:16.788275+00:00",
+        "seller": {
+          "shop_name": "Loja FICTICIA 102",
+          "rating_star": null,
+          "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+          "sales": null,
+          "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+          "shop_types": null,
+          "shop_type_semantics": "UNCONFIRMED_CODES"
+        },
+        "status": "EQUIVALENT",
+        "reason": "DOCUMENTED_EQUIVALENCE",
+        "attributes": {
+          "brand": "brave bull",
+          "model": "modelo ficticio",
+          "quantity": 1,
+          "condition": "novo",
+          "kit": [
+            "banco",
+            "estrutura"
+          ],
+          "variant": "azul",
+          "price_conditions": "anunciado sem cupom mesmas condicoes atestadas em fixture ficticia"
+        },
+        "evidence_reference": "DOCUMENTO FICTICIO DE TESTE",
+        "evidence_actor": "mock_admin",
+        "evidence_source": "MANUAL_DOCUMENTED",
+        "group": "90e34ba22c2a00010e102fa279318454cb244103d62d9c9882de46ac8372af14",
+        "rank": 1,
+        "difference_from_lowest": "0.00"
+      },
+      {
+        "identity": "103:204",
+        "shop_id": "103",
+        "item_id": "204",
+        "name": "FICTICIO capa Cockpit simulador Brave Bull",
+        "announced_price": "500.00",
+        "currency": "BRL",
+        "observed_at": "2026-10-31 23:06:16.788275+00:00",
+        "seller": {
+          "shop_name": "Loja FICTICIA 103",
+          "rating_star": null,
+          "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+          "sales": null,
+          "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+          "shop_types": null,
+          "shop_type_semantics": "UNCONFIRMED_CODES"
+        },
+        "status": "REJECTED",
+        "reason": "EXCLUSION"
+      }
+    ],
+    "groups": [
+      {
+        "group": "90e34ba22c2a00010e102fa279318454cb244103d62d9c9882de46ac8372af14",
+        "distinct_shops": 2,
+        "ranking": [
+          {
+            "identity": "102:203",
+            "shop_id": "102",
+            "item_id": "203",
+            "name": "FICTICIO Cockpit simulador Brave Bull",
+            "announced_price": "1000.00",
+            "currency": "BRL",
+            "observed_at": "2026-10-31 23:06:16.788275+00:00",
+            "seller": {
+              "shop_name": "Loja FICTICIA 102",
+              "rating_star": null,
+              "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+              "sales": null,
+              "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+              "shop_types": null,
+              "shop_type_semantics": "UNCONFIRMED_CODES"
+            },
+            "status": "EQUIVALENT",
+            "reason": "DOCUMENTED_EQUIVALENCE",
+            "attributes": {
+              "brand": "brave bull",
+              "model": "modelo ficticio",
+              "quantity": 1,
+              "condition": "novo",
+              "kit": [
+                "banco",
+                "estrutura"
+              ],
+              "variant": "azul",
+              "price_conditions": "anunciado sem cupom mesmas condicoes atestadas em fixture ficticia"
+            },
+            "evidence_reference": "DOCUMENTO FICTICIO DE TESTE",
+            "evidence_actor": "mock_admin",
+            "evidence_source": "MANUAL_DOCUMENTED",
+            "group": "90e34ba22c2a00010e102fa279318454cb244103d62d9c9882de46ac8372af14",
+            "rank": 1,
+            "difference_from_lowest": "0.00"
+          },
+          {
+            "identity": "101:202",
+            "shop_id": "101",
+            "item_id": "202",
+            "name": "FICTICIO Cockpit simulador Brave Bull",
+            "announced_price": "1100.00",
+            "currency": "BRL",
+            "observed_at": "2026-10-31 23:06:16.788275+00:00",
+            "seller": {
+              "shop_name": "Loja FICTICIA 101",
+              "rating_star": null,
+              "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+              "sales": null,
+              "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+              "shop_types": null,
+              "shop_type_semantics": "UNCONFIRMED_CODES"
+            },
+            "status": "EQUIVALENT",
+            "reason": "DOCUMENTED_EQUIVALENCE",
+            "attributes": {
+              "brand": "brave bull",
+              "model": "modelo ficticio",
+              "quantity": 1,
+              "condition": "novo",
+              "kit": [
+                "banco",
+                "estrutura"
+              ],
+              "variant": "azul",
+              "price_conditions": "anunciado sem cupom mesmas condicoes atestadas em fixture ficticia"
+            },
+            "evidence_reference": "DOCUMENTO FICTICIO DE TESTE",
+            "evidence_actor": "mock_admin",
+            "evidence_source": "MANUAL_DOCUMENTED",
+            "group": "90e34ba22c2a00010e102fa279318454cb244103d62d9c9882de46ac8372af14",
+            "rank": 2,
+            "difference_from_lowest": "100.00"
+          }
+        ],
+        "lowest_announced_identities": [
+          "102:203"
+        ],
+        "status": "COMPARABLE_ANNOUNCED_QUOTES"
+      }
+    ],
+    "status": "COMPARABLE_ANNOUNCED_QUOTES",
+    "price_semantics": "ANNOUNCED_NOT_CONFIRMED_FINAL",
+    "publication_authorized": false,
+    "history_writes": 0
+  }
+}

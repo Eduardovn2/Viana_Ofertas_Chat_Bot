@@ -38,6 +38,13 @@ from app.models.enums import (
     SourceType,
     TelegramPublicationStatus,
 )
+from app.models.shopee_collection import ShopeeCollectionCandidate, ShopeeCollectionRun
+from app.models.shopee_discovery import (
+    ShopeeDiscoveryFinding,
+    ShopeeDiscoveryPolicy,
+    ShopeeDiscoveryProduct,
+    ShopeeDiscoveryRun,
+)
 from app.models.simulation import (
     SimulationAudit,
     SimulationPolicy,
@@ -85,6 +92,12 @@ __all__ = [
     "PublicationQueueItem",
     "QueueStatus",
     "SourceType",
+    "ShopeeCollectionRun",
+    "ShopeeCollectionCandidate",
+    "ShopeeDiscoveryFinding",
+    "ShopeeDiscoveryPolicy",
+    "ShopeeDiscoveryProduct",
+    "ShopeeDiscoveryRun",
     "TelegramPublication",
     "TelegramPublicationStatus",
     "UTCDateTime",

@@ -1,5 +1,37 @@
 """Safe, typed diagnostics. Never propagate upstream response bodies or secrets."""
 
+import math
+
+
+def http_diagnostics(error):
+    """Only typed transport measurements; never exception strings/requests/headers."""
+    data = getattr(error, "http_diagnostics", {})
+    if not isinstance(data, dict):
+        return {}
+    result = {}
+    for key, allowed in {
+        "timeout_phase": {"CONNECT", "READ", "WRITE", "POOL", "UNKNOWN"},
+        "error_type": {
+            "ConnectTimeout",
+            "ReadTimeout",
+            "WriteTimeout",
+            "PoolTimeout",
+            "TimeoutException",
+            "ConnectError",
+            "ReadError",
+            "WriteError",
+            "NetworkError",
+            "RequestError",
+        },
+    }.items():
+        if isinstance(data.get(key), str) and data[key] in allowed:
+            result[key] = data[key]
+    for key in ("elapsed_ms", "timeout_connect", "timeout_read", "timeout_write", "timeout_pool"):
+        value = data.get(key)
+        if type(value) in {int, float} and math.isfinite(value) and value >= 0:
+            result[key] = value
+    return result
+
 
 class IntegrationError(Exception):
     def __init__(self, code: str, message: str):

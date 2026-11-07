@@ -388,7 +388,7 @@ def test_test_environment_and_pytest_always_block_scheduler_threads(settings, mo
         assert runtime.status()["threads_blocked"] is True
 
 
-def test_scheduler_uses_single_coalesced_tick_and_safe_lifecycle(settings, monkeypatch):
+def test_scheduler_uses_single_coalesced_tick_and_safe_lifecycle(database, settings, monkeypatch):
     created = []
 
     class FakeScheduler:
@@ -413,7 +413,7 @@ def test_scheduler_uses_single_coalesced_tick_and_safe_lifecycle(settings, monke
 
     monkeypatch.setattr(runtime_module, "BackgroundScheduler", FakeScheduler)
     monkeypatch.setattr(runtime_module, "_threads_blocked", lambda _: False)
-    runtime = MonitoringRuntime(lambda: None, settings)
+    runtime = MonitoringRuntime(database, settings)
     assert runtime.start()["running"] is True
     assert runtime.start()["running"] is True
     assert len(created) == 1
@@ -426,6 +426,58 @@ def test_scheduler_uses_single_coalesced_tick_and_safe_lifecycle(settings, monke
     assert runtime.resume()["running"] is True
     assert runtime.shutdown()["running"] is False
     assert created[0].shutdown_wait is True
+
+
+def test_start_respects_persisted_pause_before_constructing_scheduler(
+    database, settings, monkeypatch
+):
+    with database() as session:
+        save_monitoring_configuration(session, settings, {"scheduler_enabled": False})
+        session.commit()
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Paused startup must not even construct a scheduler")
+
+    monkeypatch.setattr(runtime_module, "BackgroundScheduler", forbidden)
+    monkeypatch.setattr(runtime_module, "_threads_blocked", lambda _: False)
+    runtime = MonitoringRuntime(database, settings.model_copy(update={"scheduler_enabled": True}))
+    assert runtime.start()["paused"] is True
+    assert runtime.start()["enabled"] is False
+    assert runtime._scheduler is None
+    assert runtime.resume()["running"] is False  # Persistence still forbids activation.
+    assert runtime._scheduler is None
+
+
+def test_start_fails_closed_when_configuration_unavailable(settings, monkeypatch):
+    from sqlalchemy.exc import SQLAlchemyError
+
+    def unavailable():
+        raise SQLAlchemyError("synthetic database unavailable")
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Unverified startup must not construct a scheduler")
+
+    monkeypatch.setattr(runtime_module, "BackgroundScheduler", forbidden)
+    monkeypatch.setattr(runtime_module, "_threads_blocked", lambda _: False)
+    runtime = MonitoringRuntime(unavailable, settings)
+    status = runtime.start()
+    assert status["paused"] and not status["running"] and not status["enabled"]
+    assert status["last_error"] == "SQLAlchemyError"
+
+
+def test_start_fails_closed_when_persisted_configuration_invalid(database, settings, monkeypatch):
+    from app.models import AppSetting
+
+    with database() as session:
+        session.add(AppSetting(key="monitoring_config", value={"scheduler_enabled": "invalid"}))
+        session.commit()
+    monkeypatch.setattr(runtime_module, "_threads_blocked", lambda _: False)
+    monkeypatch.setattr(
+        runtime_module, "BackgroundScheduler", lambda **kwargs: pytest.fail("Must remain stopped")
+    )
+    runtime = MonitoringRuntime(database, settings)
+    assert runtime.start()["last_error"] == "ValidationError"
+    assert runtime._scheduler is None and runtime.status()["paused"]
 
 
 def test_missing_or_disabled_product_never_creates_history(database, settings, clock):

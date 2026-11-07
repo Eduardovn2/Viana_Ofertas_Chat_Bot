@@ -31,6 +31,7 @@ class MessageData:
     coupon_text: str | None = None
     installments_text: str | None = None
     image_url: str | None = None
+    content_notice: str | None = None
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,17 @@ class RenderedMessage:
     photo_url: str | None = None
     parse_mode: str = "HTML"
     image_omitted: bool = False
+
+
+@dataclass(frozen=True)
+class AnnouncementMessageData:
+    name: str
+    announced_price: Decimal
+    affiliate_url: str
+    image_url: str | None = None
+    confirmed_title: str | None = None
+    documented_options: tuple[str, ...] = ()
+    documented_metrics: tuple[str, ...] = ()
 
 
 def _text(value: str) -> str:
@@ -174,6 +186,8 @@ def render_message(data: MessageData) -> RenderedMessage:
         )
     if data.installments_text:
         lines.append(f"Parcelamento: {escape(_text(data.installments_text), quote=True)}")
+    if data.content_notice:
+        lines.append(escape(_text(data.content_notice), quote=True))
     lines.extend([f'<a href="{affiliate}">Ver oferta pelo link de afiliado</a>', ADVERTISING_LABEL])
     text = "\n".join(lines)
     photo = validate_public_url(data.image_url) if data.image_url else None
@@ -181,6 +195,72 @@ def render_message(data: MessageData) -> RenderedMessage:
     if omitted:
         photo = None
         text += f"\n{IMAGE_OMITTED_NOTICE}"
+    if telegram_text_length(text) > 4096:
+        raise MessageTemplateError("Mensagem excede o limite de texto do Telegram.")
+    return RenderedMessage(text, photo_url=photo, image_omitted=omitted)
+
+
+def render_announcement_message(data: AnnouncementMessageData) -> RenderedMessage:
+    """Informational V2, with attribution and no variant/stock/discount assertions.
+
+    confirmed_title/options/metrics are view data from validated documentary
+    evidence, never title inferences or raw seller statistics.
+    """
+    name = " ".join(_text(data.name).split())
+    title = _text(data.confirmed_title) if data.confirmed_title else " ".join(name.split()[:4])
+    if not data.confirmed_title and title != name:
+        title += "…"
+    # Keep the complete source title below when the heading is shortened.
+    if len(title) > 76:
+        title = title[:73].rsplit(" ", 1)[0].rstrip() + "…"
+    affiliate_url = validate_public_url(data.affiliate_url)
+    parsed = urlsplit(affiliate_url)
+    if parsed.hostname not in {"s.shopee.com.br", "shopee.com.br", "www.shopee.com.br"}:
+        raise MessageTemplateError("Link afiliado Shopee inválido.")
+    icon = "🔌" if name.casefold().startswith("cabo hdmi") else "🛍"
+    lines = [f"{icon} <b>ANÚNCIO • {escape(title)}</b>"]
+    if not data.confirmed_title or name != data.confirmed_title:
+        lines.extend(["", f"Título no anúncio: {escape(name)}"])
+    if data.documented_options:
+        lines.extend(
+            [
+                "",
+                "📦 Opções documentadas no anúncio: "
+                + escape(" • ".join(_text(v) for v in data.documented_options)),
+            ]
+        )
+    if data.documented_metrics:
+        lines.extend(["", *[escape(_text(v)) for v in data.documented_metrics]])
+    lines.extend(
+        [
+            "",
+            "💰 <b>PREÇO ANUNCIADO:</b>",
+            f"<b>{_money(data.announced_price)}</b>",
+            "",
+            "🛒 <b>CONFIRA NA SHOPEE:</b>",
+            f'<a href="{escape(affiliate_url, quote=True)}">{escape(affiliate_url)}</a>',
+            "",
+            "⚠️ Confira a versão, o conteúdo, o preço final, o frete e a disponibilidade.",
+            "Preço final e estoque não verificados.",
+            "",
+            ADVERTISING_LABEL,
+        ]
+    )
+    text = "\n".join(lines)
+    photo = None
+    if data.image_url:
+        # Same official image allowlist as the Shopee connector; never fetch here.
+        try:
+            candidate = validate_public_url(data.image_url)
+            host = urlsplit(candidate).hostname or ""
+            if host == "cf.shopee.com.br" or host.endswith(".susercontent.com"):
+                photo = candidate
+        except MessageTemplateError:
+            pass
+    omitted = photo is not None and telegram_text_length(text) > 1024
+    if omitted:
+        photo = None
+        text += "\n" + IMAGE_OMITTED_NOTICE
     if telegram_text_length(text) > 4096:
         raise MessageTemplateError("Mensagem excede o limite de texto do Telegram.")
     return RenderedMessage(text, photo_url=photo, image_omitted=omitted)

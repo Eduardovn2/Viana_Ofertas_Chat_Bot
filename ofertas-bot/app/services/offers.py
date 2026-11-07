@@ -29,6 +29,7 @@ from app.services.comparison import (
     PriceComparisonService,
     PriceDirection,
     aware_utc,
+    comparable_context,
     valid_money,
 )
 from app.services.scoring import OfferScoringService, best_coupon, evaluate_coupon
@@ -99,6 +100,7 @@ def _carried_historical_price(session: Session, observation: ProductPriceHistory
             Offer.current_price >= observation.current_price,
             Offer.status.not_in((OfferStatus.FAILED, OfferStatus.REJECTED)),
             ProductPriceHistory.source == observation.source,
+            ProductPriceHistory.source_type == observation.source_type,
             ProductPriceHistory.is_simulated == observation.is_simulated,
             ProductPriceHistory.currency == "BRL",
             ProductPriceHistory.availability == Availability.AVAILABLE,
@@ -114,16 +116,18 @@ def _carried_historical_price(session: Session, observation: ProductPriceHistory
         .order_by(ProductPriceHistory.observed_at.desc(), ProductPriceHistory.id.desc())
     )
     for prior_offer, prior_observation in candidates:
+        if not comparable_context(prior_observation, observation):
+            continue
         reference = prior_offer.historical_price
         if not valid_money(reference) or reference <= observation.current_price:
             continue
         # Require actual comparable history behind the stored reference; a store's
         # crossed-out price and a coupon alone cannot establish this evidence.
-        evidence = session.scalar(
-            select(ProductPriceHistory.id)
-            .where(
+        evidence = session.scalars(
+            select(ProductPriceHistory).where(
                 ProductPriceHistory.product_id == observation.product_id,
                 ProductPriceHistory.source == observation.source,
+                ProductPriceHistory.source_type == observation.source_type,
                 ProductPriceHistory.is_simulated == observation.is_simulated,
                 ProductPriceHistory.currency == "BRL",
                 ProductPriceHistory.availability == Availability.AVAILABLE,
@@ -137,9 +141,8 @@ def _carried_historical_price(session: Session, observation: ProductPriceHistory
                     ),
                 ),
             )
-            .limit(1)
         )
-        if evidence is not None:
+        if any(comparable_context(row, observation) for row in evidence):
             return reference
     return None
 
@@ -266,7 +269,12 @@ class OfferEngine:
         self.clock = clock or (lambda: datetime.now(UTC))
 
     def process(
-        self, session: Session, product: Product, observation: ProductPriceHistory
+        self,
+        session: Session,
+        product: Product,
+        observation: ProductPriceHistory,
+        *,
+        enqueue: bool = True,
     ) -> Offer | None:
         now = aware_utc(self.clock())
         if observation.id is None or product.id is None or observation.product_id != product.id:
@@ -301,6 +309,8 @@ class OfferEngine:
         )
         session.add(offer)
         session.flush()
+        if not enqueue:
+            return offer
         # Local import keeps the revalidation helper available to the queue without a cycle.
         from app.services.publication_queue import SimulatedQueueService
 

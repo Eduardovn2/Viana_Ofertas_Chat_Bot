@@ -1,0 +1,31 @@
+{
+  "authorization_id": "dd3396c7-1863-4e28-ab48-b671732ae7ad",
+  "source_operation": "productOfferV2.offerLink",
+  "scope_sha256": "8375cbcc8d1371a67707b7f39eac1a1cc8abb453a18fa34f46e65c558a90e117",
+  "payload_sha256": "7a88bc9a85e6f77834325c1453cadbed67ccae2b2f215b6bac9c9e7a57db5496",
+  "product_id": 1,
+  "identity": "1018042820:22293101052",
+  "variant_id": "",
+  "original_url_sha256": "2cfbe1edc2dcf3fd750d516fa7e60b4e4662c13a07f749aef5f5d4b9e0236276",
+  "short_link": "https://s.shopee.com.br/LoWq4wlIk",
+  "credential_fingerprint": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+  "account_evidence_id": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9",
+  "provider_observed_at": "2026-11-05T00:51:39.070871+00:00",
+  "operationally_reviewed_at": "2026-11-05T01:01:26.941507+00:00",
+  "verified_by": "codex.documented-api-review",
+  "product_identity_verified": true,
+  "redirect_evidence": {
+    "source": "AUTHORIZED_BROWSER_REDIRECT_TOOL_TRANSCRIPT",
+    "destination_host": "shopee.com.br",
+    "destination_path": "/product/1018042820/22293101052",
+    "mmp_pid": "an_18300880153",
+    "utm_source": "an_18300880153",
+    "observed_at": null,
+    "reviewed_at": "2026-11-05T01:01:26.941507+00:00",
+    "note": "Redirect observed after the successful offerLink read, before the subsequent CAPTCHA; no new request in this registration"
+  },
+  "link_selects_variant": false,
+  "variant_selection_required": true,
+  "does_not_verify_current_price_or_availability": true,
+  "signature": "db3b45e12e11cc791339b42c03d9638adbf60ff12ae41c7c1a0f48b8d85224a9"
+}

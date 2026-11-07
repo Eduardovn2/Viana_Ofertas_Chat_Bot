@@ -1,0 +1,155 @@
+{
+  "prepared_at": "2026-11-05T02:23:02.304986+00:00",
+  "external_http_calls": 0,
+  "telegram_attempts": 0,
+  "feed": {
+    "state": "PREPARED",
+    "scope": {
+      "authorization_id": "870092ba-b926-4944-b26a-0741c84eb9bb",
+      "operation": "listItemFeeds",
+      "mode": "REAL_FEED_METADATA_READ",
+      "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "payload": {
+        "query": "query { listItemFeeds { feeds { datafeedId referenceId datafeedName description totalCount date feedMode } } }"
+      },
+      "payload_sha256": "7841a128e0dff5ce1b0fd728d2be48a16d3b02ec211513e91cd546dc40039594",
+      "credential_fingerprint": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+      "account_evidence_id": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9",
+      "account_reference": "VianaImports",
+      "not_before": "2026-11-05T02:23:02.304986+00:00",
+      "expires_at": "2026-11-05T03:23:02.304986+00:00",
+      "max_http_attempts": 1,
+      "retry": false,
+      "fallback": false,
+      "pagination": false,
+      "feed_row_reads": 0,
+      "link_generation": 0,
+      "telegram_messages": 0
+    },
+    "scope_sha256": "d5668bc5a5a57cf999d337fb619f5f89273cf7540e182c45f00332d5855abb90",
+    "consumed": false,
+    "requests_reserved": 0
+  },
+  "publication": {
+    "authorization_id": "e484ea5f-f573-4446-8f7d-8933d4fcae11",
+    "scope": {
+      "plan": {
+        "authorization_id": "e484ea5f-f573-4446-8f7d-8933d4fcae11",
+        "profile": "AUTO_PILOT",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "not_before": "2026-11-05T02:23:02.304986Z",
+        "expires_at": "2026-11-05T03:23:02.304986Z",
+        "terms": [
+          "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro"
+        ],
+        "max_messages": 1,
+        "max_queries": 1,
+        "expected_message_sha256": "70e4923caab97d3eccd09281ea518b242a1cc1fbff46ece7ca2ae469be4f6a6d",
+        "page": 1,
+        "limit": 3,
+        "window_seconds": 600,
+        "messages_per_window": 1,
+        "cooldown_seconds": 10800,
+        "duration_seconds": 600,
+        "operating_policy": {
+          "version": "WINDOWED_V1",
+          "on_no_work": "WAIT_UNTIL_END"
+        },
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "announcement_identities": [
+          "1018042820:22293101052"
+        ]
+      },
+      "credential_fingerprint": "0f9440eebe46602dc0db7e63e09052bd2b9637a0c629e9ca63f2f5e12a3bc752",
+      "mode": "REAL_AUTO_PILOT",
+      "shopee_operation": "productOfferV2",
+      "max_external_http": 2,
+      "shopee_endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "telegram_endpoint": "https://api.telegram.org",
+      "retries": 0,
+      "fallback": false,
+      "chat_id": "-5309308689",
+      "environment": "PRODUCTION",
+      "rules": {
+        "version": "ANNOUNCEMENT_ONLY_V1",
+        "publication_mode": "ANNOUNCEMENT_ONLY",
+        "max_quote_age_seconds": 600,
+        "require_official_capture": true,
+        "require_documented_owned_link": true,
+        "availability_claims": false,
+        "final_price_claims": false,
+        "historical_discount_claims": false,
+        "links_created": 0,
+        "uncertain_never_retries": true
+      },
+      "rules_sha256": "95897f7422d2fae4436550249030fdb6723ebdc2d094ad914d2a4eded263bb45",
+      "worker_tick_seconds": 30,
+      "query_payload_sha256": {
+        "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro": "9c42cf0b1a6bb0436b65eb8fbfbee505fe80218d4ce42993a18a145883ef04e7"
+      },
+      "terminal_conditions": [
+        "DEADLINE",
+        "ADMIN_STOP",
+        "MESSAGE_BUDGET",
+        "SHOPEE_PERMISSION_DENIED",
+        "QUERY_UNCERTAINTY_NO_RETRY"
+      ]
+    },
+    "scope_sha256": "80f7e6a16dc64889086c5d9ec216c65bb0d03c7eb059c8c67a29ae1421e808a9",
+    "state": "PREPARED",
+    "reason": null,
+    "queries": [],
+    "queue": [],
+    "reservations": [],
+    "findings": [],
+    "automatic_approvals": 0,
+    "approval": null,
+    "counts": {
+      "found": 0,
+      "distinct_listings_found": 0,
+      "queries_reserved": 0,
+      "messages_reserved": 0,
+      "http_attempts": 0,
+      "automatically_approved": 0,
+      "published": 0,
+      "analysis_candidates": 0,
+      "proven_comparison_groups": 0,
+      "cheap_opportunities": 0,
+      "publishable_queue": 0,
+      "uncertain": 0,
+      "rejected": 0,
+      "inconclusive": 0,
+      "unfinalized_reservations": 0,
+      "transport_permits_consumed": 0
+    },
+    "real_activation_allowed": false,
+    "query_schedule": {
+      "interval_seconds": 600.0,
+      "next_query_at": "2026-11-05T02:23:02.304986+00:00",
+      "remaining": 1,
+      "budget_exhausted": false,
+      "operating_policy": "WINDOWED"
+    },
+    "external_http_calls": 0,
+    "authority": "SIGNED_PILOT_SCOPE_AUTOMATIC_RULES",
+    "real_dispatch_implemented": true,
+    "effective_expires_at": "2026-11-05T03:23:02.304986+00:00",
+    "latest_activation_at": "2026-11-05T03:13:02.304986+00:00",
+    "window_expired": false
+  },
+  "preview_from_preserved_quote": {
+    "dispatchable": false,
+    "reason": "STALE_QUOTE_REQUIRES_NEW_AUTHORIZED_QUERY",
+    "original_observed_at": "2026-11-05T00:51:39.070871+00:00",
+    "message": {
+      "text": "📢 <b>Publicidade • link de afiliado</b>\n\nTítulo do anúncio na Shopee:\nCabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro\n\n<b>Preço anunciado: R$ 59,00</b>\n\nConfira a opção, o conteúdo, o preço aplicável, o frete e a disponibilidade no anúncio. Preço final e estoque não verificados.\n\nhttps://s.shopee.com.br/LoWq4wlIk",
+      "photo_url": null,
+      "parse_mode": "HTML",
+      "image_omitted": true
+    },
+    "chat_id": "-5309308689"
+  },
+  "existing_settings_unchanged": true,
+  "destination_enabled": false
+}

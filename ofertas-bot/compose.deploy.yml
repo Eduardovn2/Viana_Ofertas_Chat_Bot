@@ -1,0 +1,75 @@
+# Override the existing compose file: -f docker-compose.yml -f compose.deploy.yml
+# No service approves or starts a pilot. Worker is an explicitly selected profile.
+x-runtime: &runtime
+  image: ofertas-bot:local
+  build: .
+  env_file:
+    - ${DEPLOY_ENV_FILE:-.env}
+  environment: &safe-environment
+    APP_ENV: production
+    DATABASE_URL: ${DEPLOY_DATABASE_URL:?Defina a URL interna codificada com host postgres e banco ofertas_bot}
+    ADMIN_ALLOWED_NETWORKS: ${ADMIN_ALLOWED_NETWORKS:-[]}
+    SCHEDULER_ENABLED: "false"
+    SIMULATION_AUTOMATION_ENABLED: "false"
+    SHOPEE_ENABLED: "false"
+    SHOPEE_DISCOVERY_ENABLED: "false"
+    SHOPEE_SHORT_LINKS_ENABLED: "false"
+    MERCADO_LIVRE_ENABLED: "false"
+    MERCADOLIVRE_OAUTH_ENABLED: "false"
+    TELEGRAM_PUBLISHER_ENABLED: "false"
+    TELEGRAM_REAL_SENDS_AUTHORIZED: "false"
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  api:
+    <<: *runtime
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5))['status']=='ready'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    <<: *runtime
+    profiles: [pilot-worker]
+    command: ["python", "-m", "app.auto_pilot_worker"]
+    environment:
+      <<: *safe-environment
+      AUTO_PILOT_ID: ${AUTO_PILOT_ID:-}
+      AUTO_PILOT_SCOPE_SHA256: ${AUTO_PILOT_SCOPE_SHA256:-}
+      AUTO_PILOT_WORKER_TICK_SECONDS: "30"
+      AUTO_PILOT_HEALTH_FILE: /tmp/auto-pilot-worker-health.json
+    restart: "on-failure:5"
+    stop_signal: SIGTERM
+    stop_grace_period: 120s
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.auto_pilot_worker", "--healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  migrate:
+    <<: *runtime
+    profiles: [tools]
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    restart: "no"

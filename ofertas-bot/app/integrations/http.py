@@ -1,6 +1,7 @@
 """Bounded HTTP to fixed official origins; no redirects, secret logs or global retries."""
 
 import json
+import logging
 import math
 import random
 import threading
@@ -14,9 +15,15 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from app.integrations.errors import AuthorizationDenied, IntegrationError, InvalidPayload
+from app.integrations.errors import (
+    AuthorizationDenied,
+    IntegrationError,
+    InvalidPayload,
+    http_diagnostics,
+)
 
 _ORIGINS = {"api.mercadolibre.com", "open-api.affiliate.shopee.com.br"}
+logger = logging.getLogger("ofertas_bot")
 
 
 @dataclass(frozen=True)
@@ -29,7 +36,7 @@ class JsonTransport:
     def __init__(
         self,
         *,
-        timeout: float = 10,
+        timeout: float | httpx.Timeout | None = None,
         max_retries: int = 2,
         min_interval: float = 1,
         cache_seconds: float = 30,
@@ -43,10 +50,19 @@ class JsonTransport:
         rate_defer: Callable | None = None,
         on_auth_failure: Callable | None = None,
     ):
-        self.client = client or httpx.Client(
-            timeout=timeout, follow_redirects=False, trust_env=False
+        configured = (
+            timeout if timeout is not None else (client.timeout if client is not None else 10)
         )
-        self.timeout = timeout
+        self.timeout = httpx.Timeout(configured)
+        if any(
+            v is None or not math.isfinite(v) or v <= 0 for v in self.timeout.as_dict().values()
+        ):
+            raise ValueError(
+                "Timeouts de conexão/leitura/escrita/pool devem ser positivos e limitados."
+            )
+        self.client = client or httpx.Client(
+            timeout=self.timeout, follow_redirects=False, trust_env=False
+        )
         self.max_retries = max_retries
         self.min_interval = min_interval
         self.cache_seconds = cache_seconds
@@ -134,6 +150,7 @@ class JsonTransport:
                     self.rate_gate()
                 self._next_at = self.monotonic() + self.min_interval
                 response = None
+                attempt_started = self.monotonic()
                 try:
                     response = self.client.request(
                         method,
@@ -143,10 +160,37 @@ class JsonTransport:
                         timeout=self.timeout,
                         follow_redirects=False,
                     )
-                except httpx.TimeoutException:
+                except httpx.TimeoutException as cause:
                     error = IntegrationError("TIMEOUT", "Tempo limite da API excedido.")
-                except httpx.RequestError:
+                    phase = next(
+                        (
+                            phase
+                            for kind, phase in (
+                                (httpx.ConnectTimeout, "CONNECT"),
+                                (httpx.ReadTimeout, "READ"),
+                                (httpx.WriteTimeout, "WRITE"),
+                                (httpx.PoolTimeout, "POOL"),
+                            )
+                            if isinstance(cause, kind)
+                        ),
+                        "UNKNOWN",
+                    )
+                    error.http_diagnostics = dict(
+                        timeout_phase=phase,
+                        error_type=type(cause).__name__,
+                        elapsed_ms=round(max(0, self.monotonic() - attempt_started) * 1000, 3),
+                        **{
+                            "timeout_" + key: value for key, value in self.timeout.as_dict().items()
+                        },
+                    )
+                    logger.warning("integration_http_timeout", extra=http_diagnostics(error))
+                except httpx.RequestError as cause:
                     error = IntegrationError("NETWORK_ERROR", "API temporariamente inacessível.")
+                    error.http_diagnostics = dict(
+                        error_type=type(cause).__name__,
+                        elapsed_ms=round(max(0, self.monotonic() - attempt_started) * 1000, 3),
+                    )
+                    logger.warning("integration_http_network_error", extra=http_diagnostics(error))
                 else:
                     if response.status_code in {401, 403}:
                         self._cache.clear()

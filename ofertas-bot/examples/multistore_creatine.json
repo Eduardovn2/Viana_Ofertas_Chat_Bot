@@ -1,0 +1,23 @@
+{
+  "data_kind": "SYNTHETIC_ONLY",
+  "evidence_reference": "FICTÍCIO: examples/multistore_creatine.json",
+  "product": {"brand": "Growth", "model": "Creatina", "quantity": 1},
+  "documented_facts": {
+    "brand": "Growth", "model": "Creatina", "quantity": 1,
+    "condition": "novo", "packaging": "pote lacrado", "kit": ["um pote"],
+    "variant": "sem sabor", "edition": "standard",
+    "net_content": {"amount": "250", "unit": "g"},
+    "price_conditions": "anunciado sem cupom; à vista; região SP; elegibilidade pública"
+  },
+  "listings": [
+    {"shop_id": 201, "item_id": 2001, "name": "Growth Creatina 250 g comum", "price": "69.90", "evidence_overrides": {}},
+    {"shop_id": 202, "item_id": 2002, "name": "Growth Creatina 0,25 kg comum", "price": "64.90", "evidence_overrides": {"net_content": {"amount": "0.25", "unit": "kg"}}},
+    {"shop_id": 202, "item_id": 2003, "name": "Growth Creatina 250g comum", "price": "66.90", "evidence_overrides": {}},
+    {"shop_id": 203, "item_id": 2004, "name": "Growth Creatina 300 g comum", "price": "59.90", "evidence_overrides": {"net_content": {"amount": "300", "unit": "g"}}},
+    {"shop_id": 204, "item_id": 2005, "name": "Growth Creatina 250g premium", "price": "79.90", "evidence_overrides": {"edition": "premium"}},
+    {"shop_id": 205, "item_id": 2006, "name": "Dosador para Growth Creatina", "price": "9.90", "evidence_overrides": null},
+    {"shop_id": 206, "item_id": 2007, "name": "Growth Creatina 250g/300g selecione", "price": "39.90", "evidence_overrides": null},
+    {"shop_id": 207, "item_id": 2008, "name": "Growth Creatina 3g por dose", "price": "19.90", "evidence_overrides": null},
+    {"shop_id": 208, "item_id": 2009, "name": "Growth Creatina kit 2 x 250g comum", "price": "120.00", "evidence_overrides": {"quantity": 2}}
+  ]
+}

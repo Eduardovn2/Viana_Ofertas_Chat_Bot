@@ -1,0 +1,172 @@
+{
+  "state": "UNCERTAIN",
+  "scope": {
+    "authorization_id": "313d93a3-5c57-48c8-ad4b-96a42952f3c5",
+    "purpose": "IMMEDIATE_REAL_COMMERCIAL_E2E",
+    "authority": "USER_EXPLICIT_AUTHORIZATION_CURRENT_CHAT",
+    "actor": "eduardo.viana.3",
+    "not_before": "2026-11-03T00:25:58.734036+00:00",
+    "expires_at": "2026-11-03T00:45:43.734036+00:00",
+    "destination_id": 2,
+    "chat_id": "-5309308689",
+    "max_shopee_queries": 3,
+    "max_telegram_sends": 1,
+    "credential_fingerprint": "0f9440eebe46602dc0db7e63e09052bd2b9637a0c629e9ca63f2f5e12a3bc752",
+    "shopee_endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+    "retry": false,
+    "fallback": false,
+    "links_generated": 0,
+    "publication_requires_existing_valid_commercial_evidence": true,
+    "scheduled_pilot_untouched": "auto_pilot:d80879af-27e3-47fc-b47b-01e3499a3006",
+    "requests": [
+      {
+        "kind": "search",
+        "uuid": "dc151a5c-10ee-47cb-807c-f0f513aeaa37",
+        "keyword": "Cockpit simulador Brave Bull",
+        "page": 1,
+        "limit": 3,
+        "payload_sha256": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709"
+      },
+      {
+        "kind": "identity",
+        "uuid": "286fd748-262c-4ae1-b344-3f1300474004",
+        "product_id": 2,
+        "shop_id": "1904573791",
+        "item_id": "23199869203",
+        "payload_sha256": "18f2c7ef42c88f857ac1facf3bfd67f20440f1fa6782bd9a29a81351f8225419"
+      }
+    ]
+  },
+  "scope_sha256": "9003d40b270bd1512ff83df7a7bbfb5014a1dc168e5e6625300db4acefcfe6c5",
+  "reservations": [
+    {
+      "kind": "search",
+      "uuid": "dc151a5c-10ee-47cb-807c-f0f513aeaa37",
+      "state": "UNCERTAIN",
+      "at": "2026-11-03T00:25:58.734514+00:00"
+    }
+  ],
+  "results": {
+    "search": {
+      "authorization_id": "dc151a5c-10ee-47cb-807c-f0f513aeaa37",
+      "mode": "REAL_MULTISTORE_SEARCH",
+      "status": "UNCERTAIN",
+      "stored_state": "UNCERTAIN",
+      "scope_sha256": "3d33d1ecb5211ad755fcca20c2bd70eb2abbb43d8dfc6b8b93873eadbf5aa5d2",
+      "consumed": true,
+      "requests_reserved": 1,
+      "approval": {
+        "scope_sha256": "3d33d1ecb5211ad755fcca20c2bd70eb2abbb43d8dfc6b8b93873eadbf5aa5d2",
+        "actor": "eduardo.viana.3",
+        "confirmed_single_read": true,
+        "expires_at": "2026-11-03T00:45:43.734036Z"
+      },
+      "result": {
+        "http_calls": 1,
+        "mode": "REAL_MULTISTORE_SEARCH",
+        "http_status": null
+      },
+      "error_code": "TIMEOUT",
+      "publication_authorized": false,
+      "price_history_writes": 0,
+      "scope": {
+        "authorization_id": "dc151a5c-10ee-47cb-807c-f0f513aeaa37",
+        "actor": "eduardo.viana.3",
+        "operation": "productOfferV2",
+        "keyword": "Cockpit simulador Brave Bull",
+        "page": 1,
+        "limit": 3,
+        "not_before": "2026-11-03T00:25:58.734036Z",
+        "expires_at": "2026-11-03T00:45:43.734036Z",
+        "mode": "REAL_MULTISTORE_SEARCH",
+        "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+        "credential_scope": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+        "payload_sha256": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709",
+        "profile": "multistore",
+        "max_http_calls": 1,
+        "retry": false,
+        "fallback": false,
+        "pagination": false,
+        "history_writes": 0,
+        "publication_authorized": false
+      },
+      "payload": {
+        "query": "query { productOfferV2(keyword:\"Cockpit simulador Brave Bull\",page:1,limit:3) { nodes { itemId shopId productName productLink imageUrl price priceMin priceMax productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime shopName ratingStar sales shopType } pageInfo { page limit hasNextPage } } }"
+      }
+    }
+  },
+  "initial_counts": {
+    "offers": 0,
+    "histories": 4,
+    "associated_links": 0,
+    "workers": [
+      {
+        "at": "2026-11-03T00:25:27.188962+00:00",
+        "state": "PREPARED",
+        "phase": "WAITING",
+        "pilot_id": "d80879af-27e3-47fc-b47b-01e3499a3006",
+        "process_id": 8688
+      }
+    ]
+  },
+  "preserved_pilot_sha256": "3c9e9fac13789d5133be5e1144a248d9ccedb2307a48bc3f955953db98098bb0",
+  "initial_destination_enabled": false,
+  "telegram_attempts": 0,
+  "links_generated": 0,
+  "final_report": {
+    "finished_at_utc": "2026-11-03T00:26:59.594849+00:00",
+    "status": "UNCERTAIN",
+    "reason": "SHOPEE_TIMEOUT_NO_RETRY",
+    "shopee_queries_reserved": 1,
+    "shopee_http_attempts": 1,
+    "shopee_http_status": null,
+    "shopee_error_code": "TIMEOUT",
+    "selected_product": null,
+    "intended_product": {
+      "product_id": 2,
+      "shop_id": "1904573791",
+      "item_id": "23199869203"
+    },
+    "verified_current_price": null,
+    "verified_availability": null,
+    "verified_variant": null,
+    "affiliate_link_used": null,
+    "existing_link_document_reference": "docs/RESULTADO_GENERATE_SHORTLINK_SHOPEE.json",
+    "existing_link_documentary_ownership_verified": false,
+    "links_generated": 0,
+    "offers_created": 0,
+    "telegram_attempts": 0,
+    "telegram_api_result": "NOT_CALLED",
+    "telegram_http_status": null,
+    "message_id": null,
+    "message": null,
+    "destination_enabled": false,
+    "temporary_permissions_enabled": false,
+    "scheduler_enabled": false,
+    "preserved_pilot": {
+      "authorization_id": "d80879af-27e3-47fc-b47b-01e3499a3006",
+      "state": "PREPARED",
+      "scope_sha256": "fc942c3b9f2e0a28ea63f75762aadbe8f6580d2700bc50977e5944d0bbe6b387",
+      "unchanged": true,
+      "queries_reserved": 0,
+      "messages_reserved": 0
+    },
+    "operational_counts": {
+      "offers": 0,
+      "histories": 4,
+      "associated_links": 0,
+      "outbox_entries": 0
+    },
+    "worker": {
+      "at": "2026-11-03T00:26:57.220963+00:00",
+      "worker_id": "bdf313e57b464e99a96b0dd11150ad2e",
+      "pilot_id": "d80879af-27e3-47fc-b47b-01e3499a3006",
+      "phase": "WAITING",
+      "process_id": 8688,
+      "state": "PREPARED",
+      "error_type": null,
+      "heartbeat_age_seconds": 2.390778,
+      "healthy": true
+    }
+  }
+}

@@ -1,0 +1,3 @@
+{
+  "query": "query { productOfferV2(shopId:1904573791,itemId:23199869203,page:1,limit:1) { nodes { itemId shopId productName productLink imageUrl price priceMin priceMax productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime } pageInfo { page limit hasNextPage } } }"
+}

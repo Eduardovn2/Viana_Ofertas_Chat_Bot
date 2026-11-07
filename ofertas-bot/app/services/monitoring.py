@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.integrations.base import PriceProvider, PriceSnapshot
-from app.integrations.contracts import ProductSnapshot
+from app.integrations.contracts import PriceContext, ProductSnapshot
 from app.models import Availability, PriceAccess, Product, ProductPriceHistory, SourceType
 
 
@@ -103,6 +103,12 @@ def record_price(
     if raw_fingerprint is not None and not re.fullmatch(r"[a-f0-9]{64}", raw_fingerprint):
         raise ValueError("Fingerprint de evidência inválido.")
     metadata = _safe_evidence(snapshot.evidence_metadata)
+    if metadata.get("observation_only") and (
+        snapshot.availability != Availability.UNKNOWN
+        or snapshot.price_access != PriceAccess.UNKNOWN
+        or metadata.get("commercial_verified") is not False
+    ):
+        raise ValueError("Cotação observacional não pode promover condições comerciais.")
     if isinstance(snapshot, ProductSnapshot):
         metadata.update(
             _safe_evidence(
@@ -169,6 +175,15 @@ def collect_price(
 
 
 _EVIDENCE_FIELDS = {
+    "price_basis",
+    "price_context",
+    "advertised_discount_percent",
+    "offer_period_start_raw",
+    "offer_period_end_raw",
+    "period_time_unit",
+    "period_semantics",
+    "commercial_verified",
+    "observation_only",
     "category_external_id",
     "category_external_name",
     "category_external_ids",
@@ -202,9 +217,36 @@ def _safe_evidence(metadata: dict) -> dict:
     if not isinstance(metadata, dict):
         raise ValueError("Metadados de evidência inválidos.")
     clean = {}
+    if "price_context" in metadata:
+        context = PriceContext.model_validate(metadata["price_context"])
+        if metadata.get("price_basis") != context.price_basis:
+            raise ValueError("A base do preço diverge do contexto informado.")
+        clean["price_context"] = context.model_dump()
     for key, value in metadata.items():
         if key not in _EVIDENCE_FIELDS:
             continue
+        if key == "price_context":
+            continue
+        if key == "price_basis" and (
+            not isinstance(value, str) or not re.fullmatch(r"v1:[a-f0-9]{64}", value)
+        ):
+            raise ValueError("Base de preço inválida.")
+        if (
+            key == "advertised_discount_percent"
+            and value is not None
+            and (type(value) is not int or not 0 <= value <= 100)
+        ):
+            raise ValueError("Percentual anunciado inválido.")
+        if (
+            key in {"offer_period_start_raw", "offer_period_end_raw"}
+            and value is not None
+            and (type(value) is not int or not -(2**63) <= value < 2**63)
+        ):
+            raise ValueError("Período informativo inválido.")
+        if key in {"commercial_verified", "observation_only"} and type(value) is not bool:
+            raise ValueError("Indicador de evidência inválido.")
+        if key in {"period_time_unit", "period_semantics"} and value != "UNCONFIRMED":
+            raise ValueError("A unidade e a semântica do período não foram confirmadas.")
         if isinstance(value, Decimal):
             value = str(value)
         if isinstance(value, str):
@@ -242,4 +284,4 @@ def apply_product_snapshot(product: Product, snapshot: ProductSnapshot) -> None:
     metadata["category_name"] = snapshot.category_external_name
     metadata["source_name"] = snapshot.name
     product.classification_metadata = metadata
-    product.name = snapshot.name[:255]
+    product.name = snapshot.name

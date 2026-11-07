@@ -1,0 +1,19 @@
+{
+  "checked_at": "2026-11-05T02:38:50.969190+00:00",
+  "announcement_state": "COMPLETED",
+  "announcement_reason": "MESSAGE_BUDGET",
+  "publication_status": "SENT",
+  "message_id": "13",
+  "message_sent_at": "2026-11-05T02:36:03.532956+00:00",
+  "feed_state": "SUCCEEDED",
+  "feed_http_status": 200,
+  "feeds_found": 4,
+  "feed_rows_read": 0,
+  "shopee_query_posts": 1,
+  "telegram_posts": 1,
+  "feed_posts": 1,
+  "destination_enabled": false,
+  "legacy_scheduler_enabled": false,
+  "active_pilots": 0,
+  "backend_ready_http_status": 200
+}

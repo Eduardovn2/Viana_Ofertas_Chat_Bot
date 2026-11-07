@@ -1,0 +1,336 @@
+{
+  "prepared_at": "2026-11-05T03:34:45+00:00",
+  "reason": "NEW_IDENTIFIERS_REQUESTED_NO_EXECUTION",
+  "not_before": "2026-11-05T03:34:45+00:00",
+  "expires_at": "2026-11-05T05:34:45+00:00",
+  "previous_scopes": {
+    "first_publication": {
+      "uuid": "f4fd7226-fc1d-41a0-bc66-3fc525d92bfc",
+      "sha256": "c5548807319e6ee00206e78c1f19081d258950b572ab2065dd46ebadcbbe6188"
+    },
+    "first_link_preflight": {
+      "uuid": "ecb2d840-e20d-41cd-8677-17cca6c032d1",
+      "sha256": "ea32eb9b5325548fcb730613af94efb921b821dcdb052f4c7bc09c45088ef982"
+    },
+    "pilot": {
+      "uuid": "fb38591a-489b-417c-9414-39fd2cec04de",
+      "sha256": "c1cdaa02c3c94821dced7cee9d60cb732edf62fc2bd7ade7d88d0754a88a7e73"
+    },
+    "pilot_link_preflight": {
+      "uuid": "0f311e6c-e9fe-45db-80c0-89ee68085c90",
+      "sha256": "6390e0213514058dae74a4556d34845a088283a452e8aa5923f22373f1623244"
+    }
+  },
+  "external_http_calls": 0,
+  "telegram_attempts": 0,
+  "original_records_preserved": true,
+  "first_link_preflight": {
+    "scope": {
+      "authorization_id": "46f136ba-5f89-4262-9856-bdd79953f5a5",
+      "actor": "eduardo.viana.3",
+      "purpose": "ANNOUNCEMENT_ONLY_LINKS",
+      "operation": "generateShortLink",
+      "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "not_before": "2026-11-05T03:34:45+00:00",
+      "expires_at": "2026-11-05T05:34:45+00:00",
+      "max_posts": 1,
+      "retry": false,
+      "fallback": false,
+      "account_evidence_id": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9",
+      "credential_fingerprint": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+      "environment": "PRODUCTION",
+      "candidates": [
+        {
+          "product_id": 5,
+          "identity": "1595990092:58202217973",
+          "variant_id": "",
+          "origin_url": "https://shopee.com.br/product/1595990092/58202217973",
+          "product_binding_sha256": "c8852f364c95787ee985662b2441a9e132e339dd43240710b10d8866fb41d44f",
+          "payload_sha256": "93b0aba27a1a38f26bf05c0f90e509c4b95530038ee5a5d51e465de82b1e1322"
+        }
+      ],
+      "publication_authorized": false,
+      "commercial_verification": false
+    },
+    "scope_sha256": "04bfb54565892a09cf9a04a1a4683f94307725258c2c55f73fd536bc78940766",
+    "state": "PREPARED",
+    "approval": null,
+    "requests_reserved": 0,
+    "receipts": []
+  },
+  "pilot_link_preflight": {
+    "scope": {
+      "authorization_id": "3d725955-f86e-492d-8aeb-f57ec9a15f4a",
+      "actor": "eduardo.viana.3",
+      "purpose": "ANNOUNCEMENT_ONLY_LINKS",
+      "operation": "generateShortLink",
+      "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "not_before": "2026-11-05T03:34:45+00:00",
+      "expires_at": "2026-11-05T05:34:45+00:00",
+      "max_posts": 3,
+      "retry": false,
+      "fallback": false,
+      "account_evidence_id": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9",
+      "credential_fingerprint": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+      "environment": "PRODUCTION",
+      "candidates": [
+        {
+          "product_id": 2,
+          "identity": "1904573791:23199869203",
+          "variant_id": "",
+          "origin_url": "https://shopee.com.br/product/1904573791/23199869203",
+          "product_binding_sha256": "13c5400ac749d05c1dfaca2963ef51dcb55728e9989c9751c1162e45e3884849",
+          "payload_sha256": "6708f1c6274913f090469e6f48adfe41a70254dd8bd70f8e77648a80a180bd29"
+        },
+        {
+          "product_id": 4,
+          "identity": "1754100018:22799528968",
+          "variant_id": "",
+          "origin_url": "https://shopee.com.br/product/1754100018/22799528968",
+          "product_binding_sha256": "8d259aa3c529ad9f30c8d7d30537f2d3f73969e5abe99209b3791adb42fa5fe5",
+          "payload_sha256": "c3c13f53be89b0537c210f4d86cfd5ad8ae474cdaa9ea700affff36b1a469ac5"
+        },
+        {
+          "product_id": 3,
+          "identity": "1754100018:58219916237",
+          "variant_id": "",
+          "origin_url": "https://shopee.com.br/product/1754100018/58219916237",
+          "product_binding_sha256": "8af0ab93f571e23f1c96ccf338eca04aa9c4dbd8db536a68ad9eacdcdfca107f",
+          "payload_sha256": "bd24a67b40c4312aab175dfafd34f23ac695221c9e88a7bdea8ba63e32e1e4df"
+        }
+      ],
+      "publication_authorized": false,
+      "commercial_verification": false
+    },
+    "scope_sha256": "93723d155f6537076704e34cb195588583386024835c285d87b2ba0e7e999c24",
+    "state": "PREPARED",
+    "approval": null,
+    "requests_reserved": 0,
+    "receipts": []
+  },
+  "first_publication": {
+    "authorization_id": "9b0be928-f8e2-4b66-9101-2e813c74503d",
+    "scope": {
+      "plan": {
+        "authorization_id": "9b0be928-f8e2-4b66-9101-2e813c74503d",
+        "profile": "AUTO_PILOT",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "not_before": "2026-11-05T03:34:45Z",
+        "expires_at": "2026-11-05T05:34:45Z",
+        "terms": [
+          "Suporte Cockpit Para Volante Pedais Para Simulador De Voo Brave Bull"
+        ],
+        "max_messages": 1,
+        "max_queries": 1,
+        "page": 1,
+        "limit": 3,
+        "window_seconds": 600,
+        "messages_per_window": 1,
+        "cooldown_seconds": 10800,
+        "duration_seconds": 600,
+        "operating_policy": {
+          "version": "WINDOWED_V1",
+          "on_no_work": "WAIT_UNTIL_END"
+        },
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "announcement_template": "PRO_V2",
+        "announcement_selection": "RANKING_100_V1",
+        "announcement_identities": [
+          "1595990092:58202217973"
+        ]
+      },
+      "credential_fingerprint": "0f9440eebe46602dc0db7e63e09052bd2b9637a0c629e9ca63f2f5e12a3bc752",
+      "mode": "REAL_AUTO_PILOT",
+      "shopee_operation": "productOfferV2",
+      "max_external_http": 2,
+      "shopee_endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "telegram_endpoint": "https://api.telegram.org",
+      "retries": 0,
+      "fallback": false,
+      "chat_id": "-5309308689",
+      "environment": "PRODUCTION",
+      "rules": {
+        "version": "ANNOUNCEMENT_ONLY_V1",
+        "publication_mode": "ANNOUNCEMENT_ONLY",
+        "max_quote_age_seconds": 600,
+        "require_official_capture": true,
+        "require_documented_owned_link": true,
+        "availability_claims": false,
+        "final_price_claims": false,
+        "historical_discount_claims": false,
+        "links_created": 0,
+        "uncertain_never_retries": true
+      },
+      "rules_sha256": "95897f7422d2fae4436550249030fdb6723ebdc2d094ad914d2a4eded263bb45",
+      "worker_tick_seconds": 30,
+      "query_payload_sha256": {
+        "Suporte Cockpit Para Volante Pedais Para Simulador De Voo Brave Bull": "97eee76f4911d4a49df9098b991d35aa9446592de5b2ec2465eeeb51bdbff6ba"
+      },
+      "terminal_conditions": [
+        "DEADLINE",
+        "ADMIN_STOP",
+        "MESSAGE_BUDGET",
+        "SHOPEE_PERMISSION_DENIED",
+        "QUERY_UNCERTAINTY_NO_RETRY"
+      ]
+    },
+    "scope_sha256": "d58b829e7d1c43ea9ee8cd207c68cda5b43c07e8909ce09896e830147b2e812e",
+    "state": "PREPARED",
+    "reason": null,
+    "queries": [],
+    "queue": [],
+    "reservations": [],
+    "findings": [],
+    "automatic_approvals": 0,
+    "approval": null,
+    "counts": {
+      "found": 0,
+      "distinct_listings_found": 0,
+      "queries_reserved": 0,
+      "messages_reserved": 0,
+      "http_attempts": 0,
+      "automatically_approved": 0,
+      "published": 0,
+      "analysis_candidates": 0,
+      "proven_comparison_groups": 0,
+      "cheap_opportunities": 0,
+      "publishable_queue": 0,
+      "uncertain": 0,
+      "rejected": 0,
+      "inconclusive": 0,
+      "unfinalized_reservations": 0,
+      "transport_permits_consumed": 0
+    },
+    "real_activation_allowed": false,
+    "query_schedule": {
+      "interval_seconds": 600.0,
+      "next_query_at": "2026-11-05T03:34:45+00:00",
+      "remaining": 1,
+      "budget_exhausted": false,
+      "operating_policy": "WINDOWED"
+    },
+    "external_http_calls": 0,
+    "authority": "SIGNED_PILOT_SCOPE_AUTOMATIC_RULES",
+    "real_dispatch_implemented": true,
+    "effective_expires_at": "2026-11-05T05:34:45+00:00",
+    "latest_activation_at": "2026-11-05T05:24:45+00:00",
+    "window_expired": false
+  },
+  "pilot": {
+    "authorization_id": "574a91f4-9ec8-443d-8ee3-da08d66eae81",
+    "scope": {
+      "plan": {
+        "authorization_id": "574a91f4-9ec8-443d-8ee3-da08d66eae81",
+        "profile": "AUTO_PILOT",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "not_before": "2026-11-05T03:34:45Z",
+        "expires_at": "2026-11-05T05:34:45Z",
+        "terms": [
+          "Cockpit simulador Brave Bull",
+          "Cockpit Suporte Para Volante Cadeira",
+          "Cockpit Brave Bull"
+        ],
+        "max_messages": 3,
+        "max_queries": 3,
+        "page": 1,
+        "limit": 3,
+        "window_seconds": 600,
+        "messages_per_window": 3,
+        "cooldown_seconds": 10800,
+        "duration_seconds": 1800,
+        "operating_policy": {
+          "version": "WINDOWED_V1",
+          "query_interval_seconds": 600,
+          "on_no_work": "WAIT_UNTIL_END"
+        },
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "announcement_template": "PRO_V2",
+        "announcement_selection": "RANKING_100_V1",
+        "announcement_identities": [
+          "1904573791:23199869203",
+          "1754100018:22799528968",
+          "1754100018:58219916237"
+        ]
+      },
+      "credential_fingerprint": "0f9440eebe46602dc0db7e63e09052bd2b9637a0c629e9ca63f2f5e12a3bc752",
+      "mode": "REAL_AUTO_PILOT",
+      "shopee_operation": "productOfferV2",
+      "max_external_http": 6,
+      "shopee_endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "telegram_endpoint": "https://api.telegram.org",
+      "retries": 0,
+      "fallback": false,
+      "chat_id": "-5309308689",
+      "environment": "PRODUCTION",
+      "rules": {
+        "version": "ANNOUNCEMENT_ONLY_V1",
+        "publication_mode": "ANNOUNCEMENT_ONLY",
+        "max_quote_age_seconds": 600,
+        "require_official_capture": true,
+        "require_documented_owned_link": true,
+        "availability_claims": false,
+        "final_price_claims": false,
+        "historical_discount_claims": false,
+        "links_created": 0,
+        "uncertain_never_retries": true
+      },
+      "rules_sha256": "95897f7422d2fae4436550249030fdb6723ebdc2d094ad914d2a4eded263bb45",
+      "worker_tick_seconds": 30,
+      "query_payload_sha256": {
+        "Cockpit simulador Brave Bull": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709",
+        "Cockpit Suporte Para Volante Cadeira": "c6123201749261f22c161ed299c74cf3836f7106ab06caf42b7b6b403ef8674d",
+        "Cockpit Brave Bull": "d2d4119a363df76bfaf3da44f31cb5dfbf71993e3cda45a3d652d1baf87a047e"
+      },
+      "terminal_conditions": [
+        "DEADLINE",
+        "ADMIN_STOP",
+        "MESSAGE_BUDGET",
+        "SHOPEE_PERMISSION_DENIED",
+        "QUERY_UNCERTAINTY_NO_RETRY"
+      ]
+    },
+    "scope_sha256": "593198fcda9a46e595b91f864cc13d3b26c371e5972de7815b6d31da8618de2c",
+    "state": "PREPARED",
+    "reason": null,
+    "queries": [],
+    "queue": [],
+    "reservations": [],
+    "findings": [],
+    "automatic_approvals": 0,
+    "approval": null,
+    "counts": {
+      "found": 0,
+      "distinct_listings_found": 0,
+      "queries_reserved": 0,
+      "messages_reserved": 0,
+      "http_attempts": 0,
+      "automatically_approved": 0,
+      "published": 0,
+      "analysis_candidates": 0,
+      "proven_comparison_groups": 0,
+      "cheap_opportunities": 0,
+      "publishable_queue": 0,
+      "uncertain": 0,
+      "rejected": 0,
+      "inconclusive": 0,
+      "unfinalized_reservations": 0,
+      "transport_permits_consumed": 0
+    },
+    "real_activation_allowed": false,
+    "query_schedule": {
+      "interval_seconds": 600,
+      "next_query_at": "2026-11-05T03:34:45+00:00",
+      "remaining": 3,
+      "budget_exhausted": false,
+      "operating_policy": "WINDOWED"
+    },
+    "external_http_calls": 0,
+    "authority": "SIGNED_PILOT_SCOPE_AUTOMATIC_RULES",
+    "real_dispatch_implemented": true,
+    "effective_expires_at": "2026-11-05T05:34:45+00:00",
+    "latest_activation_at": "2026-11-05T05:04:45+00:00",
+    "window_expired": false
+  }
+}

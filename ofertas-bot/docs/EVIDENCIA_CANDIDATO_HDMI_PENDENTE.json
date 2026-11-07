@@ -1,0 +1,63 @@
+{
+  "status": "COMMERCIAL_VERIFICATION_PENDING_SHOPEE_CAPTCHA",
+  "product_id": 1,
+  "identity": "1018042820:22293101052",
+  "official_listing_url": "https://shopee.com.br/product/1018042820/22293101052",
+  "api_observation": {
+    "authorization_id": "5f553c94-48ff-4724-b12a-593c59a883b8",
+    "scope_sha256": "3d3231aef1ac76a33bbd58531fb7c3a2e13f96c6693b9171d0e6f25acb5003f0",
+    "result_reference": "docs/RESULTADO_PRIMEIRA_OFERTA_CONSULTA_ATUAL.json",
+    "observed_at": "2026-11-04T05:00:51.306704+00:00",
+    "status": "SUCCEEDED",
+    "http_status": 200,
+    "http_calls": 1,
+    "announced_price_brl": "59.00",
+    "price_min_brl": "59.00",
+    "price_max_brl": "59.00",
+    "public_price_access": "UNKNOWN",
+    "availability": "UNKNOWN",
+    "commercial_verified": false,
+    "retry_authorized": false
+  },
+  "official_browser_observation": {
+    "source": "OFFICIAL_LISTING_VISIBLE_BROWSER_AX_STATE",
+    "brand_as_displayed": "Aquário",
+    "visible_options": [
+      "Cabo 2.1 8K Aquário 1M",
+      "Cabo Full HD 1M"
+    ],
+    "description_summary": "Descrição oficial menciona cabo Aquário HDMI 2.1 8K, 48Gbps, conectores banhados e revestimento PVC; não comprova por si a seleção atualmente vendida.",
+    "selected_option_confirmed": false,
+    "official_sku": null,
+    "included_quantity_confirmed": false,
+    "current_applicable_public_price": null,
+    "availability_confirmed": false,
+    "page_transition": "LOGIN_REQUIRED_BEFORE_OPTION_AND_COMMERCIAL_VERIFICATION",
+    "login_required_display_time": "2026-11-04T05:01:41Z",
+    "partial_page_is_not_full_commercial_evidence": true,
+    "login_reported_completed_by_responsible": true,
+    "current_page_path": "/verify/captcha",
+    "security_challenge_completed": false
+  },
+  "publication_scope_draft": {
+    "state": "NOT_READY_FOR_FINAL_APPROVAL",
+    "destination_id": 2,
+    "chat_id": "-5309308689",
+    "maximum_new_link_generation_posts_proposed": 1,
+    "maximum_telegram_attempts_proposed": 1,
+    "maximum_total_external_posts_proposed": 2,
+    "retry": false,
+    "final_message": null,
+    "affiliate_link": null,
+    "account_evidence_reference": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9",
+    "requires_verified_identity_and_commercial_conditions": true,
+    "commercial_freshness_seconds": 600,
+    "requires_specific_final_scope_confirmation": true,
+    "link_generation_executed": false,
+    "telegram_executed": false
+  },
+  "minimal_next_action": "Responsável conclui a verificação CAPTCHA na aba já aberta e informa quando o anúncio estiver visível; não repetir a consulta API.",
+  "operational_offer_created": false,
+  "existing_pilots_modified": false,
+  "price_history_writes": 0
+}

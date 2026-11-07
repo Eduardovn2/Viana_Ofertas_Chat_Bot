@@ -1,0 +1,48 @@
+{
+  "authorization_id": "50f837480acf995acb3a4eabd3901a113407042b16177d9fdf1a80442e95d9f9",
+  "payload_sha256": "60c07179bdf9fc4f83be86ec5bb3cde4de1e500aae30469d92149fca03214174",
+  "status": "SUCCEEDED",
+  "http_status": 200,
+  "graphql_errors": [],
+  "real_posts": 1,
+  "shortLink": "https://s.shopee.com.br/1qczeLcPMR",
+  "longLink": "https://shopee.com.br/universal-link/Cockpit-simulador-de-corrida-Brave-Bull-estrutura-em-a%C3%A7o-resistente.-Volante-pedais-e-encosto-ajust%C3%A1veis.-i.1904573791.23199869203?[tracking parameters redacted]",
+  "product_identity": "AUTHORIZED_PATH_AND_IDS_MATCH; CONNECTOR_OPERATIONAL_VERIFICATION_PENDING",
+  "shop_id": "1904573791",
+  "item_id": "23199869203",
+  "telegram_publications": 0,
+  "other_commercial_operations": 0,
+  "affiliate_commission_or_conversion_tracking_proven": false,
+  "audit_events": [
+    6,
+    7,
+    8,
+    9
+  ],
+  "connector_account_product_verified": false,
+  "finished_at": "2026-10-22T01:23:44.435619+00:00",
+  "final_flags": {
+    "shopee_enabled": false,
+    "mercado_livre_enabled": false,
+    "telegram_publisher_enabled": false,
+    "telegram_real_sends_authorized": false,
+    "simulation_automation_enabled": false
+  },
+  "short_links_global_enabled": false,
+  "env_unchanged": true,
+  "group_enabled": false,
+  "monitoring_enabled": false,
+  "all_preexisting_rows_preserved": true,
+  "audit_key": "shopee_shortlink_once:50f837480acf995acb3a4eabd3901a113407042b16177d9fdf1a80442e95d9f9",
+  "durable_claim": "C:\\Users\\eduardo.viana.3\\Documents\\ChatGPT\\Chat_BOT\\ofertas-bot\\.runtime\\shortlink-once-50f837480acf995acb3a4eabd3901a113407042b16177d9fdf1a80442e95d9f9.jsonl",
+  "identity_verification": {
+    "method": "offline literal path comparison after universal-link prefix; no network request",
+    "path_matches_authorized_origin": true,
+    "shop_item_match": true,
+    "shop_id": "1904573791",
+    "item_id": "23199869203",
+    "connector_verification_unchanged": false,
+    "commission_or_conversion_attribution_proven": false
+  },
+  "longLink_sanitized": true
+}

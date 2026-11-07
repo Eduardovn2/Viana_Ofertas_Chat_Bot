@@ -1,6 +1,6 @@
 # Roadmap do Ofertas Bot
 
-Fases 1, 2 e 2.1 aprovadas e preservadas. Conectores, OAuth e pipeline da Fase 3 implementados e preservados. **Estado atual: consulta automática de preços Mercado Livre temporariamente suspensa; operação manual autorizada; Shopee com leitura pontual autorizada `productOfferV2` confirmada (HTTP 200), ainda desativada; normalização de categoria zero corrigida e validada offline. Fases 4–4.7 implementadas; última regressão integral com APIs mockadas e PostgreSQL real: 1.129 testes aprovados.** Envios reais continuam sem autorização, com `telegram_publisher_enabled=false` e `telegram_real_sends_authorized=false`. Docker/Compose e PostgreSQL foram validados na continuação de 20/10/2026. Os registros abaixo conservam o histórico das decisões e validações anteriores.
+Fases 1, 2 e 2.1 aprovadas e preservadas. Conectores, OAuth e pipeline da Fase 3 implementados e preservados. **Estado atual: consulta automática de preços Mercado Livre temporariamente suspensa; operação manual autorizada; Shopee com leitura pontual autorizada `productOfferV2` confirmada (HTTP 200), ainda desativada; normalização de categoria zero corrigida e validada offline. Fases 4–4.8 implementadas; coleta Shopee validada offline, sem polling real; última regressão integral com APIs mockadas e PostgreSQL real: 1.183 testes aprovados.** Envios reais continuam sem autorização, com `telegram_publisher_enabled=false` e `telegram_real_sends_authorized=false`. Docker/Compose e PostgreSQL foram validados na continuação de 20/10/2026. Os registros abaixo conservam o histórico das decisões e validações anteriores.
 
 ## Fase 1 — Fundação
 
@@ -307,7 +307,7 @@ Correção necessária no lease compartilhado: psycopg retornou `rowcount=-1` in
 - [x] Diagnosticado offline `INVALID_PAYLOAD` local: categoria `0` em `[100535,100583,0]` é rejeitada pela validação de IDs positivos. Acesso autenticado de leitura confirmado; ingestão comercial completa ainda não operacional.
 - [x] **86 testes existentes Shopee aprovados**, todos mockados. Código, filtros, nove categorias, migrações, tokens, alterações locais e `.env` preservados; flags reais permanecem `false`; nenhum monitoramento iniciado. Sem reconferência do estado persistido ou nova suíte PostgreSQL nesta consulta.
 - [x] Corrigida posteriormente a normalização de categoria zero, com regressão, IDs válidos preservados e disponibilidade/acesso desconhecidos. Nenhuma nova consulta real executada; ver checkpoint abaixo.
-- [ ] Autorizar separadamente eventual integração ao histórico/motor, demais operações ou operação automática; não presumir cupom, estoque, preço anterior, variante, desconto ou link próprio a partir desta resposta.
+- [x] Integração ao histórico/motor autorizada posteriormente na Fase 4.8 e validada offline; novas leituras reais, demais operações e operação automática continuam dependendo de autorização específica. Não presumir condições comerciais ou link próprio.
 
 [Relatório técnico](docs/VALIDACAO_SHOPEE_2026_10_21.md) e [evidência sanitizada](docs/VALIDACAO_SHOPEE_2026_10_21.json). Shopee continua **desativada**, Mercado Livre suspenso, Telegram real desativado; nenhum commit e nenhum avanço às Fases 5/6.
 
@@ -321,6 +321,267 @@ Correção necessária no lease compartilhado: psycopg retornou `rowcount=-1` in
 - [x] **1.129 testes aprovados na suíte integral**, incluindo **30 PostgreSQL reais** em schemas UUID isolados de `ofertas_bot_test`, **zero falhas e zero testes ignorados**. Os 179 direcionados são um subconjunto (120 Shopee e 59 simulação), não uma soma adicional. Há 17 avisos de depreciação de dependências, sem falhas. Ruff passou e 132 arquivos estão formatados; Alembic `upgrade head/current/check` passou na revisão `0007_simulated_automation`, sem drift. A indisponibilidade de ambiente registrada no checkpoint anterior foi resolvida para esta execução; revalidação integral da Fase 4.7 concluída.
 
 Conferência final por fingerprints: conteúdo de todas as tabelas principais preservado; `.env` idêntico antes/depois; nove categorias ativas, grupo Viana Ofertas pausado e monitoramento principal desativado. Nenhuma consulta nova à Shopee, geração de links ou publicação. Credenciais, dados, migrações e alterações anteriores preservados. Mercado Livre/Shopee e flags Telegram continuam desativados. Sem commit ou avanço às Fases 5/6.
+
+## Fase 4.8 — Shopee: coleta, histórico e garimpo preparado — 21/10/2026
+
+Autorizada a implementação incremental pelo briefing, **sem novas consultas reais implícitas ou polling comercial contínuo**. Checkpoint Git anterior `a6eb20e` preservado; nenhum novo commit nesta entrega.
+
+- [x] Reutilizar ShopeeConnector, ingestão/histórico, Decimal, classificação, filtros, comparador, OfferEngine, leases e APScheduler existentes.
+- [x] Migração aditiva `0008_shopee_collection`: execuções idempotentes e candidatas com auditoria, referência ao produto/histórico, orçamento de uma tentativa e downgrade protegido contra perda de dados.
+- [x] API administrativa autenticada para coleta pontual com opt-in por execução, consultas de auditoria/candidatas, revalidação local e preparação de agendamento pausado.
+- [x] Preservar identidade loja:item/variante, nome, URL, imagem, categorias positivas, horário/fonte, preço e intervalo reais; categoria zero continua não classificável. Comissão separada de desconto.
+- [x] Separar variação informativa do preço reportado de queda comercial verificada. Primeira observação não cria redução; estoque, preço público, variantes e demais dados não comprovados continuam desconhecidos.
+- [x] Filtros conjuntos por categorias, produto/frase e limiares opcionais. Matching conservador exclui acessórios e títulos ambíguos quando a intenção é console; correções manuais de categorias preservadas.
+- [x] Persistir candidatas dry-run; nenhuma outbox/autoaprovação real. Numa hipótese futura verificada, OfferEngine persiste apenas oferta PENDING, com enqueue desativado. Publicações técnicas não participam do fluxo.
+- [x] Uma página/até cinco produtos/um POST, sem retry ou links, intervalo conservador local de 900 segundos, quota/bloqueio compartilhados do registry, reserva durável, lease e fencing. Job preparado no scheduler existente permanece pausado/bloqueado.
+- [x] Testes direcionados finais: **136 aprovados**, incluindo 46 novos offline e regressões de automação/motor. Execução anterior de migrações/PostgreSQL: **77 aprovados**, incluindo oito novos PostgreSQL, sempre em schemas UUID de `ofertas_bot_test`. Contagens sobrepostas, não somar à suíte completa.
+- [x] Alembic `upgrade head/current/check` no PostgreSQL principal aprovado na revisão `0008_shopee_collection`, sem drift. Ruff/formatação aprovados.
+- [x] [Demonstração offline](docs/DEMONSTRACAO_FASE_4_8.json): 1 produto, 2 observações, 3 avaliações; INITIAL, UNVERIFIED e FILTERED; zero ofertas/outbox. Preço 59.00 é replay da resposta anterior; 55.00 é cenário hipotético explicitamente fictício, sem alegação de novo preço real.
+- [x] **1.183 testes aprovados**, incluindo **38 PostgreSQL reais** em schemas UUID isolados de `ofertas_bot_test`; zero falhas e zero ignorados. Os 1.129 anteriores foram preservados e 54 novos acrescentados (46 offline e oito PostgreSQL). Há 17 avisos de depreciação de dependências, sem falhas. Ruff e formatação de 140 arquivos passaram; Alembic `upgrade head/current/check` passou em `0008_shopee_collection`, sem drift. Conferência final por fingerprints: todas as tabelas anteriores preservadas; `.env` idêntico, nove categorias ativas, grupo pausado, monitoramento desativado, cinco flags `false`, novas tabelas principais vazias. [Evidência sanitizada](docs/VALIDACAO_FASE_4_8.json).
+
+[Guia técnico e próximos requisitos](docs/FASE_4_8_SHOPEE.md). Nenhuma consulta comercial adicional, publicação, geração de links, ativação contínua ou avanço às Fases 5/6. As cinco flags permanecem desativadas e o grupo pausado. Leitura real futura exige apresentação do escopo e nova autorização específica; geração de links próprios e operação contínua também dependem de autorização e permissões oficiais.
+
+## Fase 4.9 — Shopee → Telegram: consulta real e bloqueio comercial — 21/10/2026
+
+- [x] Autorização explícita única executada por ShopeeCollectionService/reserva idempotente `0d19d8fa-f466-47d1-8ddb-6bbebb3751d5`; `productOfferV2`, PlayStation 5, página 1, limite 1. **HTTP 200**, uma requisição, zero retry/fallback/paginação adicional.
+- [x] Cabo HDMI retornado a R$ 59,00, não console. Produto local id 1, histórico id 1, origem oficial e Decimal, primeira observação **INITIAL**, sem queda fictícia. Categoria Games; candidata FILTERED pelo matching específico.
+- [x] Condições preservadas como desconhecidas: disponibilidade/estoque e acesso público ao preço. Nenhum preço antigo, desconto, cupom ou variante inventado.
+- [x] Link próprio ausente; nenhuma geração/mutation executada. Sem substituição do produto.
+- [x] Preparação comercial **BLOCKED**; nenhuma oferta, prévia ou aprovação comercial. **Zero chamadas Telegram**, zero publicações e nenhuma utilização da outbox técnica para produto.
+- [x] Docker Desktop e container PostgreSQL existentes iniciados, sem reinstalação/alteração global ou recriação de volume. Cinco flags continuam false, grupo pausado, monitoramento desativado, `.env`/credenciais preservados.
+- [ ] Definir escopo e obter nova autorização antes de outra consulta para console adequado; comprovar condições comerciais e link próprio antes de prévia.
+- [ ] Caso uma prévia venha a ser elegível, apresentar conteúdo/destino/hash e obter autorização específica antes de uma tentativa real pela outbox comercial.
+
+[Relatório e auditoria](docs/FASE_4_9_SHOPEE_TELEGRAM.md); [evidência sanitizada](docs/VALIDACAO_FASE_4_9.json). Código e testes preservados (última suíte: 1.183/38 PostgreSQL); sem reexecução extensa, commit ou Fases 5/6. A autorização pontual desta consulta está consumida.
+
+## Fase 4.10 - descoberta e garimpo Shopee exclusivamente offline - 21/10/2026
+
+- [x] Reutilizar componentes das Fases 1-4.9, nove categorias e alteracoes locais; sem commit/push.
+- [x] Politicas por categoria com multiplos termos, intencoes, prioridades, exclusoes, produtos, preco maximo e desconto minimo comprovado; IDs locais nao viram IDs Shopee.
+- [x] Relevancia deterministica conservadora, acessorios rejeitados, ambiguidades em REVIEW e correcoes manuais auditadas.
+- [x] Lotes/paginas limitados, rotacao justa, cursor de pagina documentado, deduplicacao loja:item/variante, quota local, reservas idempotentes, leases/fencing e backoff.
+- [x] Reusar coleta/historico 4.8, Decimal, INITIAL e comparacoes verificadas separadas de variacao informativa. Nenhuma condicao comercial inventada.
+- [x] Reconsulta separada de selecionados, pontuacao, avaliacao e preparacao dry-run; hipotese MOCK_WOULD_APPROVE somente com mocks, fila SIMULATED/PENDING, template/hash e limites. Aprovacoes reais intactas.
+- [x] Tres jobs no APScheduler existente, pausados e bloqueados para consultas reais. API administrativa autenticada sem ativacao comercial.
+- [x] Migracao aditiva 0009_shopee_discovery aplicada; Alembic upgrade/current/check aprovados, sem drift.
+- [x] Demonstracao APScheduler offline: 27 produtos distintos, 18 selecionados, 36 observacoes/candidatas, 9 filtrados, 9 duplicados, 36 requisicoes mockadas, 0 preparacoes publicaveis, 0 chamadas reais. Precos ficticios e fatos comerciais UNKNOWN.
+- [x] Testes direcionados iniciais: 122 aprovados, incluindo 11 novos PostgreSQL reais em schemas UUID de ofertas_bot_test; contagem sobreposta com a suite integral.
+- [x] **1.267 testes aprovados**, incluindo **49 PostgreSQL reais**, zero falhas e zero ignorados; os 1.183 anteriores foram preservados e 84 novos acrescentados (73 offline e 11 PostgreSQL). Revalidacao dos 84 novos testes apos o ajuste final de contexto de categoria: todos aprovados. Contagens sobrepostas, nao somar. Ha 17 avisos de depreciacao de dependencias. Ruff e formatacao passaram nos 150 arquivos Python; Alembic upgrade/current/check em 0009_shopee_discovery, sem drift. Fingerprints das 27 tabelas anteriores e .env identicos apos os testes; nove categorias ativas, grupo pausado, monitoramento desativado, cinco flags false e quatro tabelas novas de producao vazias. Zero novas consultas comerciais, mutations de afiliado ou publicacoes reais. Sem commit/push ou Fases 5/6. [Evidencia](docs/VALIDACAO_FASE_4_10.json).
+- [ ] Operacao real futura depende de autorizacao especifica, quotas/permissoes oficiais, estoque/acesso/variante/link proprio comprovados e revisao das candidatas. Cupons/campanhas/ordenacoes nao comprovados permanecem pendentes.
+
+[Guia](docs/FASE_4_10_GARIMPO_SHOPEE.md) e [demonstracao](docs/DEMONSTRACAO_FASE_4_10.json). Cinco flags false; grupo real pausado; Mercado Livre suspenso. Nenhuma nova consulta Shopee, mutation de afiliado, publicacao Telegram ou Fase 5/6.
+
+## Adendo 4.10 - configuracoes dinamicas
+
+- [x] Preferencias em AppSetting com revisao otimista, auditoria transacional, validacao e independencia por destino; sem migracao nova.
+- [x] Dias/janelas/fuso, frequencias, prioridades, limiares normais/excepcionais, modo caca-bugs e limites carregados dinamicamente; valores iniciais separados do codigo operacional.
+- [x] Preservar filtros/politicas de destinos, deduplicacao de tres horas, novas observacoes, backoff, reservas e aprovacoes. Atualizar jobs existentes sem retomar a operacao ou conceder autorizacao real.
+- [x] Testes direcionados: 164 aprovados, incluindo nove novos PostgreSQL; mais tres regressoes especificas aprovadas. Contagens sobrepostas.
+- [x] Alembic current/check em 0009_shopee_discovery, sem drift; Ruff/formatacao aprovados.
+- [x] **1.341 testes aprovados**, incluindo **58 PostgreSQL reais**, zero falhas/skips; os 1.267 anteriores foram preservados e 74 acrescentados (65 offline e nove PostgreSQL). Ha 17 avisos de depreciacao de dependencias. Ruff e formatacao aprovados nos 154 arquivos Python; Alembic current/check em 0009_shopee_discovery, sem drift e sem migracao nova. Fingerprints das 31 tabelas anteriores e .env identicos apos a suite; nove categorias ativas, grupo pausado, monitoramento desativado e cinco flags false. Zero consultas comerciais, mutations de afiliado ou publicacoes reais. Nenhum commit/push ou Fases 5/6. [Evidencia sanitizada](docs/VALIDACAO_ADENDO_FASE_4_10.json).
+
+[Relatorio da entrega anterior e deste adendo](docs/RELATORIO_FASE_4_10_E_ADENDO_CONFIGURACOES.md). Cinco flags false, grupo pausado, sem consultas/publicacoes reais, commit ou Fases 5/6.
+
+### Ajuste pontual — identidade dos links Shopee
+
+- [x] Reconhecer o formato oficial `/universal-link/NOME-i.SHOP_ID.ITEM_ID`, sem resolução de rede.
+- [x] Comparar IDs com a origem, rejeitar caminhos/domínios inválidos e separar identidade de atribuição à conta (`account_verified=false`).
+- [x] Preservar integralmente o rastreamento no retorno interno/cadastro manual, ocultando-o do `repr` e de erros.
+- [x] Acrescentar regressões offline do parser, do bloqueio de associação administrativa e da persistência SQLite isolada.
+- [x] Validação: **1.335 testes offline aprovados** (52 novos), **58 PostgreSQL excluídos**, zero falhas; Ruff e formatação aprovados em 157 arquivos. Os 17 avisos são depreciações de dependências. Nenhum acesso ao banco real neste ajuste.
+- [ ] Confirmar propriedade/atribuição por evidência independente antes de qualquer ativação controlada; geração do link não comprova comissão/conversões.
+
+Nenhuma mutation, consulta comercial ou publicação real neste ajuste. Autorização anterior consumida, `.env`, registros/auditoria e flags preservados. [Validação e pendências](docs/AJUSTE_VALIDADOR_LINKS_SHOPEE.md). Fases 5/6 não iniciadas.
+
+### Integracao do gerador de links ao pipeline — exclusivamente offline
+
+- [x] Diagnostico registrado antes da implementacao; reutilizar descoberta, historico, filtros, avaliacao, fila e templates existentes.
+- [x] Gerador injetavel usando ShopeeConnector/assinatura, restrito a MockTransport e laboratorio isolado; nenhum adaptador real instalado no bootstrap operacional.
+- [x] Reservas duraveis em AppSetting por produto/variante/origem/destino/operacao, hash do payload, leases/fencing e auditoria IntegrationEvent. Sem migration nova.
+- [x] Conservar URLs integrais internamente e divulgar somente metadados sanitizados; identidade valida nao comprova atribuicao nem concede aprovacao.
+- [x] Revalidar antes/depois da geracao mockada, preservar links existentes e impedir retries de resultados incertos ou recusados.
+- [x] Preferencias dinamicas opt-in, limites globais/por destino e bloqueios reais independentes; reutilizar cooldown minimo de tres horas e nova observacao.
+- [x] Casos A-H, concorrencia, recuperacao, flags, parametros estritos, persistencia e revalidacao implementados com dados ficticios.
+- [x] Baseline anterior: 58 PostgreSQL aprovados; testes novos direcionados: 14 PostgreSQL aprovados, incluindo Alembic current/check em schema UUID de ofertas_bot_test, sem drift.
+- [x] Suite integral: **1.445 aprovados**, incluindo **72 PostgreSQL reais**, zero falhas/ignorados; 52 novos casos (38 offline e 14 PostgreSQL). Ruff e formatacao aprovados em 162 arquivos; Alembic current/check em 0009_shopee_discovery sem drift/migration nova. Os 17 avisos sao deprecacoes de dependencias. Fingerprints das 32 tabelas publicas, incluindo alembic_version, e .env identicos; nove categorias ativas, grupo pausado, monitoramento false, cinco flags false e zero reservas de links mockados no principal. Zero chamadas reais Shopee/Telegram. [Evidencia](docs/VALIDACAO_INTEGRACAO_LINKS_PIPELINE_SHOPEE.json).
+- [ ] Geracao real futura exige nova autorizacao, adaptador real aprovado, quotas/permissoes e comprovacao independente de atribuicao; a autorizacao anterior permanece consumida.
+- [ ] Publicacao comercial automatica continua sem autorizacao: depende de condicoes comerciais, revalidacao, aprovacao por destino/conteudo e liberacao especifica dos controles reais.
+
+[Arquitetura, arquivos e evidencias](docs/INTEGRACAO_LINKS_PIPELINE_SHOPEE.md). Sem consultas/mutations reais, Telegram, ativacao de scheduler, mudancas em .env, commit ou Fases 5/6.
+
+### Auditoria de prontidao comercial Shopee — 25/10/2026
+
+- [x] Auditoria documental e de codigo concluida, com matrizes de capacidades/dados, fontes oficiais, niveis de atribuicao e plano de ativacao independente. [Relatorio](AUDITORIA_PRONTIDAO_SHOPEE.md).
+- [x] Nenhuma alteracao de producao/testes/migrations, consulta autenticada, mutation ou publicacao. Flags locais false. Ultima suite registrada 1.445/72 PostgreSQL preservada; nao reexecutada nesta auditoria.
+- [ ] Confirmar oficialmente vinculo credencial/beneficiario, quotas e escopo de uso continuo; aprovar politica separando geracao de conversao/comissao.
+- [ ] Definir evidencia autorizada de preco publico, estoque e variante; API usada nao os comprova.
+- [ ] Mediante aprovacao futura, unificar identidade manual /universal-link/ e reserva da rota legada; formalizar atestados/proveniencia antes do adaptador real e da ponte comercial. Outbox atual exige oferta manual comprovada; nao fabricar detalhes manuais para anuncios automaticos.
+- [ ] Restabelecer ambiente PostgreSQL para nova conferencia operacional antes do piloto: tentativa readonly desta auditoria terminou OperationalError, sem escrita; ultimo estado documentado do grupo: pausado, nao reconfirmado hoje.
+
+A auditoria nao autoriza implementacao, novos testes reais ou Fases 5/6. Nao houve commit/push ou reutilizacao de autorizacao anterior.
+
+### Correções pós-auditoria Shopee — 25/10/2026
+
+- [x] Unificar parser de identidade convencional/universal-link no conector e cadastro manual, preservando tracking e distinguindo identidade de titularidade.
+- [x] Bloquear entrada administrativa real sem adaptador de autorização/reserva durável; preservar autorização histórica consumida. Laboratório segue mockado, com uma tentativa e interrupções UNCERTAIN.
+- [x] Preparar documentos auditáveis/versionados para atribuição e condições comerciais, sem alterar observações automáticas ou promover account_verified.
+- [x] Preparar políticas PROPOSED e diagnóstico sem ativação; conversão/comissão opcionais, sem exigir universalmente venda anterior.
+- [x] Corrigir comparabilidade por source/source_type e contexto de preço, inclusive reaproveitamento de referência de ofertas.
+- [x] Regressões offline e contratos PostgreSQL opt-in adicionados; nenhuma migration nova.
+- [x] Validação offline: suíte completa com 1.421 aprovados; revalidação de 139 e dois testes administrativos aprovados (sobrepostos; 1.422 casos distintos, incluindo uma regressão adicional). Zero falhas finais, 17 avisos de dependências. Ruff/formatação e Alembic SQLite current/check em 0009_shopee_discovery sem drift. .env/artefatos da mutation preservados por hashes; zero chamadas comerciais/publicações.
+- [x] Pendência PostgreSQL resolvida na execução posterior do piloto documental: Docker Linux ativo, banco exclusivo existente, 80 testes reais aprovados e Alembic current/check em 0009 sem drift. A execução original acima havia sido bloqueada pelo ambiente.
+- [ ] Aprovar política de confiança, reunir provas de conta/condições e revisar adaptador real/ponte comercial antes de novo piloto autorizado.
+
+[Relatório, arquivos e próximo piloto mínimo](docs/CORRECOES_POS_AUDITORIA_SHOPEE.md).
+Sem chamadas comerciais, publicações, ativação operacional, alteração de .env,
+credenciais, histórico ou primeira mutation; sem commit/push ou Fases 5/6.
+
+### Piloto comercial controlado do Cockpit — sem envio
+
+- [x] Docker Engine 29.8.2 Linux e PostgreSQL 17.11 saudável; banco ofertas_bot_test existente, sem recriação/alteração de volumes ou credenciais.
+- [x] 80 testes PostgreSQL aprovados, zero falhas/ignorados; schemas UUID isolados. Alembic current/check em 0009_shopee_discovery sem drift; saída explicitamente capturada em caso já incluído nos 80.
+- [x] Conferência operacional READ ONLY: nove categorias, Viana Ofertas enabled=false, aprovação obrigatória, categorias all, monitoramento persistido false e seis flags reais false.
+- [x] Hashes das 32 tabelas operacionais e dados/schemas públicos anteriores do banco de testes idênticos; .env e artefatos históricos preservados.
+- [x] Reserva histórica consumida, uma tentativa/HTTP 200, IDs, hash do payload e eventos 6–9 íntegros. Nenhuma mutation repetida.
+- [x] Lacuna de rastreamento registrada: um dos cinco valores de query do longLink histórico contém redação; shortLink oficial preservado. Não reconstruir valores nem tratar longLink sanitizado como URL utilizável.
+- [x] Proposta documental de confiança e rascunho manual não confirmado preparados, sem ativação/persistência de atestado humano ou account_verified.
+- [x] Diagnóstico de prévia BLOCKED: Cockpit sem cadastro e histórico comercial no principal; nenhum produto, preço, oferta, prévia ou outbox fabricado.
+- [ ] Obter preço público aplicável, variante, disponibilidade, condições e documentos da conta/beneficiário; decidir sobre shortLink e aprovar política antes de reavaliar a prévia.
+
+[Relatório e proposta sem ativação](docs/PILOTO_COMERCIAL_COCKPIT_SHOPEE.md).
+Zero novas chamadas Shopee, mutations, publicações, scheduler operacional,
+alterações de .env/credenciais ou commit/push. Sem avanço às Fases 5/6.
+
+### Evidência visual documental do Cockpit — 25/10/2026, 21h11
+
+- [x] Captura original fornecida pelo responsável preservada sem edição, com SHA256; registro exclusivamente documental, sem acesso/gravação operacional.
+- [x] Preços exibidos R$ 956,13 no Pix com cupom e R$ 1.099,00 sem cupom em outros métodos separados de preço efetivamente validado; cupom anunciado R$ 40 OFF e frete R$ 0,00 condicionais, sem aplicação confirmada.
+- [x] Cores vermelho/azul documentadas, sem seleção/SKU inferido; disponibilidade UNKNOWN; relógio visível com fuso informado, sem verified_at inventado.
+- [x] Diagnóstico BLOCKED; nenhuma comparação/queda histórica, oferta, prévia, outbox, account_verified ou publication_authorized aprovada.
+- [ ] Confirmar variante, disponibilidade e preço aplicável/condições por evidência explícita; obter autorização adicional antes de qualquer registro no banco operacional. Política/vínculo do link permanecem pendentes.
+
+[Captura, campos condicionais e diagnóstico](docs/EVIDENCIA_VISUAL_COCKPIT_BRAVE_BULL_20261025.md).
+Sem chamadas externas, mutations, publicações, alteração de .env, histórico de outro
+produto ou ativação. Validação documental local; testes da aplicação preservados.
+
+### Primeiro cadastro documental autorizado do Cockpit — sem oferta
+
+- [x] Produto operacional ID 2 criado em ofertas_bot, external_id 1904573791:23199869203, uma linha sem identificador de variante inventado; cores e declaração do responsável preservadas.
+- [x] Observações 2 (1099.00 sem cupom/outros métodos) e 3 (956.13 Pix com cupom) persistidas em Decimal BRL, fontes separadas e mesma captura: 25/10/2026 21h11 Brasília. INITIAL documental em ambos os contextos, sem queda ou comparação cruzada.
+- [x] availability UNKNOWN; price_access UNKNOWN/CONDITIONAL, preço público não verificado em metadados/enums reais. Referências/hashes preservados, sem contornar source_reference ou criar campos/migrations.
+- [x] Transação restrita a INSERT do produto e duas observações, com lock/constraints. Reexecução com DML proibido reutilizou os mesmos IDs e adicionou zero linhas.
+- [x] Zero associação de link, oferta, aprovação, fila/outbox, chamadas Shopee, mutations, Telegram, scheduler ou mudanças em políticas/.env. Monitoramento do produto false; grupo e flags reais preservados false.
+- [ ] Comprovar preço aplicável/condições, variante e disponibilidade; concluir vínculo e política do link antes de futura avaliação comercial. Cadastro documental não autoriza operação real nem publicação.
+
+[Registro operacional e verificações](docs/CADASTRO_DOCUMENTAL_COCKPIT_SHOPEE.md).
+A autorização de cadastro desta execução supera somente a pendência documental
+anterior de permissão para gravar; demais bloqueios comerciais continuam vigentes.
+Sem commit/push ou avanço às Fases 5/6.
+
+### Fontes comerciais automatizáveis — estudo documental de 26/10/2026
+
+- [x] Extrair do Explorer local o contrato público de productOfferV2, listItemFeeds e getItemFeedData, com SHA256 e proveniência; leitura pública atual indisponível, sem nova comprovação de permissões.
+- [x] Separar preço/faixa e desconto anunciado de queda histórica, estoque, variante e preço efetivamente aplicável; não presumir colunas dos feeds ou validade comercial dos períodos.
+- [x] Propor reconsulta por identidade e reaproveitamento do pipeline, com persistência/contexto comparável, idempotência e etapas futuras de leitura delimitadas. Produto 2 e históricos 2/3 intocados.
+- [ ] Confirmar oficialmente quotas, escopo por conta, dicionário dos feeds e fontes de condições comerciais; obter autorização nova antes da implementação e de qualquer consulta ou recorrência real.
+
+[Matriz de capacidade e plano mínimo](docs/FONTES_COMERCIAIS_AUTOMATIZAVEIS_SHOPEE.md).
+Entrega apenas documental, sem testes repetidos, alterações de código, acesso ao
+banco operacional, chamadas autenticadas, mutations, scheduler ou Telegram.
+Nenhuma flag, política ou credencial alterada; sem commit/push ou Fases 5/6.
+
+### Monitoramento observacional Shopee — implementação offline, 26/10/2026
+
+- [x] Escopo tipado para anúncio já cadastrado, com consulta por shopId/itemId, página 1/limite 1, usando o conector e as reservas/auditorias existentes; nenhum anúncio substituto ou variante fabricada.
+- [x] Desconto anunciado e períodos Int64 informativos integrados; preços continuam Decimal e sem cálculo fictício de preço anterior ou validade.
+- [x] Contexto estruturado/price_basis validado persistido; separação por origem, produto, variante/condições, source_type e simulação. Nenhuma reescrita de histórico legado.
+- [x] Modo observacional UNKNOWN/UNKNOWN/commercial_verified=false, sem geração de links, ofertas ou outbox. Interface administrativa real bloqueada com 409, independentemente de flags; laboratório exige MockTransport e banco isolado.
+- [x] Reutilizar DiscoveryOperations para duração de lease/orçamento, idempotência, concorrência e fencing; timeout/interrupção/falha após início da persistência conservam tentativa e resultado UNCERTAIN.
+- [x] 1.593 testes aprovados: 1.500 offline e 93 PostgreSQL reais em schemas UUID de ofertas_bot_test, zero falhas/ignorados; 78 testes offline e 13 PostgreSQL novos. Ruff/formatação nos 175 arquivos e Alembic current/check em 0009 sem drift; nenhuma migração operacional.
+- [x] Conferência READ ONLY antes/depois: produto 2, históricos 2/3, destinos, configurações e dados/schemas preexistentes do banco de testes preservados. .env/evidências protegidas intactas; seis flags false, grupo pausado e scheduler persistido false; guard HTTP confirma zero transporte real.
+- [ ] Confirmar quotas/escopo/semântica e fontes de condições comerciais; obter nova autorização e revisar adaptador/recuperação antes de qualquer leitura real ou recorrência. Publicação continua etapa separada e bloqueada.
+
+[Funcionamento e validação](docs/MONITORAMENTO_OBSERVACIONAL_SHOPEE.md).
+[Payload real futuro, somente preparado](docs/PAYLOAD_OBSERVACIONAL_COCKPIT_SHOPEE.json).
+Nenhuma consulta comercial real, mutation, Telegram ou scheduler operacional iniciado;
+produto 2, históricos 2/3, configurações e .env preservados. Sem commit/push ou
+avanço às Fases 5/6.
+
+### Piloto observacional de leitura única — preparação de 30/10/2026
+
+- [x] Adaptador sobre o conector/coleta existentes, com plano read-only e escopo tipado de anúncio conhecido; não cria outro pipeline, histórico ou migração.
+- [x] Reserva em AppSetting, aprovação explícita de hash/ator/validade, claim CAS e ShopeeCollectionRun commitados antes do HTTP; máximo de uma tentativa, sem retry/fallback/paginação ou liberação por flags.
+- [x] Verificação de bytes/identidade/conta/modo/owner/lease antes do HTTP; concorrência e estados incertos impedem repetição. Namespace novo não consome autorizações históricas.
+- [x] Cotação efêmera sanitizada, auditando somente metadados técnicos/hash. Zero gravações de preço em ProductPriceHistory ou JSON operacional, links, ofertas, outbox e Telegram.
+- [x] Plano do Cockpit preparado somente por leitura do produto 2, com nonce/hash propostos; nenhuma autorização real registrada, aprovada ou consumida. Laboratório isolado exige mocks e não promove autorizações a reais.
+- [x] 437 testes distintos aprovados: 328 offline e todos os 109 PostgreSQL reais, com 37 casos offline e 16 PostgreSQL novos. Ruff/formatação nos 178 arquivos e Alembic current/check em 0009 nos schemas isolados sem drift; zero transporte HTTP real e nenhuma migração operacional. Suíte offline anterior não repetida integralmente.
+- [x] Conferência READ ONLY antes/depois preservou produto 2, históricos 2/3, destinos, configurações, arquivos protegidos e dados públicos/schemas preexistentes do banco de testes. Seis flags false, grupo pausado e scheduler persistido false.
+- [ ] Confirmar acesso/quotas oficiais e obter autorização explícita posterior para este plano antes de registrar/aprovar/executar uma leitura real. Persistência, recorrência e publicação permanecem etapas separadas e bloqueadas.
+
+[Detalhes, testes e procedimento exato](docs/PILOTO_LEITURA_UNICA_SHOPEE_20261030.md).
+Somente desenvolvimento e validação local. Históricos 2/3, .env, credenciais,
+flags, grupo e scheduler operacional preservados. Sem commit/push ou Fases 5/6.
+
+### Cotação histórica e recorrência — preparação, 30/10/2026
+
+- [x] Cotação protegida conferida com hash do objeto quote, reserva REAL consumida e cadeia de auditoria; hash do envelope completo registrado separadamente.
+- [x] Preparação OFFICIAL_API com Decimal/horário originais, UNKNOWN/UNKNOWN, percentual anunciado independente, contexto e fingerprint por leitura/hash; sem misturar MANUAL ou alterar históricos 2/3.
+- [x] 102 testes selecionados aprovados: 85 offline e 17 PostgreSQL isolados, incluindo idempotência, concorrência e bloqueios. Ruff/formatação passaram. Sem mudança de esquema ou migração operacional.
+- [x] Plano não aplicado de 1–3 anúncios, intervalo inicial proposto 6h e teto local 12 leituras/24h, ajustáveis e sujeitos a quotas oficiais. Reserva por leitura e interrupção por permissão/incerteza; nenhuma recorrência habilitada.
+- [x] Autorização específica recebida e executada em 30/10/2026: observação OFFICIAL_API ID 4 do produto 2, auditoria ID 14, BRL 1099.00 no horário original. Hash conferido; repetição na mesma transação reutilizou o ID sem duplicação. Históricos 2/3 e demais registros preservados.
+- [ ] Confirmar permissões/quotas e aprovar separadamente qualquer recorrência. A entrada operacional genérica permanece bloqueada; a exceção aceita exclusivamente a cotação histórica autorizada.
+
+[Plano e texto exato de autorização futura](docs/INGESTAO_HISTORICA_E_MONITORAMENTO_SHOPEE_20261030.md).
+Zero consultas reais adicionais, observações operacionais, mutations, Telegram,
+flags/credenciais/scheduler alterados, commit ou push. Fases 5/6 não iniciadas.
+
+### Conclusão da ingestão histórica autorizada — 30/10/2026
+
+Persistência confirmada após recuperação da interrupção: INITIAL, previous_price NULL,
+percentual anunciado 31 separado, availability/price_access UNKNOWN e
+commercial_verified=false. Os períodos brutos foram preservados. Não houve chamadas
+externas, ofertas, outbox ou publicações. Flags permanecem false e grupo pausado.
+85 regressões offline aprovadas; Ruff e formatação passaram nesta retomada.
+Os 17 testes PostgreSQL da preparação não foram repetidos nesta retomada.
+Relatório protegido em `.runtime/authorized-identity-read-ee52b076-4084-4dc3-abd3-4a9e994db463/INGESTAO_AUTORIZADA.json`.
+
+### Preparação do monitoramento recorrente por identidade — 30/10/2026
+
+- [x] Coordenador de laboratório reutilizando leitura única, reservas, DiscoveryOperations, histórico e comparação existentes; sem novo conector ou migração.
+- [x] Autorização por conta/produto/payload, validade, orçamento e intervalo mínimo; aprovação explícita e referência de quotas. Cada ciclo tem reserva e claim próprios antes do HTTP, com idempotência e concorrência controladas.
+- [x] Preferência de intervalo persistida sem ampliar autorização; integração somente preparada e pausada no scheduler de laboratório.
+- [x] Comparação informativa OFFICIAL_API compatível; UNKNOWN/UNKNOWN e bloqueios comerciais preservados. Falhas/403/429/incerteza pausam, sem retry.
+- [x] 182 testes distintos aprovados (143 offline e 39 PostgreSQL isolados), incluindo regressões e repetição final do novo monitor. Alembic current/check, Ruff e formatação passaram. Suíte completa não repetida; tabelas operacionais e .env preservados por hashes.
+- [ ] Confirmar oficialmente permissões de recorrência e quotas. Aprovar novo escopo de piloto e validar uma liberação operacional posterior; execução real continua bloqueada por código.
+
+Proposta não aplicada: produto 2, intervalo mínimo 6h, 24h de validade e até 4 POSTs.
+[Plano e autorização futura](docs/MONITORAMENTO_RECORRENTE_SHOPEE_20261030.md).
+Sem consultas externas, mudanças operacionais, publicações, commit ou push.
+
+### Piloto experimental delimitado — 30/10/2026
+
+- [x] Exceção separada para até duas leituras por identidade, intervalo mínimo 6h e validade máxima 24h; sem relaxar a autorização da recorrência geral.
+- [x] Rotas administrativas autenticadas; hash/conta/payload/validade vinculados. Ciência explícita de quotas desconhecidas obrigatória; flags não substituem autorização.
+- [x] Reserva/claim por ciclo, pausa em falhas/incerteza, sem retry; espaçamento mínimo contado após conclusão da leitura. Persistência somente observacional, sem vínculos/ofertas/outbox.
+- [x] Escopo real PREPARED `1cfbb654-f4ab-4146-b185-e9f48e702540`, auditoria 15, zero reservas consumidas e zero HTTP. Demais dados/configurações preservados.
+- [x] 111 testes distintos aprovados: 74 offline e 37 PostgreSQL isolados; Ruff, formatação e Alembic current/check passaram. Sem suíte completa ou migração operacional.
+- [ ] Receber autorização específica do hash/janela final antes de aprovar ou despachar. Nenhuma chamada real executada nesta preparação; scheduler e Telegram desativados.
+
+[Plano, limitações de permissão e procedimento](docs/PILOTO_EXPERIMENTAL_RECORRENCIA_SHOPEE_20261030.md).
+Quotas oficiais e permissão para recorrência seguem não confirmadas. Sem commit/push.
+
+### Comparação multiloja — implementação offline, 31/10/2026
+
+- [x] Perfil específico de descoberta com shopName/ratingStar/sales/shopType; sem mudar payload de identidade ou perfil padrão.
+- [x] Candidatos por relevância e grupos por evidências documentadas, sem inferir equivalência pelo título. Deduplicação por shopId, Decimal BRL, empates e diferenças; comparação transversal separada do histórico.
+- [x] Campos ausentes/desconhecidos preservados; avaliações não promovidas a reputação, estoque, preço final ou aprovação comercial.
+- [x] 216 testes distintos aprovados (205 offline e 11 PostgreSQL isolados); Ruff, formatação e Alembic current/check passaram. Suíte completa não repetida.
+- [x] Busca independente PREPARED bce2459b-a77a-4e30-86fa-30d8069cf4bf, auditoria 25, sem aprovação/consumo. Keyword Cockpit simulador Brave Bull, page=1/limit=3, máximo um POST.
+- [ ] Receber autorização específica e preparar entrada administrativa de despacho com claim para essa busca. execute_real permanece bloqueado; quotas e permissões não confirmadas.
+
+[Implementação e demo sintética](docs/IMPLEMENTACAO_MULTILOJA_SHOPEE_20261031.md).
+Zero chamadas externas, histórico operacional alterado, links ou publicações.
+Piloto aprovado de amanhã preservado; sem scheduler, commit ou push. Fases 5/6 não iniciadas.
 
 ## Fase 5 — Ampliar cupons e operação da fila
 

@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-30",
+  "purpose": "LOCAL_DEVELOPMENT_AND_MOCK_VALIDATION_ONLY",
+  "implementation": {
+    "new_connector": false,
+    "new_history": false,
+    "new_migration": false,
+    "price_history_ingest": false,
+    "quote_audit_storage": "HASH_AND_TECHNICAL_METADATA_ONLY",
+    "quote_return": "EPHEMERAL_FIRST_SUCCESS_RESPONSE_ONLY",
+    "maximum_http_calls_per_authorization": 1
+  },
+  "tests": {
+    "initial_targeted_passed": 325,
+    "final_adapter_passed": 37,
+    "postgres_passed": 109,
+    "initial_targeted_adapter_cases_overlapping_final": 34,
+    "unique_offline_passed": 328,
+    "unique_selected_passed": 437,
+    "new_offline_cases": 37,
+    "new_postgres_cases": 16,
+    "failures": 0,
+    "skipped": 0,
+    "previous_full_suite": 1593,
+    "full_offline_suite_rerun": false,
+    "dependency_warning": "StarletteDeprecationWarning"
+  },
+  "ruff": {
+    "check": "PASSED",
+    "format_check": "PASSED",
+    "python_files": 178
+  },
+  "alembic": {
+    "head": "0009_shopee_discovery",
+    "current_check": "PASSED_IN_UUID_TEST_SCHEMAS",
+    "operational_migrations": 0
+  },
+  "preservation": {
+    "operational_product_2_and_histories_2_3_unchanged": true,
+    "operational_settings_and_destinations_unchanged": true,
+    "test_public_tables_and_preexisting_schemas_unchanged": true,
+    "protected_files_unchanged": 7,
+    "flags": {
+      "shopee_enabled": false,
+      "shopee_short_links_enabled": false,
+      "mercado_livre_enabled": false,
+      "telegram_publisher_enabled": false,
+      "telegram_real_sends_authorized": false,
+      "simulation_automation_enabled": false
+    },
+    "group_enabled": false,
+    "persisted_scheduler_enabled": false
+  },
+  "real_authorizations_registered": 0,
+  "real_authorizations_approved": 0,
+  "real_authorizations_consumed": 0,
+  "real_shopee_calls": 0,
+  "mutations": 0,
+  "real_telegram_calls": 0,
+  "operational_database_writes": 0,
+  "scheduler_operational_started": false,
+  "credentials_or_env_changed": false,
+  "historical_authorizations_reused": false,
+  "commit_or_push": false,
+  "permission_and_quota_status": "NOT_RECONFIRMED; public contract from local 2026-10-21 cache",
+  "plan": "docs/PLANO_LEITURA_UNICA_COCKPIT_SHOPEE_20261030.json",
+  "next_required_authorization": "NEW_EXPLICIT_OWNER_APPROVAL_OF_EXACT_ONE_READ_PLAN_NO_INGEST_NO_PUBLICATION"
+}

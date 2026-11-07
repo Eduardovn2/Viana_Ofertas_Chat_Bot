@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!requirements.deploy.txt
+!app/
+!app/**
+!alembic/
+!alembic/**
+!alembic.ini
+!docs/
+!docs/CONTRATO_FONTES_SHOPEE_20261026.json
+!docs/CONTRATO_INDICADORES_SHOPEE_20261021.json
+**/__pycache__/**
+**/*.pyc

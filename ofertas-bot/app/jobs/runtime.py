@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from threading import RLock
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -84,6 +85,8 @@ class MonitoringRuntime:
         self._tick_failures = 0
         self._next_tick_at: datetime | None = None
         self._state_lock = RLock()
+        self._prepared_jobs = {}
+        self._configuration_observers = {}
 
     def _interval(self, product: Product, settings: Settings) -> int:
         return (
@@ -420,6 +423,8 @@ class MonitoringRuntime:
         if self._next_tick_at is not None and now < self._next_tick_at:
             return
         try:
+            for observer in tuple(self._configuration_observers.values()):
+                observer()
             self.run_due()
         except Exception as exc:
             self._tick_failures += 1
@@ -435,9 +440,62 @@ class MonitoringRuntime:
             self._last_error = None
             self._next_tick_at = now + timedelta(seconds=self.settings.scheduler_tick_seconds)
 
+    def observe_configuration(self, key, callback):
+        with self._state_lock:
+            self._configuration_observers[key] = callback
+
+    def update_prepared_job_interval(self, job_id, interval_seconds):
+        # Preserve pause state and callback identity: editing frequency is not activation.
+        with self._state_lock:
+            specification = self._prepared_jobs.get(job_id)
+            if specification is None or specification["seconds"] == interval_seconds:
+                return
+            specification["seconds"] = interval_seconds
+            if self._scheduler is not None:
+                job = self._scheduler.get_job(job_id)
+                if job is not None:
+                    paused = job.next_run_time is None
+                    self._scheduler.modify_job(
+                        job_id,
+                        trigger=IntervalTrigger(seconds=interval_seconds, timezone="UTC"),
+                        next_run_time=None
+                        if paused
+                        else datetime.now(UTC) + timedelta(seconds=interval_seconds),
+                    )
+
+    def prepare_paused_job(self, job_id, callback, interval_seconds):
+        """Prepare on this runtime without starting threads or enabling monitoring."""
+        with self._state_lock:
+            specification = {
+                "func": callback,
+                "trigger": "interval",
+                "seconds": interval_seconds,
+                "id": job_id,
+                "next_run_time": None,
+                "max_instances": 1,
+                "coalesce": True,
+                "replace_existing": True,
+            }
+            self._prepared_jobs[job_id] = specification
+            if self._scheduler is not None:
+                self._scheduler.add_job(**specification)
+
     def start(self) -> dict:
         with self._state_lock:
             if _threads_blocked(self.settings):
+                return self.status()
+            # Starting the administrative app is not permission to create a
+            # background worker while monitoring is durably paused. Fail closed
+            # if the persisted configuration cannot be read or validated.
+            try:
+                with self.session_factory() as session:
+                    effective = self._settings(session)
+            except (SQLAlchemyError, ValueError) as exc:
+                self._paused = True
+                self._effective_enabled = False
+                self._last_error = type(exc).__name__[:100]
+                return self.status()
+            if self._paused or not effective.scheduler_enabled:
                 return self.status()
             if self._scheduler is None:
                 self._scheduler = BackgroundScheduler(timezone="UTC")
@@ -450,6 +508,8 @@ class MonitoringRuntime:
                     coalesce=True,
                     replace_existing=True,
                 )
+                for specification in self._prepared_jobs.values():
+                    self._scheduler.add_job(**specification)
                 self._scheduler.start()
             return self.status()
 

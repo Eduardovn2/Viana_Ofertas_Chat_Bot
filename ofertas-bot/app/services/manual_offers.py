@@ -37,6 +37,8 @@ _MESSAGES = {
     "MANUAL_LINK_REQUIRED": "Cadastre um link de afiliado próprio e operacionalmente verificado.",
     "MANUAL_COUPON_INVALID": "O cupom não possui confirmação pública válida para este produto e preço.",
     "MANUAL_OFFER_INVALID": "A oferta não corresponde à evidência manual atual ou está encerrada.",
+    "MULTISTORE_EVIDENCE_INVALID": "A prévia multiloja mudou ou não comprova o candidato e suas condições.",
+    "MANUAL_IDENTITY_EVIDENCE_INVALID": "A evidência documental não corresponde ao anúncio e à variante.",
 }
 
 
@@ -114,6 +116,8 @@ def create_manual_offer(
     verified_at: datetime | None = None,
     expires_at: datetime | None = None,
     now: datetime | None = None,
+    multistore_context: dict | None = None,
+    documented_identity: dict | None = None,
 ) -> ManualOfferBundle:
     """Append a real manual observation and offer. Caller owns commit/rollback.
 
@@ -152,6 +156,47 @@ def create_manual_offer(
     if product is None:
         raise _error("MANUAL_PRODUCT_NOT_FOUND")
     _validate_product(product)
+    from app.services.affiliate_pipeline import validate_owned_link_receipt
+
+    try:
+        validate_owned_link_receipt(session, settings, product, now)
+    except (ValueError, KeyError, TypeError):
+        raise _error("MANUAL_OFFER_INVALID") from None
+    identity_document = None
+    if documented_identity is not None:
+        from app.services.product_documentation import CORE_CONTENT_NOTICE, DocumentedIdentity
+
+        try:
+            identity_document = DocumentedIdentity.model_validate(
+                documented_identity
+            ).validate_product(product, now)
+            identity_document.validate_commercial(
+                current_price, observed, coupon_id=coupon_id, previous_price=previous_price
+            )
+            if identity_document.message_scope == "CORE_ATTRIBUTES_ONLY" and image_url is not None:
+                raise ValueError(
+                    "Descrição limitada sem composição confirmada não admite imagem de equipamentos."
+                )
+        except (ValueError, TypeError):
+            raise _error("MANUAL_IDENTITY_EVIDENCE_INVALID") from None
+    binding = None
+    if multistore_context is not None:
+        from app.services.shopee_commercial_handoff import validate_binding
+
+        try:
+            # A seller's other price is never accepted as a temporal baseline.
+            if previous_price is not None:
+                raise ValueError("Prévia multiloja não fornece preço anterior.")
+            binding = validate_binding(
+                session,
+                multistore_context,
+                product,
+                current_price,
+                observed,
+                allow_simulated=settings.app_env == "test",
+            )
+        except (LookupError, ValueError, TypeError, KeyError):
+            raise _error("MULTISTORE_EVIDENCE_INVALID") from None
     latest = latest_observation(session, product.id)
     if latest is not None and aware_utc(latest.observed_at) > observed:
         raise _error("MANUAL_EVIDENCE_STALE")
@@ -176,6 +221,9 @@ def create_manual_offer(
                 coupon_text=coupon.code if coupon else None,
                 installments_text=installment_text,
                 image_url=image_url,
+                content_notice=CORE_CONTENT_NOTICE
+                if identity_document and identity_document.message_scope == "CORE_ATTRIBUTES_ONLY"
+                else None,
             )
         )
     except ValueError:
@@ -197,6 +245,17 @@ def create_manual_offer(
         ),
         now=now,
     )
+    if identity_document is not None:
+        history.evidence_metadata = {
+            **(history.evidence_metadata or {}),
+            "documented_identity": identity_document.model_dump(mode="json"),
+        }
+    if binding is not None:
+        history.evidence_metadata = {
+            **(history.evidence_metadata or {}),
+            "multistore_context": binding,
+            "multistore_registered_variant_id": product.variant_id,
+        }
     comparison = PriceComparisonService().compare(
         session,
         history,
@@ -272,7 +331,19 @@ def read_manual_offer(session, offer_id, settings, now=None) -> ManualOfferBundl
         raise _error("MANUAL_OFFER_INVALID")
     _validate_product(product)
     _fresh(details.verified_at, now, settings)
+    from app.services.affiliate_pipeline import validate_owned_link_receipt
+
+    try:
+        validate_owned_link_receipt(session, settings, product, now)
+    except (ValueError, KeyError, TypeError):
+        raise _error("MANUAL_OFFER_INVALID") from None
     _fresh(history.observed_at, now, settings)
+    from app.services.official_offer_import import validate_current_import
+
+    try:
+        validate_current_import(session, history)
+    except ValueError:
+        raise _error("MANUAL_EVIDENCE_STALE") from None
     latest = latest_observation(session, product.id)
     if (
         details.verified_at != history.observed_at
@@ -287,4 +358,40 @@ def read_manual_offer(session, offer_id, settings, now=None) -> ManualOfferBundl
     )
     if offer.final_price != (evaluation.final_price if evaluation else None):
         raise _error("MANUAL_COUPON_INVALID")
+    binding = (history.evidence_metadata or {}).get("multistore_context")
+    identity_document = (history.evidence_metadata or {}).get("documented_identity")
+    if identity_document is not None:
+        from app.services.product_documentation import DocumentedIdentity
+
+        try:
+            DocumentedIdentity.model_validate(identity_document).validate_product(
+                product, now
+            ).validate_commercial(
+                offer.current_price,
+                details.verified_at,
+                coupon_id=offer.coupon_id,
+                previous_price=offer.previous_price,
+            )
+        except (ValueError, TypeError):
+            raise _error("MANUAL_IDENTITY_EVIDENCE_INVALID") from None
+    if binding is not None:
+        from app.services.shopee_commercial_handoff import validate_binding
+
+        try:
+            if (
+                offer.previous_price is not None
+                or history.evidence_metadata.get("multistore_registered_variant_id")
+                != product.variant_id
+            ):
+                raise ValueError("Preço anterior não pertence ao contexto multiloja.")
+            validate_binding(
+                session,
+                binding,
+                product,
+                offer.current_price,
+                details.verified_at,
+                allow_simulated=settings.app_env == "test",
+            )
+        except (LookupError, ValueError, TypeError, KeyError):
+            raise _error("MULTISTORE_EVIDENCE_INVALID") from None
     return ManualOfferBundle(offer, product, history, details, coupon, evaluation)

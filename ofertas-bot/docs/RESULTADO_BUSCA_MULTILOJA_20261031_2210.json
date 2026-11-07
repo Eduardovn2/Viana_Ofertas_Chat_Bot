@@ -1,0 +1,232 @@
+{
+  "authorization_id": "e2fcad8a-3e26-4522-8685-868aa13d52a0",
+  "mode": "REAL_MULTISTORE_SEARCH",
+  "status": "SUCCEEDED",
+  "stored_state": "SUCCEEDED",
+  "scope_sha256": "249b2c26b90bb837056f5b2e443181c8aa4cbf1a2a2342ddf9e15296eb35614e",
+  "consumed": true,
+  "requests_reserved": 1,
+  "approval": {
+    "scope_sha256": "249b2c26b90bb837056f5b2e443181c8aa4cbf1a2a2342ddf9e15296eb35614e",
+    "actor": "eduardo.viana.3",
+    "confirmed_single_read": true,
+    "expires_at": "2026-11-01T01:20:00Z"
+  },
+  "result": {
+    "http_calls": 1,
+    "mode": "REAL_MULTISTORE_SEARCH",
+    "http_status": 200,
+    "comparison_sha256": "f030f86b97103d3024568183be3bc6c0cd5221d4763eb4c75adad90829fbb0fa",
+    "comparison": {
+      "query": "Cockpit simulador Brave Bull",
+      "candidates": [
+        {
+          "identity": "1754100018:58219916237",
+          "shop_id": "1754100018",
+          "item_id": "58219916237",
+          "name": "Cockpit simulador de corrida Brave Bull, estrutura em aço resistente. Volante, pedais e encosto ajustáveis.",
+          "announced_price": "1399.00",
+          "currency": "BRL",
+          "observed_at": "2026-11-01 01:11:22.482974+00:00",
+          "seller": {
+            "shop_name": "Brave Bull Oficial",
+            "rating_star": "0",
+            "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+            "sales": 2,
+            "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+            "shop_types": [],
+            "shop_type_semantics": "UNCONFIRMED_CODES"
+          },
+          "attributes": {
+            "brand": null,
+            "model": null,
+            "quantity": null,
+            "condition": null,
+            "packaging": null,
+            "kit": null,
+            "variant": null,
+            "price_conditions": null
+          },
+          "unknown_attributes": [
+            "brand",
+            "model",
+            "quantity",
+            "condition",
+            "packaging",
+            "kit",
+            "variant",
+            "price_conditions"
+          ],
+          "price_status": "VALID_ANNOUNCED_PRICE",
+          "status": "CANDIDATE",
+          "reason": "EQUIVALENCE_UNPROVEN"
+        },
+        {
+          "identity": "1754100018:22799528968",
+          "shop_id": "1754100018",
+          "item_id": "22799528968",
+          "name": "Cockpit Suporte Para Volante Cadeira Cockpit Simulador Brave Bull",
+          "announced_price": "1399.00",
+          "currency": "BRL",
+          "observed_at": "2026-11-01 01:11:22.482974+00:00",
+          "seller": {
+            "shop_name": "Brave Bull Oficial",
+            "rating_star": "0",
+            "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+            "sales": 0,
+            "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+            "shop_types": [],
+            "shop_type_semantics": "UNCONFIRMED_CODES"
+          },
+          "attributes": {
+            "brand": null,
+            "model": null,
+            "quantity": null,
+            "condition": null,
+            "packaging": null,
+            "kit": null,
+            "variant": null,
+            "price_conditions": null
+          },
+          "unknown_attributes": [
+            "brand",
+            "model",
+            "quantity",
+            "condition",
+            "packaging",
+            "kit",
+            "variant",
+            "price_conditions"
+          ],
+          "price_status": "VALID_ANNOUNCED_PRICE",
+          "status": "CANDIDATE",
+          "reason": "EQUIVALENCE_UNPROVEN"
+        },
+        {
+          "identity": "1595990092:58202217973",
+          "shop_id": "1595990092",
+          "item_id": "58202217973",
+          "name": "Suporte Cockpit Para Volante Pedais Para Simulador De Voo Brave Bull",
+          "announced_price": "639.00",
+          "currency": "BRL",
+          "observed_at": "2026-11-01 01:11:22.482974+00:00",
+          "seller": {
+            "shop_name": "3L LOJA——Brave Bull",
+            "rating_star": "4.9",
+            "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+            "sales": 7,
+            "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+            "shop_types": [],
+            "shop_type_semantics": "UNCONFIRMED_CODES"
+          },
+          "attributes": {
+            "brand": null,
+            "model": null,
+            "quantity": null,
+            "condition": null,
+            "packaging": null,
+            "kit": null,
+            "variant": null,
+            "price_conditions": null
+          },
+          "unknown_attributes": [
+            "brand",
+            "model",
+            "quantity",
+            "condition",
+            "packaging",
+            "kit",
+            "variant",
+            "price_conditions"
+          ],
+          "price_status": "VALID_ANNOUNCED_PRICE",
+          "status": "CANDIDATE",
+          "reason": "EQUIVALENCE_UNPROVEN"
+        }
+      ],
+      "groups": [],
+      "candidate_price_order": [
+        {
+          "identity": "1595990092:58202217973",
+          "shop_id": "1595990092",
+          "announced_price": "639.00",
+          "currency": "BRL",
+          "equivalence_status": "CANDIDATE"
+        },
+        {
+          "identity": "1754100018:22799528968",
+          "shop_id": "1754100018",
+          "announced_price": "1399.00",
+          "currency": "BRL",
+          "equivalence_status": "CANDIDATE"
+        }
+      ],
+      "status": "INSUFFICIENT_EQUIVALENCE",
+      "price_semantics": "ANNOUNCED_NOT_CONFIRMED_FINAL",
+      "comparison_kind": "CROSS_STORE_SAME_OBSERVATION",
+      "commercial_unknowns": [
+        "final_price",
+        "shipping",
+        "stock",
+        "seller_reputation"
+      ],
+      "publication_authorized": false,
+      "history_writes": 0,
+      "incompatible_products": [],
+      "proven_equivalences": [],
+      "has_next_not_followed": true,
+      "http_calls": 1,
+      "mode": "REAL_MULTISTORE_SEARCH",
+      "http_status": 200
+    },
+    "raw_response_persisted": false
+  },
+  "error_code": null,
+  "publication_authorized": false,
+  "price_history_writes": 0,
+  "scope": {
+    "authorization_id": "e2fcad8a-3e26-4522-8685-868aa13d52a0",
+    "actor": "eduardo.viana.3",
+    "operation": "productOfferV2",
+    "keyword": "Cockpit simulador Brave Bull",
+    "page": 1,
+    "limit": 3,
+    "not_before": "2026-11-01T01:10:00Z",
+    "expires_at": "2026-11-01T01:20:00Z",
+    "mode": "REAL_MULTISTORE_SEARCH",
+    "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+    "credential_scope": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+    "payload_sha256": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709",
+    "profile": "multistore",
+    "max_http_calls": 1,
+    "retry": false,
+    "fallback": false,
+    "pagination": false,
+    "history_writes": 0,
+    "publication_authorized": false
+  },
+  "payload": {
+    "query": "query { productOfferV2(keyword:\"Cockpit simulador Brave Bull\",page:1,limit:3) { nodes { itemId shopId productName productLink imageUrl price priceMin priceMax productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime shopName ratingStar sales shopType } pageInfo { page limit hasNextPage } } }"
+  },
+  "checked_at_utc": "2026-11-01T01:11:19.841132+00:00",
+  "checked_at_brasilia": "2026-10-31T22:11:19.841132-03:00",
+  "window_open": true,
+  "execution_invoked": true,
+  "administrative_http_status": 200,
+  "administrative_error_type": null,
+  "external_post_attempts": 1,
+  "external_http_statuses": [
+    200
+  ],
+  "external_attempts_at_utc": [
+    "2026-11-01T01:11:20.345703+00:00"
+  ],
+  "verification": {
+    "existing_other_authorizations_preserved": true,
+    "temporal_history_preserved": true,
+    "products_preserved": true,
+    "env_preserved": true,
+    "scheduler_started": false
+  },
+  "api_transport": "LOCAL_ASGI_EXISTING_AUTHENTICATED_ROUTER"
+}

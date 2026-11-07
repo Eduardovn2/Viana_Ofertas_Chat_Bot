@@ -1,0 +1,24 @@
+{
+  "offline_demo": {
+    "mode": "SYNTHETIC_MOCK_ONLY",
+    "product_id": 2,
+    "identity": "1904573791:23199869203",
+    "shop_id": "1904573791",
+    "name": "FICTICIO - Cockpit Brave Bull para teste offline",
+    "price": "1234.56",
+    "currency": "BRL",
+    "shop_name": null,
+    "rating": null,
+    "availability": "UNKNOWN",
+    "price_access": "UNKNOWN",
+    "commercial_verified": false,
+    "mocked_requests": 1,
+    "real_requests": 0,
+    "history_writes": 0
+  },
+  "pytest_passed": 29,
+  "pytest_deselected": 91,
+  "live_http_forbidden": true,
+  "real_requests": 0,
+  "operational_history_unchanged": true
+}

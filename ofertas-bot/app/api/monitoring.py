@@ -125,6 +125,7 @@ def monitoring_status(request: Request, session: Db):
     runtime_status = request.app.state.monitoring.status()
     return {
         **runtime_status,
+        "background_monitoring_allowed": request.app.state.background_monitoring_allowed,
         "enabled": configuration.scheduler_enabled,
         "paused": not configuration.scheduler_enabled,
         "running": runtime_status["running"] and configuration.scheduler_enabled,
@@ -139,6 +140,8 @@ def monitoring_configuration(request: Request, session: Db):
 
 @router.patch("/monitoring/config", response_model=MonitoringConfiguration)
 def patch_configuration(data: ConfigurationPatch, request: Request, session: Db):
+    if data.scheduler_enabled is True and not request.app.state.background_monitoring_allowed:
+        raise HTTPException(409, "Scheduler bloqueado neste processo de preparação assistida.")
     try:
         configuration = save_monitoring_configuration(
             session, request.app.state.settings, data.model_dump(exclude_unset=True)
@@ -361,4 +364,25 @@ def product_variations(
             }
             for row in observations
         ]
+    )
+
+
+@router.get("/products/{product_id}/ranking")
+def product_opportunity_ranking(product_id: int, session: Db):
+    from datetime import UTC, datetime
+
+    from app.models import ProductPriceHistory
+    from app.services.comparison import PriceComparisonService
+
+    get_product(session, product_id)
+    observation = session.scalar(
+        select(ProductPriceHistory)
+        .where(ProductPriceHistory.product_id == product_id)
+        .order_by(ProductPriceHistory.observed_at.desc(), ProductPriceHistory.id.desc())
+        .limit(1)
+    )
+    if observation is None:
+        raise HTTPException(404, "Produto sem observação registrada.")
+    return encoded(
+        PriceComparisonService().rank_observation(session, observation, now=datetime.now(UTC))
     )

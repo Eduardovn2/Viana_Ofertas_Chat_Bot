@@ -32,7 +32,23 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "event": record.getMessage(),
         }
-        for key in ("product_id", "error_type", "status_code"):
+        for key in (
+            "product_id",
+            "error_type",
+            "status_code",
+            "pilot_id",
+            "worker_id",
+            "state",
+            "phase",
+            "queries_reserved",
+            "messages_reserved",
+            "timeout_phase",
+            "elapsed_ms",
+            "timeout_connect",
+            "timeout_read",
+            "timeout_write",
+            "timeout_pool",
+        ):
             if hasattr(record, key):
                 result[key] = getattr(record, key)
         if hasattr(record, "oauth_error"):

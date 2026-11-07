@@ -1,0 +1,152 @@
+{
+  "status": "DRAFT_PENDING_HUMAN_VERIFICATION_NOT_SUBMITTABLE",
+  "method": "POST",
+  "endpoint": "/api/v1/manual-offers",
+  "body": {
+    "product_id": 2,
+    "current_price": null,
+    "actor": null,
+    "verified": false,
+    "availability": "UNKNOWN",
+    "price_access": "UNKNOWN",
+    "previous_price": null,
+    "coupon_id": null,
+    "installment_text": null,
+    "image_url": null,
+    "verified_at": null,
+    "expires_at": null,
+    "multistore_context": null
+  },
+  "schema_validation_passed": false,
+  "schema_issues": [
+    {
+      "field": "current_price",
+      "type": "decimal_type"
+    },
+    {
+      "field": "actor",
+      "type": "string_type"
+    }
+  ],
+  "service_blockers": [
+    "verified must be explicitly true after responsible verification",
+    "availability must be verified AVAILABLE",
+    "price_access must be verified PUBLIC",
+    "existing own affiliate link must be explicitly verified and associated"
+  ],
+  "pending_fields": {
+    "current_price": "Current public applicable price for the selected variant; do not copy old documentary prices",
+    "actor": "Actual responsible verifier",
+    "verified": "Keep false until explicit commercial verification; this artifact grants no attestation",
+    "availability": "Responsible must confirm current availability of the selected variant",
+    "price_access": "Responsible must confirm PUBLIC price and exact payment/eligibility conditions",
+    "verified_at": "Aware date/time of actual verification, not form preparation time",
+    "expires_at": "Explicit validity bound within the existing freshness limit",
+    "selected_variant": "Sem inventar SKU: VARIANT somente com identificador documentado; LISTING_ALL_OPTIONS somente com mesmo preço público e disponibilidade de todas as opções comprovados. Azul segue seleção declarada, não SKU.",
+    "affiliate_link": "Uma referência oficial reutilizável identificando a conta afiliada autorizada e o App ID configurado (comparado localmente, sem expor segredo). Para este recibo legado sem fingerprint, o mesmo conjunto documental deve também vincular o link preservado à conta. Origem, data, responsável e validade são registrados uma vez; não repetir por anúncio futuro quando houver recibo com vínculo de credencial e prova de conta válida."
+  },
+  "declared_preparation_context_not_api_body": {
+    "source": "USER_MESSAGE_IN_THIS_CHAT_2026-11-01",
+    "intended_option": "AZUL",
+    "option_status": "DECLARED_NOT_OFFICIAL_SKU_PROOF",
+    "official_sku": null,
+    "official_sku_status": "NOT_PROVIDED",
+    "included_kit": null,
+    "excluded_items": null,
+    "quantity": 1,
+    "link_owned_by_responsible_declared": true,
+    "link_matches_listing_declared": true,
+    "ownership_documentary_reference": null,
+    "blue_variant_linkage_proven": false,
+    "operationally_verified": false,
+    "historical_prices_are_current_confirmation": false,
+    "model_as_documented": "Lagos",
+    "description_evidence_reference": "docs/EVIDENCIA_TRANSCRICAO_PRODUTO_2_20261103.json",
+    "last_displayed_without_coupon_brl": "1099.00",
+    "last_displayed_price_conditions": "sem cupom em outros métodos de pagamento",
+    "price_display_observed_at": null,
+    "current_public_price_verified": false
+  },
+  "single_administrative_submission": {
+    "already_recorded_do_not_reconfirm": [
+      "Produto 2, anuncio 1904573791:23199869203, opcao pretendida AZUL",
+      "Declaracao do responsavel: link preservado gerado em sua conta e correspondente ao anuncio",
+      "Igualdade de preco exibido entre azul/vermelho anteriormente declarada; nao comprova preco atual"
+    ],
+    "stable_evidence_to_complete_first": {
+      "affiliate_account_link_document": null,
+      "affiliate_account_link_document_requirement": "Uma referência oficial reutilizável identificando a conta afiliada autorizada e o App ID configurado (comparado localmente, sem expor segredo). Para este recibo legado sem fingerprint, o mesmo conjunto documental deve também vincular o link preservado à conta. Origem, data, responsável e validade são registrados uma vez; não repetir por anúncio futuro quando houver recibo com vínculo de credencial e prova de conta válida.",
+      "blue_option_and_kit_document": null,
+      "blue_option_and_kit_document_requirement": "Sem inventar SKU: VARIANT somente com identificador documentado; LISTING_ALL_OPTIONS somente com mesmo preço público e disponibilidade de todas as opções comprovados. Azul segue seleção declarada, não SKU. Composição continua desconhecida. A mensagem limitada, textual e com aviso obrigatório não promete acessórios; uma mensagem com equipamentos, kit ou imagens exige comprovação adicional.",
+      "model": "Lagos",
+      "quantity": 1,
+      "included_items": null,
+      "excluded_items": null,
+      "official_sku": null,
+      "product_description_document": "docs/EVIDENCIA_TRANSCRICAO_PRODUTO_2_20261103.json"
+    },
+    "commercial_verification_last_after_stable_evidence_validation": {
+      "applicable_public_price_brl": null,
+      "payment_and_eligibility_conditions": null,
+      "blue_option_available": null,
+      "source_reference": null,
+      "verified_by": null,
+      "actual_verified_at_with_timezone": null,
+      "expires_at_with_timezone": null,
+      "maximum_age_seconds": 600,
+      "coupon_required": false,
+      "omit_unproven_shipping_installments_and_discount_claims": true
+    },
+    "explicit_registration_authorization": {
+      "received": false,
+      "scope_to_confirm_after_evidence": "Autorizo associar o link preservado apos a verificacao documental e cadastrar uma oferta individual do produto 2 no escopo e condicoes efetivamente comprovados, para apresentar a mensagem por review-message. Nao autorizo ativar destino, aprovar publicacao ou enviar mensagem."
+    },
+    "next_existing_endpoints_after_confirmation": [
+      "PUT /api/v1/products/2/affiliate-link: somente apos prova e autorizacao adequadas",
+      "POST /api/v1/manual-offers: somente com verificacao comercial atual explicita",
+      "POST /api/v1/manual-offers/{offer_id}/review-message: destination_id=2, include_image=false"
+    ],
+    "stop_after_review_message": true,
+    "future_single_publication_authorization_must_bind": [
+      "Mensagem exata e hash de revisao do conteudo efetivamente apresentados",
+      "Oferta e opcao comprovadas, dentro da validade vigente",
+      "Destino 2, chat -5309308689",
+      "Ativacao controlada necessaria e no maximo um envio, sem retry automatico",
+      "Conferir igualdade exata da previa normal antes de registrar aprovacao no hash da outbox; nenhuma substituicao de conteudo"
+    ]
+  },
+  "local_configuration": {
+    "publisher_enabled": false,
+    "real_sends_authorized": false,
+    "group_in_allowlist": true,
+    "price_max_age_seconds": 600,
+    "effective_persisted_freshness_not_revalidated": false
+  },
+  "operational_snapshot": ".runtime\\assisted-offer-product2-live-readonly.json",
+  "operational_snapshot_checked_at_utc": "2026-11-01T10:28:02.178204+00:00",
+  "reusable_fields": {
+    "id": 2,
+    "platform": "SHOPEE",
+    "external_id": "1904573791:23199869203",
+    "name": "Cockpit simulador de corrida Brave Bull",
+    "original_url": "https://shopee.com.br/Cockpit-simulador-de-corrida-Brave-Bull-estrutura-em-a%C3%A7o-resistente.-Volante-pedais-e-encosto-ajust%C3%A1veis.-i.1904573791.23199869203"
+  },
+  "variant_scope": "UNCONFIRMED_EXISTING_EMPTY_VARIANT_ID_IS_NOT_PROOF",
+  "operational_data_read": true,
+  "offer_created": false,
+  "history_writes": 0,
+  "external_http_calls": 0,
+  "limited_description_preparation_not_api_body": {
+    "proposed_message_scope": "CORE_ATTRIBUTES_ONLY",
+    "mandatory_content_notice": "Volante, pedais, câmbio e demais equipamentos: composição não confirmada. Confira os itens incluídos no anúncio.",
+    "publication_name_proposed": "Cockpit simulador de corrida Brave Bull",
+    "image_url": null,
+    "kit": null,
+    "excluded_items": null,
+    "composition_claims_allowed": false,
+    "historical_discount_allowed": false,
+    "commercial_verification_still_required": true,
+    "variant_policy": "Sem inventar SKU: VARIANT somente com identificador documentado; LISTING_ALL_OPTIONS somente com mesmo preço público e disponibilidade de todas as opções comprovados. Azul segue seleção declarada, não SKU.",
+    "publication_authorized": false
+  }
+}

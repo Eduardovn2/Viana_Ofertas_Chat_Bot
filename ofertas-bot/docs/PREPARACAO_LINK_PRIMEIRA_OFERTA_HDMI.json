@@ -1,0 +1,28 @@
+{
+  "authorization_id": "7f2e56d1-1034-40f8-bf54-6cfd202390c8",
+  "scope_sha256": "c601b9cad0739d1c46bfddf81aeb7ae1363e7c28c0dc4cc26e2d8cbe9e3ffb78",
+  "state": "PREPARED",
+  "not_before_brasilia": "2026-11-04T02:12:31.547462-03:00",
+  "expires_at_brasilia": "2026-11-04T02:18:48.953023-03:00",
+  "operation": "generateShortLink",
+  "origin_url": "https://shopee.com.br/product/1018042820/22293101052",
+  "product_id": 1,
+  "name": "Cabo HDMI de 1 metro — selecione a versão no anúncio",
+  "public_price_brl": "59.00",
+  "identity_level": "LISTING_ALL_OPTIONS",
+  "max_posts": 1,
+  "retry": false,
+  "new_link_generation_authorized": false,
+  "telegram_authorized": false,
+  "proposed_telegram_max_attempts": 1,
+  "account_evidence_id": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9",
+  "offer_creation_only_after_scope_approval": true,
+  "planned_message_without_unknown_link": "Cabo HDMI de 1 metro — selecione a versão no anúncio\nPreço atual: R$ 59,00\n[Link próprio pendente de geração]\nPublicidade • link de afiliado",
+  "existing_authorizations_and_price_history_preserved": true,
+  "current_operational_counts": {
+    "offers": 0,
+    "affiliate_links": 0,
+    "product_price_history": 4
+  },
+  "external_posts_this_preparation": 0
+}

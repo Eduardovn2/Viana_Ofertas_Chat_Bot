@@ -1,11 +1,13 @@
 """Synthetic HTTP responses only; never contact a marketplace."""
 
+import logging
 from datetime import UTC, datetime
 from decimal import Decimal
 
 import httpx
 import pytest
 
+from app.core.logging import JsonFormatter
 from app.integrations.errors import AuthorizationDenied, IntegrationError, InvalidPayload
 from app.integrations.http import JsonTransport
 
@@ -90,6 +92,84 @@ def test_timeout_is_bounded_and_safe():
     assert error.value.code == "TIMEOUT"
     assert "private-token" not in str(error.value)
     assert len(calls) == 2
+
+
+@pytest.mark.parametrize(
+    "kind,phase",
+    [
+        (httpx.ConnectTimeout, "CONNECT"),
+        (httpx.ReadTimeout, "READ"),
+        (httpx.WriteTimeout, "WRITE"),
+        (httpx.PoolTimeout, "POOL"),
+        (httpx.TimeoutException, "UNKNOWN"),
+    ],
+)
+def test_timeout_subtype_and_limits_are_retained_without_secrets(kind, phase, caplog, monkeypatch):
+    monkeypatch.setattr(logging.getLogger("ofertas_bot"), "propagate", True)
+    calls = []
+
+    def failed(request):
+        calls.append(request)
+        raise kind("private-token-and-body", request=request)
+
+    sender = transport(failed, max_retries=0, timeout=3)
+    with (
+        caplog.at_level(logging.WARNING, logger="ofertas_bot"),
+        pytest.raises(IntegrationError) as error,
+    ):
+        sender.request(
+            "POST",
+            URL,
+            headers={"Authorization": "private-token-and-body"},
+            body=b"private-token-and-body",
+            retry=False,
+        )
+    assert len(calls) == 1 and error.value.code == "TIMEOUT"
+    data = error.value.http_diagnostics
+    assert data["timeout_phase"] == phase and data["error_type"] == kind.__name__
+    assert data["timeout_connect"] == data["timeout_read"] == 3
+    assert data["elapsed_ms"] >= 0
+    assert "private-token-and-body" not in str(error.value)
+    records = [r for r in caplog.records if r.message == "integration_http_timeout"]
+    assert records
+    rendered = JsonFormatter().format(records[-1])
+    assert "private-token-and-body" not in rendered and phase in rendered
+
+
+def test_injected_client_phase_timeouts_are_not_overwritten_by_transport_default():
+    seen = []
+    client = httpx.Client(
+        timeout=httpx.Timeout(9, connect=2, read=7, write=3, pool=4),
+        transport=httpx.MockTransport(
+            lambda request: (
+                seen.append(request.extensions["timeout"]) or httpx.Response(200, json={})
+            )
+        ),
+    )
+    with client:
+        sender = JsonTransport(client=client, max_retries=0, min_interval=0)
+        sender.request("GET", URL)
+    assert seen == [dict(connect=2, read=7, write=3, pool=4)]
+
+
+def test_explicit_transport_timeout_overrides_client_by_request():
+    seen = []
+    with httpx.Client(
+        timeout=2,
+        transport=httpx.MockTransport(
+            lambda r: seen.append(r.extensions["timeout"]) or httpx.Response(200, json={})
+        ),
+    ) as client:
+        JsonTransport(client=client, timeout=6, min_interval=0).request("GET", URL)
+    assert seen == [dict(connect=6, read=6, write=6, pool=6)]
+
+
+def test_unbounded_injected_timeout_is_rejected_without_request():
+    with httpx.Client(
+        timeout=None, transport=httpx.MockTransport(lambda r: pytest.fail("no HTTP"))
+    ) as client:
+        with pytest.raises(ValueError):
+            JsonTransport(client=client)
 
 
 def test_mutation_retry_can_be_disabled():

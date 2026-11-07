@@ -1,0 +1,81 @@
+{
+  "authorization_id": "5f553c94-48ff-4724-b12a-593c59a883b8",
+  "scope_sha256": "3d3231aef1ac76a33bbd58531fb7c3a2e13f96c6693b9171d0e6f25acb5003f0",
+  "execute_admin_http_status": 200,
+  "execution": {
+    "authorization_id": "5f553c94-48ff-4724-b12a-593c59a883b8",
+    "mode": "REAL_SINGLE_READ",
+    "status": "SUCCEEDED",
+    "stored_state": "SUCCEEDED",
+    "scope_sha256": "3d3231aef1ac76a33bbd58531fb7c3a2e13f96c6693b9171d0e6f25acb5003f0",
+    "consumed": true,
+    "requests_reserved": 1,
+    "approval": {
+      "scope_sha256": "3d3231aef1ac76a33bbd58531fb7c3a2e13f96c6693b9171d0e6f25acb5003f0",
+      "actor": "eduardo.viana.3",
+      "confirmed_single_read": true,
+      "expires_at": "2026-11-04T05:10:49.923571Z"
+    },
+    "result": {
+      "http_calls": 1,
+      "mode": "REAL_SINGLE_READ",
+      "http_status": 200,
+      "quote_sha256": "011be43c6af558e9e29ffb45474d8dddfad94acbd367aba0f2ec9ea6eedf6c75",
+      "quote_persisted": false
+    },
+    "error_code": null,
+    "publication_authorized": false,
+    "price_history_writes": 0,
+    "quote": {
+      "http_calls": 1,
+      "mode": "REAL_SINGLE_READ",
+      "identity": "1018042820:22293101052",
+      "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+      "currency": "BRL",
+      "price": "59.00",
+      "price_min": "59.00",
+      "price_max": "59.00",
+      "advertised_discount_percent": 0,
+      "offer_period_start_raw": 1787713200,
+      "offer_period_end_raw": 32503651199,
+      "period_time_unit": "UNCONFIRMED",
+      "period_semantics": "UNCONFIRMED",
+      "availability": "UNKNOWN",
+      "price_access": "UNKNOWN",
+      "commercial_verified": false,
+      "observed_at": "2026-11-04T05:00:51.306704+00:00",
+      "price_history_writes": 0,
+      "publication_authorized": false,
+      "http_status": 200
+    }
+  },
+  "final": {
+    "authorization_id": "5f553c94-48ff-4724-b12a-593c59a883b8",
+    "mode": "REAL_SINGLE_READ",
+    "status": "SUCCEEDED",
+    "stored_state": "SUCCEEDED",
+    "scope_sha256": "3d3231aef1ac76a33bbd58531fb7c3a2e13f96c6693b9171d0e6f25acb5003f0",
+    "consumed": true,
+    "requests_reserved": 1,
+    "approval": {
+      "scope_sha256": "3d3231aef1ac76a33bbd58531fb7c3a2e13f96c6693b9171d0e6f25acb5003f0",
+      "actor": "eduardo.viana.3",
+      "confirmed_single_read": true,
+      "expires_at": "2026-11-04T05:10:49.923571Z"
+    },
+    "result": {
+      "http_calls": 1,
+      "mode": "REAL_SINGLE_READ",
+      "http_status": 200,
+      "quote_sha256": "011be43c6af558e9e29ffb45474d8dddfad94acbd367aba0f2ec9ea6eedf6c75",
+      "quote_persisted": false
+    },
+    "error_code": null,
+    "publication_authorized": false,
+    "price_history_writes": 0
+  },
+  "historical_authorizations_preserved": true,
+  "real_link_generation_calls": 0,
+  "telegram_calls": 0,
+  "execution_repeated": false
+}

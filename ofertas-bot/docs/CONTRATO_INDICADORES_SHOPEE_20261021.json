@@ -1,0 +1,731 @@
+{
+  "source_url": "https://open-api.affiliate.shopee.com.br/explorer/v2",
+  "source_cache_date": "2026-10-21",
+  "source_html_sha256": "c48bed7c7caef93e815903e92f446caf81b51544a9e1b09fe293dd0c69054de4",
+  "live_schema_checked": false,
+  "operations": [
+    {
+      "name": "shopOfferV2",
+      "opType": "query",
+      "args": [
+        {
+          "name": "keyword",
+          "type": "String",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "Search by shop name",
+          "enumName": ""
+        },
+        {
+          "name": "shopType",
+          "type": "Int",
+          "isList": true,
+          "required": false,
+          "defaultValue": "",
+          "description": "Filter specific shop type\nALL = 0;\nOFFICIAL_SHOP        = 1;\nFilter mall shop\nPREFERRED_SHOP       = 2;\nFilter preferred(Star) shop\nCROSS_BOARDER_SHOP   = 3;\nFilter corss border shop",
+          "enumName": ""
+        },
+        {
+          "name": "sortType",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "1",
+          "description": "SHOP_LIST_SORT_TYPE_LATEST_DESC = 1;\nSort by last update time\nSHOP_LIST_SORT_TYPE_HIGHEST_COMMISSION_DESC = 2;\nSort by commission rate from high to low\nSHOP_LIST_SORT_TYPE_POPULAR_SHOP_DESC = 3;\nSort by Popular shop from high to low",
+          "enumName": ""
+        },
+        {
+          "name": "sellerCommCoveRatio",
+          "type": "String",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "The ratio of products with seller commission.\ne.g. set “0.0123” if the rate is large or equal to 1.23%",
+          "enumName": ""
+        },
+        {
+          "name": "page",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "1",
+          "description": "Page number",
+          "enumName": ""
+        },
+        {
+          "name": "limit",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "20",
+          "description": "Number of data per page",
+          "enumName": ""
+        },
+        {
+          "name": "shopId",
+          "type": "Int64",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "query by shop id",
+          "enumName": ""
+        },
+        {
+          "name": "isKeySeller",
+          "type": "Boolean",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "",
+          "enumName": ""
+        }
+      ],
+      "returnType": "ShopOfferConnectionV2",
+      "desc": "Get Shop Offer list V2"
+    },
+    {
+      "name": "productOfferV2",
+      "opType": "query",
+      "args": [
+        {
+          "name": "listType",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "0",
+          "description": "Type of product offer list\nALL = 0;\nHIGHEST_COMMISSION = 1;\nTOP_PERFORMING = 2;\nLANDING_CATEGORY = 3;\nDETAIL_CATEGORY = 4;\nDETAIL_SHOP = 5;\nDETAIL_COLLECTION = 6;",
+          "enumName": ""
+        },
+        {
+          "name": "matchId",
+          "type": "Int64",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "CategoryId for listType = LANDING_CATEGORY and DETAIL_CATEGORY;\nShopId for listType = DETAIL_SHOP;\nCollectionId for listType = DETAIL_COLLECTION",
+          "enumName": ""
+        },
+        {
+          "name": "keyword",
+          "type": "String",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "Search by product name",
+          "enumName": ""
+        },
+        {
+          "name": "sortType",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "RELEVANCE_DESC = 1;\nOnly for search by keyword, and sort by relevance with keyword\nITEM_SOLD_DESC = 2;\nSort by sold count from high to low\nPRICE_DESC     = 3;\nSort by price from high to low\nPRICE_ASC      = 4;\nSort by price from low to high\nCOMMISSION_DESC = 5;\nSort by commission rate from high to low",
+          "enumName": ""
+        },
+        {
+          "name": "page",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "1",
+          "description": "Page number",
+          "enumName": ""
+        },
+        {
+          "name": "limit",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "20",
+          "description": "Number of data per page",
+          "enumName": ""
+        },
+        {
+          "name": "itemId",
+          "type": "Int64",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "item id",
+          "enumName": ""
+        },
+        {
+          "name": "shopId",
+          "type": "Int64",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "Shop id",
+          "enumName": ""
+        },
+        {
+          "name": "productCatId",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "Category id",
+          "enumName": ""
+        },
+        {
+          "name": "isAMSOffer",
+          "type": "Boolean",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "filter ams offer",
+          "enumName": ""
+        },
+        {
+          "name": "isKeySeller",
+          "type": "Boolean",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "",
+          "enumName": ""
+        }
+      ],
+      "returnType": "ProductOfferConnectionV2",
+      "desc": "Get Product Offer list V2"
+    },
+    {
+      "name": "listItemFeeds",
+      "opType": "query",
+      "args": [
+        {
+          "name": "feedMode",
+          "type": "FeedMode",
+          "isList": false,
+          "required": false,
+          "defaultValue": "",
+          "description": "Filter by feed mode (FULL or DELTA). If not specified, returns all available feeds.",
+          "enumName": "FeedMode"
+        }
+      ],
+      "returnType": "ItemFeedListConnection",
+      "desc": "Get available item feed metadata list.\n    Use this to discover available feeds before fetching actual data.\n    Returns feed metadata including ID, date, total count, and feed mode (FULL/DELTA)."
+    },
+    {
+      "name": "getItemFeedData",
+      "opType": "query",
+      "args": [
+        {
+          "name": "datafeedId",
+          "type": "String",
+          "isList": false,
+          "required": true,
+          "defaultValue": "",
+          "description": "Composite datafeed ID obtained from listItemFeeds (format: {datafeedId}_{feedMode}_{grassDate}, e.g. \"12345_FULL_20260205\")",
+          "enumName": ""
+        },
+        {
+          "name": "offset",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "0",
+          "description": "Pagination offset (starts from 0)",
+          "enumName": ""
+        },
+        {
+          "name": "limit",
+          "type": "Int",
+          "isList": false,
+          "required": false,
+          "defaultValue": "500",
+          "description": "Number of records per page (max 500)",
+          "enumName": ""
+        }
+      ],
+      "returnType": "ItemFeedDataConnection",
+      "desc": "Fetch item feed data with pagination.\n    Use datafeedId from listItemFeeds to retrieve actual product data.\n    Supports both FULL sync (complete dataset) and DELTA sync (incremental changes).\n    DELTA mode includes updateType field (NEW/UPDATE/DELETE) for each row."
+    }
+  ],
+  "types": {
+    "ItemFeed": {
+      "name": "ItemFeed",
+      "fields": [
+        {
+          "name": "datafeedId",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Composite ID (format: {datafeedId}_{feedMode}_{grassDate}, e.g. \"12345_FULL_20260205\")"
+        },
+        {
+          "name": "referenceId",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Original numeric ID (e.g. \"12345\")"
+        },
+        {
+          "name": "datafeedName",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Feed name"
+        },
+        {
+          "name": "description",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Feed description"
+        },
+        {
+          "name": "totalCount",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Total record count"
+        },
+        {
+          "name": "date",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Data date (format: YYYYMMDD)"
+        },
+        {
+          "name": "feedMode",
+          "type": "FeedMode",
+          "rawType": "FeedMode!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Feed mode: FULL or DELTA"
+        }
+      ]
+    },
+    "ItemFeedDataConnection": {
+      "name": "ItemFeedDataConnection",
+      "fields": [
+        {
+          "name": "rows",
+          "type": "ItemFeedDataRow",
+          "rawType": "[ItemFeedDataRow!]!",
+          "isList": true,
+          "guaranteed": true,
+          "description": "Data rows"
+        },
+        {
+          "name": "pageInfo",
+          "type": "ItemFeedPageInfo",
+          "rawType": "ItemFeedPageInfo!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Pagination info"
+        }
+      ]
+    },
+    "ItemFeedDataRow": {
+      "name": "ItemFeedDataRow",
+      "fields": [
+        {
+          "name": "columns",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Column name-value pairs as JSON"
+        },
+        {
+          "name": "updateType",
+          "type": "DeltaDataUpdateType",
+          "rawType": "DeltaDataUpdateType",
+          "isList": false,
+          "guaranteed": false,
+          "description": "Update type for DELTA mode (NEW, UPDATE, DELETE)"
+        }
+      ]
+    },
+    "ItemFeedListConnection": {
+      "name": "ItemFeedListConnection",
+      "fields": [
+        {
+          "name": "feeds",
+          "type": "ItemFeed",
+          "rawType": "[ItemFeed!]!",
+          "isList": true,
+          "guaranteed": true,
+          "description": "Available feeds"
+        }
+      ]
+    },
+    "ItemFeedPageInfo": {
+      "name": "ItemFeedPageInfo",
+      "fields": [
+        {
+          "name": "offset",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Current offset"
+        },
+        {
+          "name": "limit",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Page size"
+        },
+        {
+          "name": "totalCount",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Total record count"
+        },
+        {
+          "name": "hasMore",
+          "type": "Boolean",
+          "rawType": "Boolean!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Has more records"
+        }
+      ]
+    },
+    "ProductOfferV2": {
+      "name": "ProductOfferV2",
+      "fields": [
+        {
+          "name": "itemId",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "item ID"
+        },
+        {
+          "name": "commissionRate",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Commission rate, e.g. set \"0.0123\" if the rate is 1.23%"
+        },
+        {
+          "name": "appExistRate",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Commission rate for non-first-time order users on the app, e.g. set “0.0123” if the rate is 1.23%"
+        },
+        {
+          "name": "appNewRate",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Commission rate for new users on the app,  e.g. set “0.0123” if the rate is 1.23%"
+        },
+        {
+          "name": "webExistRate",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Commission rate for non-first-time order users on the web, e.g. set “0.0123” if the rate is 1.23%"
+        },
+        {
+          "name": "webNewRate",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Commission rate for new users on the web, e.g. set “0.0123” if the rate is 1.23%"
+        },
+        {
+          "name": "commission",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Commission amount  = price * commissionRate\nNote: The unit is the local currency"
+        },
+        {
+          "name": "price",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Pirce\nNote: The unit is the local currency"
+        },
+        {
+          "name": "sales",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Sales count for this product"
+        },
+        {
+          "name": "imageUrl",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Image url"
+        },
+        {
+          "name": "productName",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Product name"
+        },
+        {
+          "name": "shopName",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Shop Name"
+        },
+        {
+          "name": "productLink",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "product link"
+        },
+        {
+          "name": "offerLink",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "offer link"
+        },
+        {
+          "name": "periodEndTime",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Offer end time"
+        },
+        {
+          "name": "periodStartTime",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Offer start time"
+        },
+        {
+          "name": "priceMin",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Product min price"
+        },
+        {
+          "name": "priceMax",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Product max price"
+        },
+        {
+          "name": "productCatIds",
+          "type": "Int",
+          "rawType": "[Int!]",
+          "isList": true,
+          "guaranteed": false,
+          "description": "Product category ids, l1-l3"
+        },
+        {
+          "name": "ratingStar",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "product rating star"
+        },
+        {
+          "name": "priceDiscountRate",
+          "type": "Int",
+          "rawType": "Int!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "product discount rate, 0-100"
+        },
+        {
+          "name": "shopId",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "product shop id"
+        },
+        {
+          "name": "shopType",
+          "type": "Int",
+          "rawType": "[Int!]",
+          "isList": true,
+          "guaranteed": false,
+          "description": "product shop type"
+        },
+        {
+          "name": "sellerCommissionRate",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true
+        },
+        {
+          "name": "shopeeCommissionRate",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true
+        }
+      ]
+    },
+    "ShopOfferV2": {
+      "name": "ShopOfferV2",
+      "fields": [
+        {
+          "name": "commissionRate",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Commission rate, e.g. set \"0.0123\" if the rate is 1.23%"
+        },
+        {
+          "name": "imageUrl",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "imageUrl"
+        },
+        {
+          "name": "offerLink",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Offer link"
+        },
+        {
+          "name": "originalLink",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Orignal link"
+        },
+        {
+          "name": "shopId",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Shop ID"
+        },
+        {
+          "name": "shopName",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "shop name"
+        },
+        {
+          "name": "periodStartTime",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Offer start time"
+        },
+        {
+          "name": "periodEndTime",
+          "type": "Int64",
+          "rawType": "Int64!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Offer end time"
+        },
+        {
+          "name": "bannerInfo",
+          "type": "BannerInfo",
+          "rawType": "BannerInfo",
+          "isList": false,
+          "guaranteed": false,
+          "description": "banner info"
+        },
+        {
+          "name": "ratingStar",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true
+        },
+        {
+          "name": "shopType",
+          "type": "Int",
+          "rawType": "[Int!]",
+          "isList": true,
+          "guaranteed": false
+        },
+        {
+          "name": "remainingBudget",
+          "type": "Int",
+          "rawType": "Int!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "shopBudgetUnlimited = 0\nshopBudgetVeryLow   = 1\nshopBudgetLow       = 2\nshopBudgetNormal    = 3"
+        },
+        {
+          "name": "sellerCommCoveRatio",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "The ratio of products with seller commission.e.g. set \"0.0123\" if the rate is large or equal to 1.23%"
+        }
+      ]
+    }
+  },
+  "ranking_semantics": {
+    "ProductOfferV2.ratingStar": {
+      "subject": "PRODUCT",
+      "scale_and_review_count": "UNDOCUMENTED"
+    },
+    "ProductOfferV2.sales": {
+      "subject": "PRODUCT",
+      "meaning": "SALES_COUNT",
+      "period": "UNDOCUMENTED"
+    },
+    "ProductOfferV2.shopType": {
+      "meaning": "PRODUCT_SHOP_TYPE",
+      "seller_reputation": "NOT_PROVEN"
+    },
+    "ShopOfferV2.ratingStar": {
+      "meaning": "UNDOCUMENTED",
+      "seller_reputation": "NOT_PROVEN"
+    }
+  }
+}

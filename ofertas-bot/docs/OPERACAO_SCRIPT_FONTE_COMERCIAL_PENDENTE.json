@@ -1,0 +1,24 @@
+{
+  "mode": "DETERMINISTIC_PYTHON_WORKER",
+  "worker_entrypoint": "python -m app.auto_pilot_worker",
+  "ai_required_per_cycle": false,
+  "browser_ai_verification_enabled": false,
+  "captcha_completion_reported_by_responsible": true,
+  "captcha_is_not_commercial_evidence": true,
+  "documented_productOfferV2_fields": {
+    "price": true,
+    "priceMin": true,
+    "priceMax": true,
+    "offerLink": true,
+    "availability": false,
+    "stock": false,
+    "priceAccess": false
+  },
+  "existing_importer": "python -m app.import_official_offers",
+  "existing_finalizer": "python -m scripts.finalize_single_documented_offer",
+  "missing_configuration": "Authorized machine-readable official source for current public applicable price and availability; API offer quote alone is insufficient",
+  "automatic_commercial_eligibility": false,
+  "commercial_data_invented": false,
+  "new_external_calls": 0,
+  "messages_sent_this_step": 0
+}

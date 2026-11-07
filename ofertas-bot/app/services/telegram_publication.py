@@ -11,6 +11,7 @@ import re
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from types import SimpleNamespace
 
 from sqlalchemy import func, inspect, select, update
 from sqlalchemy.exc import IntegrityError
@@ -112,9 +113,84 @@ class TelegramPublicationService:
     def _now(self):
         return aware_utc(self.clock())
 
-    def _context(self, session, offer_id, destination_id, include_image=True):
+    def _read_bundle(self, session, offer_id, now):
         from app.services.manual_offers import read_manual_offer
+
+        return read_manual_offer(session, offer_id, self.settings, now)
+
+    @staticmethod
+    def _render(bundle, include_image):
         from app.services.message_templates import MessageData, render_message
+        from app.services.product_documentation import CORE_CONTENT_NOTICE
+
+        if type(include_image) is not bool:
+            raise _error("OUTBOX_INVALID")
+        limited = (bundle.history.evidence_metadata or {}).get("documented_identity", {}).get(
+            "message_scope"
+        ) == "CORE_ATTRIBUTES_ONLY"
+        return render_message(
+            MessageData(
+                bundle.product.name,
+                bundle.offer.current_price,
+                bundle.product.affiliate_link.url,
+                previous_price=bundle.offer.previous_price,
+                coupon_text=bundle.coupon.code if bundle.coupon_evaluation is not None else None,
+                installments_text=bundle.history.installment_text,
+                image_url=bundle.details.image_url if include_image and not limited else None,
+                content_notice=CORE_CONTENT_NOTICE if limited else None,
+            )
+        )
+
+    def review_message(self, session, offer_id, destination_id, include_image=True):
+        """Read-only human review while the destination is paused; never an approval token."""
+        from app.services.manual_offers import read_manual_offer
+        from app.services.telegram_destinations import validate_chat_id
+
+        destination = session.get(PublicationDestination, destination_id)
+        if destination is None or destination.channel != DestinationChannel.TELEGRAM:
+            raise _error("OUTBOX_INVALID")
+        try:
+            validate_chat_id(destination.external_id)
+        except (ValueError, TypeError):
+            raise _error("OUTBOX_INVALID") from None
+        bundle = read_manual_offer(session, offer_id, self.settings, self._now())
+        # Evaluate routing after an explicitly authorized future activation without
+        # changing or classifying any persisted object in this review operation.
+        proposed_destination = SimpleNamespace(
+            id=destination.id,
+            enabled=True,
+            category_mode=destination.category_mode,
+        )
+        if not destination_accepts(session, bundle.product, proposed_destination):
+            raise _error("OUTBOX_INVALID")
+        self._cooldown(session, bundle, destination, self._now())
+        try:
+            reviewed = _canonical(
+                dict(
+                    chat_id=destination.external_id,
+                    message=asdict(self._render(bundle, include_image)),
+                )
+            )
+        except (ValueError, TypeError, AttributeError):
+            raise _error("OUTBOX_INVALID") from None
+        return dict(
+            offer_id=offer_id,
+            product_id=bundle.product.id,
+            destination_id=destination_id,
+            product_identity=bundle.product.external_id,
+            variant_id=bundle.product.variant_id,
+            destination_enabled=destination.enabled,
+            content=reviewed,
+            content_sha256=_hash(reviewed),
+            expires_at=aware_utc(bundle.offer.expires_at).isoformat(),
+            can_approve=False,
+            publication_authorized=False,
+            outbox_created=False,
+            hash_semantics="CONTENT_REVIEW_ONLY_NOT_OUTBOX_APPROVAL_HASH",
+            next_step="After explicit authorization, revalidate existing publication preview and require exact reviewed message/chat match before approval and one dispatch",
+        )
+
+    def _context(self, session, offer_id, destination_id, include_image=True):
 
         now = self._now()
         try:
@@ -137,24 +213,12 @@ class TelegramPublicationService:
             from app.services.telegram_destinations import validate_chat_id
 
             validate_chat_id(destination.external_id)
-            bundle = read_manual_offer(session, offer_id, self.settings, now)
+            bundle = self._read_bundle(session, offer_id, now)
             CategoryService().classify(session, bundle.product)
             if not destination_accepts(session, bundle.product, destination):
                 raise ValueError
             self._cooldown(session, bundle, destination, now)
-            rendered = render_message(
-                MessageData(
-                    bundle.product.name,
-                    bundle.offer.current_price,
-                    bundle.product.affiliate_link.url,
-                    previous_price=bundle.offer.previous_price,
-                    coupon_text=bundle.coupon.code
-                    if bundle.coupon_evaluation is not None
-                    else None,
-                    installments_text=bundle.history.installment_text,
-                    image_url=bundle.details.image_url if include_image else None,
-                )
-            )
+            rendered = self._render(bundle, include_image)
             categories = session.execute(
                 select(ProductCategory, Category)
                 .join(
@@ -181,7 +245,7 @@ class TelegramPublicationService:
                 "product": _row(bundle.product),
                 "offer": _row(bundle.offer),
                 "history": _row(bundle.history),
-                "manual_details": _row(bundle.details),
+                "manual_details": _row(bundle.details) if bundle.details is not None else None,
                 "affiliate_link": _row(bundle.product.affiliate_link),
                 "destination": _row(destination),
                 "product_categories": [

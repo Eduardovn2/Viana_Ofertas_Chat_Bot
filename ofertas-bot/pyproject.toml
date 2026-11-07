@@ -17,6 +17,7 @@ dependencies = [
   "pydantic-settings>=2.7,<3",
   "APScheduler>=3.11,<4",
   "httpx>=0.28,<1",
+  "tzdata>=2024.1; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]

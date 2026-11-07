@@ -1,0 +1,28 @@
+{
+  "phase": "4.8",
+  "total_passed": 1183,
+  "postgres_passed_in_isolated_test_schemas": 38,
+  "previous_tests_preserved": 1129,
+  "new_tests": 54,
+  "failures": 0,
+  "skipped": 0,
+  "dependency_deprecation_warnings": 17,
+  "ruff": "PASSED",
+  "format_check_python_files": 140,
+  "alembic_revision": "0008_shopee_collection",
+  "alembic_upgrade_current_check": "PASSED",
+  "additional_real_commercial_requests": 0,
+  "real_telegram_publications": 0,
+  "commit_created": false,
+  "preservation": {
+    "previous_data_preserved": true,
+    "active_categories": 9,
+    "viana_group_paused": true,
+    "monitoring_disabled": true,
+    "main_collection_runs": 0,
+    "main_candidates": 0,
+    "alembic_revision": "0008_shopee_collection",
+    "real_flags_disabled": true,
+    "env_unchanged": true
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "phase": "4.10",
+  "date": "2026-10-21",
+  "status": "IMPLEMENTED_AND_VALIDATED_OFFLINE",
+  "tests": {
+    "full_suite_passed": 1267,
+    "postgres_real_passed_in_full_suite": 49,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "warnings": 17,
+    "new_tests": 84,
+    "new_unit_integration_offline": 73,
+    "new_postgres": 11,
+    "targeted_initial_passed": 122,
+    "targeted_final_after_category_context_adjustment_passed": 84,
+    "counts_overlap": true,
+    "execution": "python -m pytest CLI; TEST_DATABASE_URL only in child process; UUID schemas in ofertas_bot_test"
+  },
+  "checks": {
+    "docker_engine": "29.8.2",
+    "postgresql": "healthy / real connection confirmed",
+    "alembic_upgrade": "PASS",
+    "alembic_current": "0009_shopee_discovery (head)",
+    "alembic_check": "PASS; no schema drift",
+    "ruff": "PASS",
+    "format": "PASS; 150 Python files",
+    "git_diff_check": "PASS"
+  },
+  "preservation": {
+    "old_tables_preserved": true,
+    "changed_old_tables": [],
+    "old_tables_compared": 27,
+    "env_unchanged": true,
+    "active_categories": 9,
+    "viana_ofertas_enabled": false,
+    "mandatory_approval": true,
+    "main_monitoring_enabled": false,
+    "new_main_tables_rows": {
+      "shopee_discovery_runs": 0,
+      "shopee_discovery_policies": 0,
+      "shopee_discovery_findings": 0,
+      "shopee_discovery_products": 0
+    },
+    "flags": {
+      "shopee_enabled": false,
+      "mercado_livre_enabled": false,
+      "telegram_publisher_enabled": false,
+      "telegram_real_sends_authorized": false,
+      "simulation_automation_enabled": false
+    },
+    "revision": "0009_shopee_discovery"
+  },
+  "offline_demo": {
+    "mode": "OFFLINE_FICTITIOUS_DATA",
+    "scheduler": "existing APScheduler; bounded CLI",
+    "virtual_clock": true,
+    "database": ".runtime/discovery-409bbb737eb44ad880ea408a830de022.simulation.db",
+    "categories": 9,
+    "discovery": 9,
+    "monitor": 18,
+    "evaluation": 1,
+    "mock_requests": 36,
+    "errors": [],
+    "dispositions_including_requeries": {
+      "SELECTED": 36,
+      "REVIEW": 0,
+      "FILTERED": 9,
+      "DUPLICATE": 9
+    },
+    "discovered_unique_products": 27,
+    "selected_products": 18,
+    "history_observations": 36,
+    "candidates": 36,
+    "prices": {
+      "first_fictitious": "100.00",
+      "requery_fictitious": "90.00"
+    },
+    "availability": "UNKNOWN",
+    "price_access": "UNKNOWN",
+    "prepared_outbox": 0,
+    "reason": "Unverified public price/stock and no own verified affiliate link",
+    "real_shopee_calls": 0,
+    "real_telegram_calls": 0,
+    "real_affiliate_mutations": 0
+  },
+  "real_shopee_calls": 0,
+  "real_telegram_calls": 0,
+  "real_affiliate_mutations": 0,
+  "commercial_jobs": "PAUSED / blocked callbacks; no activation route",
+  "git_commit_created": false,
+  "phase5_or6_started": false,
+  "pending": [
+    "official account quotas/continuous-operation authorization",
+    "documented coupon/campaign/sorting contracts",
+    "verified stock/public price/variant and own affiliate link",
+    "explicit approval before any future controlled real read or publication"
+  ]
+}

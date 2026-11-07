@@ -1,0 +1,123 @@
+{
+  "checked_at": "2026-11-03T00:46:29.717364+00:00",
+  "authenticated_http_calls": 0,
+  "http_requests": 0,
+  "timeout_seconds": 5.0,
+  "configured_retries": 1,
+  "actual_controlled_read_retries": 0,
+  "trust_env": false,
+  "tls_verification": true,
+  "environment_presence": {
+    "HTTP_PROXY": false,
+    "HTTPS_PROXY": false,
+    "ALL_PROXY": false,
+    "NO_PROXY": false,
+    "SSL_CERT_FILE": false,
+    "SSL_CERT_DIR": false,
+    "REQUESTS_CA_BUNDLE": false
+  },
+  "system_proxy_configured": {},
+  "probes": [
+    {
+      "ip": "147.136.133.187",
+      "family": "IPv4",
+      "status": "FAILED",
+      "stage": "TCP_CONNECT",
+      "error_type": "TimeoutError",
+      "errno": null,
+      "verify_code": null,
+      "elapsed_ms": 5016.0
+    },
+    {
+      "ip": "202.181.93.12",
+      "family": "IPv4",
+      "origin": "DNS_ONLY_NO_HOSTS_SYSTEM_RESOLVER",
+      "connect_limit_seconds": 10,
+      "tcp_connect_ms": 2188.0,
+      "status": "FAILED",
+      "stage": "TLS_HANDSHAKE",
+      "error_type": "TimeoutError",
+      "errno": null,
+      "verify_code": null,
+      "elapsed_ms": 12297.0
+    }
+  ],
+  "dns": {
+    "status": "RESOLVED",
+    "elapsed_ms": 46.0,
+    "addresses": [
+      "147.136.133.187"
+    ]
+  },
+  "original_attempt": {
+    "state": "UNCERTAIN",
+    "consumed": true,
+    "error_code": "TIMEOUT",
+    "claimed_at": "2026-11-03T00:25:58.934171+00:00",
+    "finished_at": "2026-11-03T00:26:05.543413+00:00",
+    "http_calls": 1,
+    "http_status": null,
+    "requests_reserved": 1,
+    "claim_to_completion_seconds": 6.609242
+  },
+  "hosts_override_count": 0,
+  "independent_system_dns_answer": [
+    "202.181.93.12"
+  ],
+  "preservation": {
+    "original_e2e_and_result_unchanged": true,
+    "consumed": true,
+    "requests_reserved": 1,
+    "original_state": "UNCERTAIN",
+    "original_exact_timeout_type": "NOT_RECORDED_CANNOT_RECONSTRUCT",
+    "local_credential_fingerprint_matches_approved_request": true,
+    "credentials_remote_validity": "NOT_RETESTED",
+    "controlled_collection_lease_present": false,
+    "destination_enabled": false,
+    "pilot_state": "PREPARED",
+    "pilot_scope_sha256": "fc942c3b9f2e0a28ea63f75762aadbe8f6580d2700bc50977e5944d0bbe6b387",
+    "pilot_unchanged": true
+  },
+  "worker": {
+    "at": "2026-11-03T00:54:57.665941+00:00",
+    "worker_id": "bdf313e57b464e99a96b0dd11150ad2e",
+    "pilot_id": "d80879af-27e3-47fc-b47b-01e3499a3006",
+    "phase": "WAITING",
+    "process_id": 8688,
+    "state": "PREPARED",
+    "error_type": null,
+    "heartbeat_age_seconds": 7.948663,
+    "healthy": true
+  },
+  "findings": {
+    "original_timeout_subtype_lost": true,
+    "original_global_deadline_seconds": null,
+    "original_request_phase_limits_seconds": {
+      "connect": 5,
+      "read": 5,
+      "write": 5,
+      "pool": 5
+    },
+    "no_configured_proxy_or_hosts_override": true,
+    "current_tcp_or_tls_path_failure_reproduced_without_http": true,
+    "confirmed_coding_corrections": [
+      "Retain safe timeout subtype, elapsed milliseconds and effective phase limits in logs and future audits",
+      "Honor injected client phase timeouts rather than overwriting them with a transport default"
+    ],
+    "no_dns_ip_pinned": true,
+    "no_tls_verification_disabled": true,
+    "no_firewall_or_credentials_changed": true,
+    "network_root_cause": "UNCONFIRMED_ROUTE_FILTERING_OR_UPSTREAM_CONNECTIVITY",
+    "tests": {
+      "offline_regression": 228,
+      "postgres_timeout_persistence": 1,
+      "targeted_privacy_and_phase_limits": 8,
+      "counts_overlap": true
+    }
+  },
+  "code_deployment": {
+    "source_fixed": true,
+    "api_and_worker_restarted": false,
+    "reload_required_before_next_authorized_request": true
+  }
+}

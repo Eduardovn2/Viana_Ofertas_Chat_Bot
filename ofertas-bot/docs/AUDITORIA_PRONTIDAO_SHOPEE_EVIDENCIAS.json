@@ -1,0 +1,51 @@
+{
+  "audit_date": "2026-10-25",
+  "timezone": "America/Sao_Paulo",
+  "mode": "TECHNICAL_DOCUMENTARY_AUDIT_ONLY",
+  "readiness": "NOT_READY_FOR_AUTOMATIC_REAL_COMMERCIAL_OPERATION",
+  "last_recorded_tests": {
+    "passed": 1445,
+    "postgres": 72,
+    "rerun_in_this_audit": false
+  },
+  "current_local_configuration": {
+    "shopee_enabled": false,
+    "mercado_livre_enabled": false,
+    "telegram_publisher_enabled": false,
+    "telegram_real_sends_authorized": false,
+    "simulation_automation_enabled": false,
+    "shopee_short_links_enabled": false,
+    "shopee_discovery_enabled": false
+  },
+  "production_files_tests_migrations_env_unchanged": true,
+  "database_current_state_verified": false,
+  "database_error_type": "OperationalError",
+  "operational_rows_comparison": null,
+  "current_group_state_verified": false,
+  "last_documented_group_enabled": false,
+  "explorer_current_reader_access": "UNAVAILABLE",
+  "explorer_cache_date": "2026-10-21",
+  "authenticated_shopee_calls": 0,
+  "commercial_queries": 0,
+  "shortlink_mutations": 0,
+  "telegram_publications": 0,
+  "production_changes": false,
+  "scheduler_activated": false,
+  "previous_authorization_reused": false,
+  "commit_or_push": false,
+  "offline_check": {
+    "manual_validator_accepts_mismatched_universal_path": true,
+    "connector_rejects_same_path": true,
+    "network_calls": 0,
+    "database_writes": 0
+  },
+  "findings": [
+    "commercial_evidence_unknown",
+    "account_linkage_policy_pending",
+    "mock_only_generator",
+    "manual_only_commercial_outbox",
+    "manual_universal_identity_gap",
+    "legacy_generation_endpoint_without_pipeline_reservation",
+    "provenance_rules_need_review"
+  ]
+}

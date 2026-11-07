@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-30",
+  "integrity": "VERIFIED",
+  "file_sha256": "e4bfb9e0d53cdacc2da9247ddf35fdaf8ebe10d4a69c21c777152a1f5e667bbc",
+  "quote_sha256": "a567eb6f9d8acf963ee73e54874fbff1b9abb5be747f8f77173a0deece2ab829",
+  "hash_scope": "quote object; the whole envelope hash is recorded locally, not attested by the original audit",
+  "authorization_id": "ee52b076-4084-4dc3-abd3-4a9e994db463",
+  "price": "1099.00",
+  "observed_at": "2026-10-30T09:29:44.200225+00:00",
+  "source_type": "OFFICIAL_API",
+  "advertised_discount_percent": 31,
+  "price_basis": "v1:082e4e9de2ea59a85cc134fffa0c7386c3b6166183051e85ecc14063c2c0ab2c",
+  "operational_history_ids": [
+    2,
+    3
+  ],
+  "official_baseline_exists": false,
+  "planned_direction": "INITIAL",
+  "operational_writes": 0,
+  "additional_real_api_calls": 0
+}

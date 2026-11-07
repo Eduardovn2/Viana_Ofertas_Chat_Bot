@@ -1,0 +1,61 @@
+{
+  "status": "REGISTERED_DOCUMENTED_CURRENT_CREDENTIAL",
+  "credential_handling": {
+    "secret_disclosed_in_chat_requires_revocation": true,
+    "disclosed_secret_copied_to_configuration": false,
+    "secret_value_preserved_in_this_document": false,
+    "private_local_replacement_confirmation_required": true
+  },
+  "reported_by_responsible": {
+    "app_id": "18300880153",
+    "displayed_account": "VianaImports",
+    "displayed_status": "Válido",
+    "source": "REVIEWED_SANITIZED_OFFICIAL_PORTAL_IMAGE_AND_EXPLICIT_USER_CONFIRMATION"
+  },
+  "local_check": {
+    "configured_app_id_matches_reported": true,
+    "api_ready_http_status": 200,
+    "account_evidence_state": "DOCUMENTED",
+    "new_secret_saved_confirmed": true,
+    "new_secret_authentication_confirmed": false,
+    "services_restarted_with_current_local_settings": true,
+    "credential_environment_override_present": false,
+    "current_credential_binding_matches": true
+  },
+  "official_sanitized_image": "docs\\evidencias\\conta_afiliada\\comprovante_vianaimports_appid_18300880153_sanitizado.png",
+  "document_requirements": [
+    "Official Shopee Affiliate origin and account identification visible",
+    "App ID 18300880153 visibly associated with VianaImports",
+    "Secret, tokens, session identifiers and unrelated personal data hidden",
+    "If account and App ID are on different screens, supply both from the same official session"
+  ],
+  "registration_draft_not_submittable": {
+    "endpoint": "/api/v1/integrations/shopee/account-evidence",
+    "status": "REGISTERED",
+    "manifest_reference": ".runtime\\conta-vianaimports-reviewed-manifest.json",
+    "evidence_id": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9"
+  },
+  "sequence": [
+    "Responsible revokes exposed secret and replaces SHOPEE_SECRET directly in the local .env",
+    "Responsible confirms saved replacement without sending the secret",
+    "Reload only the required safe services; do not activate a pilot or legacy scheduler",
+    "Validate authentication through a fresh bounded administrative scope; do not reuse consumed operations",
+    "Review the sanitized official account evidence",
+    "Present the reviewed account/App ID facts for explicit ownership and credential-binding confirmation",
+    "Calculate document hash locally and register the account proof once",
+    "Read account-evidence/current and confirm validity for the new credential"
+  ],
+  "legacy_receipt_modified": false,
+  "account_evidence_registered": true,
+  "link_generation_authorized": false,
+  "telegram_authorized": false,
+  "external_calls_performed": 0,
+  "responsible_explicit_confirmations": {
+    "ownership_confirmed": true,
+    "credential_binding_authorized": true,
+    "source": "USER_MESSAGE_2026-11-04",
+    "document_review_still_required": true
+  },
+  "registered_evidence_id": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9",
+  "expires_at": "2027-02-02T04:55:15.356027Z"
+}

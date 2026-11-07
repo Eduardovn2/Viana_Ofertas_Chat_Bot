@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "rules": [
+    {"category_slug": "casa-decoracao", "confidence": "0.7500", "keywords": ["casa", "decoracao", "almofada", "cortina", "tapete", "quadro", "vaso", "luminaria", "organizador", "roupa de cama", "jogo de cama", "sofa", "mesa", "cadeira", "cabeceira", "cama"]},
+    {"category_slug": "materiais-ferramentas", "confidence": "0.8000", "keywords": ["furadeira", "parafusadeira", "martelo", "alicate", "serra", "ferramenta", "ferramentas", "chave de fenda", "broca", "trena", "tinta", "parafuso"]},
+    {"category_slug": "eletrodomesticos", "confidence": "0.8500", "keywords": ["geladeira", "fogao", "micro ondas", "microondas", "air fryer", "fritadeira", "liquidificador", "batedeira", "aspirador", "cafeteira", "lavadora", "maquina de lavar", "secadora de roupas", "forno"]},
+    {"category_slug": "moda", "confidence": "0.8000", "keywords": ["camiseta", "camisa", "calca", "vestido", "casaco", "jaqueta", "tenis", "sapato", "sandalia", "bolsa", "mochila", "roupa", "relogio"]},
+    {"category_slug": "infantil", "confidence": "0.8500", "keywords": ["bebe", "infantil", "infantis", "crianca", "criancas", "fralda", "carrinho de bebe", "mamadeira", "brinquedo", "brinquedos", "berco"]},
+    {"category_slug": "tecnologia", "confidence": "0.8500", "keywords": ["smartphone", "celular", "notebook", "computador", "tablet", "monitor", "teclado", "mouse", "ssd", "processador", "memoria ram", "smartwatch", "roteador", "fone de ouvido", "fones de ouvido", "tv", "televisao"]},
+    {"category_slug": "games", "confidence": "0.8500", "keywords": ["game", "games", "gamer", "gaming", "console", "playstation", "xbox", "nintendo", "videogame"]},
+    {"category_slug": "beleza", "confidence": "0.8500", "keywords": ["shampoo", "condicionador", "perfume", "maquiagem", "batom", "creme facial", "hidratante", "protetor solar", "secador de cabelo", "escova de cabelo", "barbeador", "esmalte"]}
+  ]
+}

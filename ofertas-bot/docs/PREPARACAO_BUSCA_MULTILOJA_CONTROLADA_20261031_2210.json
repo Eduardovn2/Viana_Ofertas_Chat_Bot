@@ -1,0 +1,43 @@
+{
+  "authorization_id": "e2fcad8a-3e26-4522-8685-868aa13d52a0",
+  "mode": "REAL_MULTISTORE_SEARCH",
+  "status": "PREPARED",
+  "stored_state": "PREPARED",
+  "scope_sha256": "249b2c26b90bb837056f5b2e443181c8aa4cbf1a2a2342ddf9e15296eb35614e",
+  "consumed": false,
+  "requests_reserved": 0,
+  "approval": null,
+  "result": {},
+  "error_code": null,
+  "publication_authorized": false,
+  "price_history_writes": 0,
+  "scope": {
+    "authorization_id": "e2fcad8a-3e26-4522-8685-868aa13d52a0",
+    "actor": "eduardo.viana.3",
+    "operation": "productOfferV2",
+    "keyword": "Cockpit simulador Brave Bull",
+    "page": 1,
+    "limit": 3,
+    "not_before": "2026-11-01T01:10:00Z",
+    "expires_at": "2026-11-01T01:20:00Z",
+    "mode": "REAL_MULTISTORE_SEARCH",
+    "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+    "credential_scope": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+    "payload_sha256": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709",
+    "profile": "multistore",
+    "max_http_calls": 1,
+    "retry": false,
+    "fallback": false,
+    "pagination": false,
+    "history_writes": 0,
+    "publication_authorized": false
+  },
+  "payload": {
+    "query": "query { productOfferV2(keyword:\"Cockpit simulador Brave Bull\",page:1,limit:3) { nodes { itemId shopId productName productLink imageUrl price priceMin priceMax productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime shopName ratingStar sales shopType } pageInfo { page limit hasNextPage } } }"
+  },
+  "existing_operational_rows_preserved": true,
+  "env_preserved": true,
+  "external_posts": 0,
+  "blocked_external_attempts": 0,
+  "preparation_only": true
+}

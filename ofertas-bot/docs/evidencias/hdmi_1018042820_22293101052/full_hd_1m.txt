@@ -1,0 +1,111 @@
+
+  - link "Shopee":
+    - /url: /
+  - img "icon arrow right"
+  - link "Áudio":
+    - /url: /Áudio-cat.11059971
+  - img "icon arrow right"
+  - link "Cabos e Conversores de Áudio e Vídeo":
+    - /url: /Cabos-e-Conversores-de-Áudio-e-Vídeo-cat.11059971.11060001
+  - img "icon arrow right"
+  - generic: Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro
+  - img "Imagem do produto Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro Cabo Full HD 1M"
+  - img "icon video play"
+  - generic: "Compartilhar:"
+  - button "Share on Messenger"
+  - button "Share on Facebook"
+  - button "Share on Pinterest"
+  - button "Share on Twitter"
+  - button "Favoritar (187)":
+    - generic: Favoritar (187)
+  - heading "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro" [level=1]
+  - button "4.8":
+    - generic: "4.8"
+  - button "88 Avaliações":
+    - generic: "88"
+    - generic: Avaliações
+  - generic: 198 Vendidos
+  - button "Denunciar"
+  - generic: R$59,00
+  - heading "Cartão de Crédito" [level=2]
+  - generic: 11x R$6,20
+  - button "Opções de parcelamento icon arrow right":
+    - text: Opções de parcelamento
+    - img "icon arrow right"
+  - heading "Enviado de" [level=2]
+  - img "outline green truck icon"
+  - generic: Enviado de
+  - generic: Rio de Janeiro, Rio de Janeiro
+  - generic: Frete
+  - generic: R$8,39
+  - generic: R$0,00
+  - generic: Frete grátis com cupom
+  - heading "1M" [level=2]
+  - button "Cabo 2.1 8K Aquário 1M":
+    - generic: Cabo 2.1 8K Aquário 1M
+  - button "Cabo Full HD 1M" [active]:
+    - generic: Cabo Full HD 1M
+    - img "icon-tick-bold"
+  - heading "Fulld HD" [level=2]
+  - button "1M":
+    - generic: 1M
+    - img "icon-tick-bold"
+  - heading "Quantidade" [level=2]
+  - button "Diminuir quantidade" [disabled]:
+  - spinbutton: "1"
+  - button "Aumentar quantidade":
+  - generic: 30 peças disponíveis
+  - button "icon-add-to-cart Adicionar ao carrinho":
+    - img "icon-add-to-cart"
+    - generic: Adicionar ao carrinho
+  - button "comprar agora"
+  - link "icon head shot clique aqui para entrar na página da loja":
+    - /url: /idpvariedades?categoryId=100535&entryPoint=ShopByPDP&itemId=22293101052
+    - img "icon head shot"
+    - img "clique aqui para entrar na página da loja"
+  - generic: IDP Comercio de Variedades
+  - generic: Último login há 27 minutos
+  - button "Conversar agora":
+    - generic: Conversar agora
+  - link "icon shop Ver página da loja":
+    - /url: /idpvariedades?categoryId=100535&entryPoint=ShopByPDP&itemId=22293101052
+    - img "icon shop"
+    - generic: Ver página da loja
+  - generic: Avaliações
+  - generic: 9,1mil
+  - generic: Taxa de resposta do chat
+  - generic: "-"
+  - generic: Loja Shopee desde
+  - generic: 3 anos atrás
+  - link "produtos 17":
+    - /url: /idpvariedades#product_list
+    - generic: produtos
+    - generic: "17"
+  - generic: Geralmente responde o chat em
+  - generic: dentro de minutos
+  - generic: Seguidores
+  - generic: "945"
+  - heading "Detalhes do Produto" [level=2]
+  - heading "Categoria" [level=3]
+  - link "Shopee":
+    - /url: /
+  - img "icon arrow right"
+  - link "Áudio":
+    - /url: /Áudio-cat.11059971
+  - img "icon arrow right"
+  - link "Cabos e Conversores de Áudio e Vídeo":
+    - /url: /Cabos-e-Conversores-de-Áudio-e-Vídeo-cat.11059971.11060001
+  - heading "Estoque" [level=3]
+  - generic: "43"
+  - heading "Marca" [level=3]
+  - link "Aquário":
+    - /url: https://shopee.com.br/search?brands=2432020
+  - heading "Envio de" [level=3]
+  - generic: São Paulo
+  - heading "Descrição do produto" [level=2]
+  - paragraph: Ultra velocidade e alto desempenho
+  - paragraph: Com ultra velocidade na transferência de dados, o Cabo HDMI 2.1 8K da Aquário tem qualidade de som cinematográfico e imagem em alta resolução 8K a 60Hz, além de 120Hz no 4K. Preparado para fornecer a melhor experiência para os usuários, este cabo vai agradar até mesmo os consumidores mais exigentes. Com conectores banhados a ouro 24K, ele é ideal para TVs de última geração, monitores, projetores, computadores de alto desempenho e consoles de games.
+  - paragraph
+  - paragraph: Ele possui condutores livres de oxigênio para reduzir a perda de sinal e alta blindagem para evitar qualquer tipo de interferência.
+  - paragraph
+  - paragraph: Outro destaque é que o cabo é revestido em PVC e é 8K UHD, com 16x mais detalhes que o Full HD. Este cabo também possui 48Gbps, que garante alta velocidade e largura de banda, além de som imersivo com até 32 canais de áudio.

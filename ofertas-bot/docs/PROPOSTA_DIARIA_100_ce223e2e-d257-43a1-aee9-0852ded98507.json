@@ -1,0 +1,72 @@
+{
+  "prepared_at": "2026-11-06T16:15:48.408308-03:00",
+  "scope": {
+    "scope": {
+      "plan": {
+        "authorization_id": "ce223e2e-d257-43a1-aee9-0852ded98507",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "start_date": "2026-11-07",
+        "end_date": "2026-12-06",
+        "start_time": "08:00:00",
+        "end_time": "23:00:00",
+        "days": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "terms": [
+          "Cockpit simulador Brave Bull",
+          "Suporte Cockpit Para Volante",
+          "Creatina 300 g",
+          "Fone bluetooth",
+          "Teclado mecanico",
+          "SSD 1 TB"
+        ],
+        "max_queries": null,
+        "max_links": null,
+        "max_messages": 100,
+        "messages_per_window": 3,
+        "query_interval_seconds": null,
+        "operation_version": "DAILY_V2",
+        "cooldown_seconds": 10800,
+        "quota_reference": null,
+        "shopee_daily_quota": null,
+        "telegram_daily_quota": null
+      },
+      "timezone": "America/Sao_Paulo",
+      "chat_id": "-5309308689",
+      "template": "PRO_V2",
+      "operations": [
+        "productOfferV2",
+        "Telegram",
+        "generateShortLink"
+      ],
+      "max_external_posts": null,
+      "window_seconds": 600,
+      "freshness_seconds": 600,
+      "retry": false,
+      "fallback": false,
+      "pagination": false,
+      "ranking": "OPPORTUNITY_100_V1"
+    },
+    "scope_sha256": "1ceb2e6552e1865e13c9d0f66c055358d5ac6c3e9fe00902cdd6ac8e9aadad18",
+    "approval": null,
+    "state": "PREPARED"
+  },
+  "replaces_proposal_reference": "437b04ba-58ed-4d91-8f2f-2d9c68667aa9",
+  "quota_status": "PENDING_DOCUMENTED_PROVIDER_LIMITS",
+  "approval_blockers": [
+    "SHOPEE_QUERY_BUDGET",
+    "SHOPEE_LINK_BUDGET",
+    "SHOPEE_QUERY_INTERVAL",
+    "PROVIDER_QUOTA_EVIDENCE"
+  ],
+  "destination_hourly_limit": 20,
+  "external_posts": 0
+}

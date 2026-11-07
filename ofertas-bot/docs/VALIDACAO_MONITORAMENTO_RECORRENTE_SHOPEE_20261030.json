@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-30",
+  "mode": "OFFLINE_ONLY",
+  "tests_distinct": 182,
+  "offline_distinct": 143,
+  "postgres_distinct": 39,
+  "executed_runs": [
+    {
+      "name": "selected_offline_regressions",
+      "passed": 142
+    },
+    {
+      "name": "selected_postgres_regressions",
+      "passed": 38
+    },
+    {
+      "name": "final_recurring_offline",
+      "passed": 21
+    },
+    {
+      "name": "final_recurring_postgres",
+      "passed": 22
+    }
+  ],
+  "full_suite_executed": false,
+  "postgres_database": "ofertas_bot_test",
+  "postgres_schemas": "UUID_ISOLATED",
+  "alembic_current": "0009_shopee_discovery",
+  "alembic_check": "PASSED_IN_ISOLATED_SCHEMA",
+  "ruff": "PASSED",
+  "format": "187_FILES_PASSED",
+  "external_calls": 0,
+  "publications": 0,
+  "operational_tables_unchanged": true,
+  "env_unchanged": true,
+  "flags": {
+    "shopee_enabled": false,
+    "shopee_short_links_enabled": false,
+    "mercado_livre_enabled": false,
+    "telegram_publisher_enabled": false,
+    "telegram_real_sends_authorized": false,
+    "simulation_automation_enabled": false
+  },
+  "group_enabled": false,
+  "scheduler_enabled": false,
+  "operational_recurring_authorizations": 0,
+  "official_recurring_quotas": "UNCONFIRMED",
+  "real_execution": "BLOCKED_IN_CODE",
+  "warnings": [
+    "Existing Starlette/httpx deprecation warning"
+  ]
+}

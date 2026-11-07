@@ -1,0 +1,66 @@
+{
+  "authorization_id": "0538bd35-9fd2-40bf-b25d-85713fa92bd5",
+  "status": "PREPARED",
+  "mode": "REAL_SINGLE_READ",
+  "scope_sha256": "8b115275bfe09b6094e1e00ed4dca92b5f0e794a5cee13426e6fd7f0efd72f18",
+  "payload": {
+    "query": "query { productOfferV2(shopId:1904573791,itemId:23199869203,page:1,limit:1) { nodes { itemId shopId productName productLink imageUrl price priceMin priceMax productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime } pageInfo { page limit hasNextPage } } }"
+  },
+  "max_http_calls": 1,
+  "price_history_writes": 0,
+  "publication_authorized": false,
+  "request": {
+    "request_id": "0538bd35-9fd2-40bf-b25d-85713fa92bd5",
+    "actor": "eduardo.viana.3",
+    "product_id": 2,
+    "shop_id": "1904573791",
+    "item_id": "23199869203"
+  },
+  "created_at": "2026-10-30T14:32:39.340869+00:00",
+  "proposed_window": {
+    "not_before": "2026-10-30T14:42:39.340869+00:00",
+    "expires_at": "2026-10-30T15:02:39.340869+00:00",
+    "status": "PROPOSED_NOT_APPROVED",
+    "not_before_enforced_by": "ADMINISTRATIVE_PROCEDURE",
+    "expires_at_enforced_by": "EXISTING_APPROVAL_FLOW"
+  },
+  "previous_recurring": {
+    "authorization_id": "1cfbb654-f4ab-4146-b185-e9f48e702540",
+    "status": "PREPARED",
+    "used": 0,
+    "approval": null,
+    "sequence": "SAFE_FIRST_RECURRING_NOT_AUTHORIZED"
+  },
+  "official_quotas": "UNKNOWN",
+  "known_restrictions": "NO_ACCOUNT_BLOCK_FOUND_LOCALLY; OFFICIAL_ACCESS_NOT_RECHECKED",
+  "contract_sha256": "db8ff1e44c4a22e6a52ccaa1c42b1c6d545f937a6fad55d2f60d3c313e25eeb6",
+  "real_http_calls": 0,
+  "new_operational_observations": 0,
+  "account_bound_by_fingerprint": true,
+  "origin_url_sha256": "9c7f0e7ec0f4f59e8fd57dab3ab4695ba55175eeb9d785292610cbfca03b0395",
+  "payload_sha256": "18f2c7ef42c88f857ac1facf3bfd67f20440f1fa6782bd9a29a81351f8225419",
+  "audit_ids": [
+    16
+  ],
+  "stored_state": "PREPARED",
+  "consumed": false,
+  "requests_reserved": 0,
+  "approval": null,
+  "result": {},
+  "error_code": null,
+  "histories_2_3_4_preserved": true,
+  "previous_settings_and_authorizations_preserved": true,
+  "env_unchanged": true,
+  "flags": {
+    "shopee_enabled": false,
+    "shopee_short_links_enabled": false,
+    "mercado_livre_enabled": false,
+    "telegram_publisher_enabled": false,
+    "telegram_real_sends_authorized": false,
+    "simulation_automation_enabled": false
+  },
+  "scheduler_enabled": false,
+  "group_enabled": false,
+  "idempotency_verified": true,
+  "safe_plan_sha256": "1284f77ae20c6a0e95c662b3fd513e559f46b719251ef7a6eb7368d4250feb8a"
+}

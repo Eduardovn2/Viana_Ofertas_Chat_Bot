@@ -1,0 +1,293 @@
+{
+  "checked_at": "2026-11-02T23:24:39.311881+00:00",
+  "preparation_only": true,
+  "operational_writes": 0,
+  "external_http_calls": 0,
+  "authorization_id": "d80879af-27e3-47fc-b47b-01e3499a3006",
+  "scope_sha256": "fc942c3b9f2e0a28ea63f75762aadbe8f6580d2700bc50977e5944d0bbe6b387",
+  "state": "PREPARED",
+  "plan_unchanged": true,
+  "counts": {
+    "registered_real_candidates": 2,
+    "additional_real_search_candidates": 3,
+    "total_candidates": 5,
+    "registered_offers": 0,
+    "associated_links": 0,
+    "commercially_eligible": 0
+  },
+  "technical_checks": "SIGNED_SCOPE_CREDENTIAL_FORMAT_DATABASE_AND_TRANSPORT_GUARDS_VALID",
+  "worker_requires_manual_start_inside_window": true,
+  "authorization_grants_no_schedule": true,
+  "freshness_seconds": 600,
+  "sustained_pilot_requires_fresh_evidence_not_initial_two_hour_attestation": true,
+  "candidates": [
+    {
+      "product_id": 2,
+      "identity": "1904573791:23199869203",
+      "name": "Cockpit simulador de corrida Brave Bull",
+      "sources": [
+        {
+          "type": "EXISTING_REAL_API_HISTORY",
+          "history_id": 4,
+          "reference": "productOfferV2:1904573791:23199869203",
+          "observed_at": "2026-10-30 09:29:44.200225+00:00"
+        }
+      ],
+      "variant_id": null,
+      "documented_identity_present": false,
+      "associated_link_ids": [],
+      "offer_ids": [],
+      "priority": 1,
+      "selection_reason": "EXISTING_PRESERVED_LINK_AND_MATCHING_SEARCH_TERM",
+      "within_prepared_search_terms": true,
+      "search_coverage_semantics": "TEXTUAL_ONLY_NO_EQUIVALENCE_OR_PUBLICATION_PROOF",
+      "state": "AWAITING_DOCUMENTED_AND_CURRENT_COMMERCIAL_EVIDENCE",
+      "intended_option_declared": "AZUL",
+      "preserved_link_reference": "docs/RESULTADO_GENERATE_SHORTLINK_SHOPEE.json#shortLink",
+      "ownership_declared_not_verified": true,
+      "missing_evidence": [
+        "Documented identity: selected variant with attested facts OR whole listing with explicit same PUBLIC price and AVAILABLE status for every selectable option; never invent SKU",
+        "Existing own affiliate link with dated account/link documentary reference and listing/option binding",
+        "Current applicable PUBLIC price, payment conditions and AVAILABLE selected option; responsible, source, actual verification time and expiry <=600 seconds"
+      ],
+      "current_commercial_form": {
+        "product_id": 2,
+        "current_price": null,
+        "actor": null,
+        "verified": false,
+        "availability": "UNKNOWN",
+        "price_access": "UNKNOWN",
+        "verified_at": null,
+        "expires_at": null,
+        "previous_price": null,
+        "coupon_id": null,
+        "documented_identity": null
+      },
+      "form_submittable": false,
+      "existing_pilot_requirements": [
+        "VARIANT requires documented identifier and facts; LISTING_ALL_OPTIONS allows no SKU only with explicit comprehensive commercial evidence bound to price, publication name and actual verification time",
+        "Discovery name must match the registered title or an explicitly documented alias; conflicting known facts remain blocked",
+        "Discovery of this identity inside the already approved terms; no standalone import into the publication queue"
+      ],
+      "next_endpoints_after_evidence": [
+        "PUT /api/v1/products/{product_id}/affiliate-link",
+        "POST /api/v1/manual-offers"
+      ]
+    },
+    {
+      "product_id": 1,
+      "identity": "1018042820:22293101052",
+      "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+      "sources": [
+        {
+          "type": "EXISTING_REAL_API_HISTORY",
+          "history_id": 1,
+          "reference": "productOfferV2:1018042820:22293101052",
+          "observed_at": "2026-10-21 23:14:25.115255+00:00"
+        }
+      ],
+      "variant_id": null,
+      "documented_identity_present": false,
+      "associated_link_ids": [],
+      "offer_ids": [],
+      "priority": 2,
+      "selection_reason": "SIMPLER_TITLE_ONLY_NOT_DOCUMENTED",
+      "within_prepared_search_terms": false,
+      "search_coverage_semantics": "TEXTUAL_ONLY_NO_EQUIVALENCE_OR_PUBLICATION_PROOF",
+      "state": "AWAITING_DOCUMENTED_AND_CURRENT_COMMERCIAL_EVIDENCE",
+      "intended_option_declared": null,
+      "preserved_link_reference": null,
+      "ownership_declared_not_verified": false,
+      "missing_evidence": [
+        "Documented identity: selected variant with attested facts OR whole listing with explicit same PUBLIC price and AVAILABLE status for every selectable option; never invent SKU",
+        "Existing own affiliate link with dated account/link documentary reference and listing/option binding",
+        "Current applicable PUBLIC price, payment conditions and AVAILABLE selected option; responsible, source, actual verification time and expiry <=600 seconds"
+      ],
+      "current_commercial_form": {
+        "product_id": 1,
+        "current_price": null,
+        "actor": null,
+        "verified": false,
+        "availability": "UNKNOWN",
+        "price_access": "UNKNOWN",
+        "verified_at": null,
+        "expires_at": null,
+        "previous_price": null,
+        "coupon_id": null,
+        "documented_identity": null
+      },
+      "form_submittable": false,
+      "existing_pilot_requirements": [
+        "VARIANT requires documented identifier and facts; LISTING_ALL_OPTIONS allows no SKU only with explicit comprehensive commercial evidence bound to price, publication name and actual verification time",
+        "Discovery name must match the registered title or an explicitly documented alias; conflicting known facts remain blocked",
+        "Discovery of this identity inside the already approved terms; no standalone import into the publication queue"
+      ],
+      "next_endpoints_after_evidence": [
+        "PUT /api/v1/products/{product_id}/affiliate-link",
+        "POST /api/v1/manual-offers"
+      ]
+    },
+    {
+      "product_id": null,
+      "identity": "1595990092:58202217973",
+      "name": "Suporte Cockpit Para Volante Pedais Para Simulador De Voo Brave Bull",
+      "sources": [
+        {
+          "type": "EXISTING_REAL_SEARCH",
+          "reference": "docs\\RESULTADO_BUSCA_MULTILOJA_20261031_2210.json",
+          "source_sha256": "2581ccf39e211a6593769ae595956f8a343ce18f902b0b55b8829b6ace486e4d",
+          "observed_at": "2026-11-01 01:11:22.482974+00:00"
+        }
+      ],
+      "variant_id": null,
+      "documented_identity_present": false,
+      "associated_link_ids": [],
+      "offer_ids": [],
+      "priority": 3,
+      "selection_reason": "REAL_DISCOVERY_REQUIRES_MORE_IDENTITY_AND_KIT_EVIDENCE",
+      "within_prepared_search_terms": true,
+      "search_coverage_semantics": "TEXTUAL_ONLY_NO_EQUIVALENCE_OR_PUBLICATION_PROOF",
+      "state": "AWAITING_DOCUMENTED_AND_CURRENT_COMMERCIAL_EVIDENCE",
+      "intended_option_declared": null,
+      "preserved_link_reference": null,
+      "ownership_declared_not_verified": false,
+      "missing_evidence": [
+        "Documented identity: selected variant with attested facts OR whole listing with explicit same PUBLIC price and AVAILABLE status for every selectable option; never invent SKU",
+        "Existing own affiliate link with dated account/link documentary reference and listing/option binding",
+        "Current applicable PUBLIC price, payment conditions and AVAILABLE selected option; responsible, source, actual verification time and expiry <=600 seconds"
+      ],
+      "current_commercial_form": {
+        "product_id": null,
+        "current_price": null,
+        "actor": null,
+        "verified": false,
+        "availability": "UNKNOWN",
+        "price_access": "UNKNOWN",
+        "verified_at": null,
+        "expires_at": null,
+        "previous_price": null,
+        "coupon_id": null,
+        "documented_identity": null
+      },
+      "form_submittable": false,
+      "existing_pilot_requirements": [
+        "VARIANT requires documented identifier and facts; LISTING_ALL_OPTIONS allows no SKU only with explicit comprehensive commercial evidence bound to price, publication name and actual verification time",
+        "Discovery name must match the registered title or an explicitly documented alias; conflicting known facts remain blocked",
+        "Discovery of this identity inside the already approved terms; no standalone import into the publication queue"
+      ],
+      "next_endpoints_after_evidence": [
+        "POST /api/v1/products",
+        "PUT /api/v1/products/{product_id}/affiliate-link",
+        "POST /api/v1/manual-offers"
+      ]
+    },
+    {
+      "product_id": null,
+      "identity": "1754100018:22799528968",
+      "name": "Cockpit Suporte Para Volante Cadeira Cockpit Simulador Brave Bull",
+      "sources": [
+        {
+          "type": "EXISTING_REAL_SEARCH",
+          "reference": "docs\\RESULTADO_BUSCA_MULTILOJA_20261031_2210.json",
+          "source_sha256": "2581ccf39e211a6593769ae595956f8a343ce18f902b0b55b8829b6ace486e4d",
+          "observed_at": "2026-11-01 01:11:22.482974+00:00"
+        }
+      ],
+      "variant_id": null,
+      "documented_identity_present": false,
+      "associated_link_ids": [],
+      "offer_ids": [],
+      "priority": 3,
+      "selection_reason": "REAL_DISCOVERY_REQUIRES_MORE_IDENTITY_AND_KIT_EVIDENCE",
+      "within_prepared_search_terms": true,
+      "search_coverage_semantics": "TEXTUAL_ONLY_NO_EQUIVALENCE_OR_PUBLICATION_PROOF",
+      "state": "AWAITING_DOCUMENTED_AND_CURRENT_COMMERCIAL_EVIDENCE",
+      "intended_option_declared": null,
+      "preserved_link_reference": null,
+      "ownership_declared_not_verified": false,
+      "missing_evidence": [
+        "Documented identity: selected variant with attested facts OR whole listing with explicit same PUBLIC price and AVAILABLE status for every selectable option; never invent SKU",
+        "Existing own affiliate link with dated account/link documentary reference and listing/option binding",
+        "Current applicable PUBLIC price, payment conditions and AVAILABLE selected option; responsible, source, actual verification time and expiry <=600 seconds"
+      ],
+      "current_commercial_form": {
+        "product_id": null,
+        "current_price": null,
+        "actor": null,
+        "verified": false,
+        "availability": "UNKNOWN",
+        "price_access": "UNKNOWN",
+        "verified_at": null,
+        "expires_at": null,
+        "previous_price": null,
+        "coupon_id": null,
+        "documented_identity": null
+      },
+      "form_submittable": false,
+      "existing_pilot_requirements": [
+        "VARIANT requires documented identifier and facts; LISTING_ALL_OPTIONS allows no SKU only with explicit comprehensive commercial evidence bound to price, publication name and actual verification time",
+        "Discovery name must match the registered title or an explicitly documented alias; conflicting known facts remain blocked",
+        "Discovery of this identity inside the already approved terms; no standalone import into the publication queue"
+      ],
+      "next_endpoints_after_evidence": [
+        "POST /api/v1/products",
+        "PUT /api/v1/products/{product_id}/affiliate-link",
+        "POST /api/v1/manual-offers"
+      ]
+    },
+    {
+      "product_id": null,
+      "identity": "1754100018:58219916237",
+      "name": "Cockpit simulador de corrida Brave Bull, estrutura em aço resistente. Volante, pedais e encosto ajustáveis.",
+      "sources": [
+        {
+          "type": "EXISTING_REAL_SEARCH",
+          "reference": "docs\\RESULTADO_BUSCA_MULTILOJA_20261031_2210.json",
+          "source_sha256": "2581ccf39e211a6593769ae595956f8a343ce18f902b0b55b8829b6ace486e4d",
+          "observed_at": "2026-11-01 01:11:22.482974+00:00"
+        }
+      ],
+      "variant_id": null,
+      "documented_identity_present": false,
+      "associated_link_ids": [],
+      "offer_ids": [],
+      "priority": 3,
+      "selection_reason": "REAL_DISCOVERY_REQUIRES_MORE_IDENTITY_AND_KIT_EVIDENCE",
+      "within_prepared_search_terms": true,
+      "search_coverage_semantics": "TEXTUAL_ONLY_NO_EQUIVALENCE_OR_PUBLICATION_PROOF",
+      "state": "AWAITING_DOCUMENTED_AND_CURRENT_COMMERCIAL_EVIDENCE",
+      "intended_option_declared": null,
+      "preserved_link_reference": null,
+      "ownership_declared_not_verified": false,
+      "missing_evidence": [
+        "Documented identity: selected variant with attested facts OR whole listing with explicit same PUBLIC price and AVAILABLE status for every selectable option; never invent SKU",
+        "Existing own affiliate link with dated account/link documentary reference and listing/option binding",
+        "Current applicable PUBLIC price, payment conditions and AVAILABLE selected option; responsible, source, actual verification time and expiry <=600 seconds"
+      ],
+      "current_commercial_form": {
+        "product_id": null,
+        "current_price": null,
+        "actor": null,
+        "verified": false,
+        "availability": "UNKNOWN",
+        "price_access": "UNKNOWN",
+        "verified_at": null,
+        "expires_at": null,
+        "previous_price": null,
+        "coupon_id": null,
+        "documented_identity": null
+      },
+      "form_submittable": false,
+      "existing_pilot_requirements": [
+        "VARIANT requires documented identifier and facts; LISTING_ALL_OPTIONS allows no SKU only with explicit comprehensive commercial evidence bound to price, publication name and actual verification time",
+        "Discovery name must match the registered title or an explicitly documented alias; conflicting known facts remain blocked",
+        "Discovery of this identity inside the already approved terms; no standalone import into the publication queue"
+      ],
+      "next_endpoints_after_evidence": [
+        "POST /api/v1/products",
+        "PUT /api/v1/products/{product_id}/affiliate-link",
+        "POST /api/v1/manual-offers"
+      ]
+    }
+  ]
+}

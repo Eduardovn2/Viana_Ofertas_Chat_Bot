@@ -14,9 +14,37 @@ class Availability(StrEnum):
     UNKNOWN = "UNKNOWN"
 
 
+class CategorySource(StrEnum):
+    STORE = "store"
+    RULE = "rule"
+    MANUAL = "manual"
+
+
+class CategoryMode(StrEnum):
+    UNCONFIGURED = "unconfigured"
+    ALL = "all"
+    SELECTED = "selected"
+
+
 class PriceAccess(StrEnum):
     PUBLIC = "PUBLIC"
     EXCLUSIVE = "EXCLUSIVE"
+    CONDITIONAL = "CONDITIONAL"
+    UNKNOWN = "UNKNOWN"
+
+
+class SourceType(StrEnum):
+    OFFICIAL_API = "OFFICIAL_API"
+    MANUAL = "MANUAL"
+    SIMULATED = "SIMULATED"
+    UNKNOWN = "UNKNOWN"
+
+
+class CouponEvidenceType(StrEnum):
+    PERCENT = "PERCENT"
+    FIXED = "FIXED"
+    FREE_SHIPPING = "FREE_SHIPPING"
+    UNKNOWN = "UNKNOWN"
 
 
 class CouponDiscountType(StrEnum):
@@ -37,17 +65,39 @@ class OfferStatus(StrEnum):
     PUBLISHED = "PUBLISHED"
     REJECTED = "REJECTED"
     EXPIRED = "EXPIRED"
+    PENDING = "PENDING"
+    FAILED = "FAILED"
 
 
 class DestinationChannel(StrEnum):
     TELEGRAM = "TELEGRAM"
     WHATSAPP = "WHATSAPP"
+    SIMULATED = "SIMULATED"
+
+
+class QueueStatus(StrEnum):
+    PENDING = "PENDING"
+    READY = "READY"
+    PUBLISHED = "PUBLISHED"
+    FAILED = "FAILED"
+    EXPIRED = "EXPIRED"
 
 
 class PublicationStatus(StrEnum):
     PENDING = "PENDING"
     SENT = "SENT"
     FAILED = "FAILED"
+
+
+class TelegramPublicationStatus(StrEnum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    SENDING = "SENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+    UNCERTAIN = "UNCERTAIN"
+    EXPIRED = "EXPIRED"
+    REJECTED = "REJECTED"
 
 
 class MonitoringJobStatus(StrEnum):

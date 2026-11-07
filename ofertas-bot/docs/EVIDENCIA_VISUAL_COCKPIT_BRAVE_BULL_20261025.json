@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "evidence_id": "cockpit-brave-bull-visual-20261025-2111",
+  "status": "BLOCKED",
+  "scope": "DOCUMENT_ONLY_NO_OPERATIONAL_REGISTRATION",
+  "prepared_at": "2026-10-26T00:16:54.472257+00:00",
+  "source": {
+    "kind": "RESPONSIBLE_SUPPLIED_SCREENSHOT",
+    "supplied_by": "RESPONSAVEL_PELO_PROJETO",
+    "document_type": "VISUAL_EVIDENCE_NOT_MANUAL_COMMERCIAL_ATTESTATION",
+    "original_filename": "codex-clipboard-17dd7faa-aa5a-4ddf-9f2d-2b930d2f38e0.png",
+    "preserved_file": "docs/evidencias/cockpit_brave_bull/2026-10-25_2111_brt.png",
+    "sha256": "c2f854f2140211c0fa04380675ac0df98e52a3d1fe7738d3cd6df992556a2247",
+    "bytes": 575360,
+    "width": 1919,
+    "height": 1079,
+    "original_bytes_preserved": true,
+    "image_edited": false,
+    "displayed_date": "2026-10-25",
+    "displayed_time": "21:11",
+    "time_precision": "minute",
+    "timezone_reported": "America/Sao_Paulo",
+    "utc_offset_reported": "-03:00",
+    "timezone_source": "RESPONSAVEL",
+    "clock_source": "WINDOWS_CLOCK_VISIBLE_IN_SCREENSHOT",
+    "capture_time_independently_verified": false,
+    "retrieved_from_website_by_codex": false
+  },
+  "product": {
+    "shop_id": "1904573791",
+    "item_id": "23199869203",
+    "name": "Cockpit simulador de corrida Brave Bull",
+    "identity_source": "USER_PROVIDED_IDS_AND_VISIBLE_ADDRESS_BAR",
+    "visible_identity_consistent": true,
+    "server_identity_checked": false,
+    "database_product_created": false
+  },
+  "displayed_quotes": [
+    {
+      "currency": "BRL",
+      "amount": "956.13",
+      "displayed_label": "no Pix com cupom",
+      "payment_method_shown": "PIX",
+      "coupon_mentioned": true,
+      "status": "DISPLAYED_CONDITIONAL_UNVERIFIED",
+      "effective_applicable_price": null,
+      "coupon_application_confirmed": false,
+      "coupon_available_to_all_confirmed": false,
+      "variant_id": null,
+      "verified_at": null
+    },
+    {
+      "currency": "BRL",
+      "amount": "1099.00",
+      "displayed_label": "sem cupom em outros métodos de pagamento",
+      "payment_method_shown": "OUTROS_METODOS_NAO_ESPECIFICADOS",
+      "coupon_mentioned": false,
+      "status": "DISPLAYED_UNVERIFIED_FOR_APPLICABILITY",
+      "effective_applicable_price": null,
+      "universally_public_price_confirmed": false,
+      "variant_id": null,
+      "verified_at": null
+    }
+  ],
+  "coupon": {
+    "status": "ADVERTISED_UNVERIFIED",
+    "advertised_text": "R$ 40 OFF",
+    "advertised_amount": "40.00",
+    "currency": "BRL",
+    "code": null,
+    "applied": null,
+    "eligibility_for_product_confirmed": false,
+    "available_to_all_confirmed": false,
+    "minimum_purchase": null,
+    "validity": null,
+    "stacking_rules": null,
+    "manual_coupon_evidence_created": false
+  },
+  "shipping": {
+    "status": "DISPLAYED_CONDITIONAL_UNVERIFIED",
+    "displayed_amount": "0.00",
+    "currency": "BRL",
+    "displayed_condition": "Frete grátis com cupom",
+    "locality_reported_by_responsible": "São Paulo/SP",
+    "visible_location_text": "São Paulo, São Paulo",
+    "visible_location_label": "Enviado De",
+    "destination_confirmed": false,
+    "postal_code": null,
+    "applicable_shipping_price": null,
+    "coupon_application_confirmed": false,
+    "available_to_all_confirmed": false,
+    "validated_at": null
+  },
+  "variants": {
+    "visible_color_options": [
+      "vermelho",
+      "azul"
+    ],
+    "selected_variant": null,
+    "selected_color": null,
+    "sku_model": null,
+    "selection_confirmed": false,
+    "blue_product_image_is_not_variant_selection_proof": true,
+    "same_displayed_price_declared": true,
+    "price_equivalence_source": "DECLARACAO_DO_RESPONSAVEL",
+    "price_equivalence_declaration_id": "declaracao-responsavel-mesmo-preco-exibido-azul-vermelho"
+  },
+  "commercial_validation": {
+    "price_access": "UNKNOWN",
+    "effective_public_price": null,
+    "availability": "UNKNOWN",
+    "stock_quantity": null,
+    "payment_conditions_fully_verified": false,
+    "commercial_conditions_confirmed": false,
+    "independent_manual_attestation_provided": false,
+    "verified_at": null,
+    "image_is_not_commission_or_ownership_evidence": true
+  },
+  "history": {
+    "documentary_visual_observation_recorded": true,
+    "price_history_row_created": false,
+    "comparison_executed": false,
+    "comparison_direction": null,
+    "historical_reference_price": null,
+    "historical_discount_percentage": null,
+    "historical_drop_confirmed": false,
+    "displayed_quotes_are_not_temporal_history": true,
+    "displayed_quotes_have_different_payment_coupon_contexts": true,
+    "coupon_amount_not_applied_to_displayed_prices": true,
+    "other_product_history_modified": false,
+    "future_first_comparable_observation_rule": "INITIAL_WITHOUT_CLAIMING_A_DROP"
+  },
+  "preview": {
+    "status": "BLOCKED",
+    "created": false,
+    "offer_created": false,
+    "outbox_created": false,
+    "publication_authorized": false,
+    "account_verified": false,
+    "blockers": [
+      "APPLICABLE_PRICE_NOT_VALIDATED",
+      "VARIANT_NOT_CONFIRMED",
+      "AVAILABILITY_UNKNOWN",
+      "PAYMENT_COUPON_CONDITIONS_NOT_VALIDATED",
+      "TRUST_POLICY_NOT_APPROVED",
+      "ACCOUNT_LINK_PROVENANCE_PENDING",
+      "OPERATIONAL_REGISTRATION_NOT_AUTHORIZED"
+    ],
+    "conditional_claims_not_authorized": [
+      "COUPON_APPLIED",
+      "UNIVERSAL_COUPON_ELIGIBILITY",
+      "FREE_SHIPPING_FOR_ALL",
+      "BLUE_VARIANT_SELECTED",
+      "IN_STOCK",
+      "HISTORICAL_DISCOUNT"
+    ]
+  },
+  "safety": {
+    "operational_database_connected": false,
+    "operational_database_written": false,
+    "external_calls": 0,
+    "shopee_calls": 0,
+    "mutations": 0,
+    "telegram_publications": 0,
+    "scheduler_started": false,
+    "integrations_activated": false,
+    "credentials_modified": false,
+    "authorization_reused": false,
+    "commit_or_push": false
+  },
+  "declarations": [
+    {
+      "id": "declaracao-responsavel-mesmo-preco-exibido-azul-vermelho",
+      "source": "DECLARACAO_DO_RESPONSAVEL",
+      "scope": "SAME_DISPLAYED_PRICE_ACROSS_COLORS_ONLY",
+      "statement": "As cores azul e vermelha do Cockpit Brave Bull apresentam o mesmo preço exibido.",
+      "colors": [
+        "azul",
+        "vermelho"
+      ],
+      "same_displayed_price_declared": true,
+      "existing_displayed_quotes_and_conditions_preserved": true,
+      "recorded_at": "2026-10-26T02:54:00.728734+00:00",
+      "verification_time_provided": null,
+      "independently_verified": false,
+      "is_screenshot_finding": false,
+      "is_api_response": false,
+      "confirms_effective_applicable_price": false,
+      "confirms_coupon_application": false,
+      "confirms_variant_selection": false,
+      "confirms_variant_ids": false,
+      "confirms_stock": false,
+      "confirms_link_ownership_or_commission": false
+    }
+  ],
+  "updated_at": "2026-10-26T02:54:00.728734+00:00"
+}

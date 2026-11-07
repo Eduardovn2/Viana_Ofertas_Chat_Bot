@@ -1,0 +1,1800 @@
+{
+  "authorization_id": "76350f50-29a2-4d68-85a0-fa74c0da765b",
+  "result": {
+    "authorization_id": "76350f50-29a2-4d68-85a0-fa74c0da765b",
+    "scope": {
+      "plan": {
+        "authorization_id": "76350f50-29a2-4d68-85a0-fa74c0da765b",
+        "profile": "AUTO_PILOT",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "not_before": "2026-11-05T02:30:32Z",
+        "expires_at": "2026-11-05T03:30:32Z",
+        "terms": [
+          "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro"
+        ],
+        "max_messages": 1,
+        "max_queries": 1,
+        "expected_message_sha256": "70e4923caab97d3eccd09281ea518b242a1cc1fbff46ece7ca2ae469be4f6a6d",
+        "page": 1,
+        "limit": 3,
+        "window_seconds": 600,
+        "messages_per_window": 1,
+        "cooldown_seconds": 10800,
+        "duration_seconds": 600,
+        "operating_policy": {
+          "version": "WINDOWED_V1",
+          "on_no_work": "WAIT_UNTIL_END"
+        },
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "announcement_identities": [
+          "1018042820:22293101052"
+        ]
+      },
+      "credential_fingerprint": "0f9440eebe46602dc0db7e63e09052bd2b9637a0c629e9ca63f2f5e12a3bc752",
+      "mode": "REAL_AUTO_PILOT",
+      "shopee_operation": "productOfferV2",
+      "max_external_http": 2,
+      "shopee_endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "telegram_endpoint": "https://api.telegram.org",
+      "retries": 0,
+      "fallback": false,
+      "chat_id": "-5309308689",
+      "environment": "PRODUCTION",
+      "rules": {
+        "version": "ANNOUNCEMENT_ONLY_V1",
+        "publication_mode": "ANNOUNCEMENT_ONLY",
+        "max_quote_age_seconds": 600,
+        "require_official_capture": true,
+        "require_documented_owned_link": true,
+        "availability_claims": false,
+        "final_price_claims": false,
+        "historical_discount_claims": false,
+        "links_created": 0,
+        "uncertain_never_retries": true
+      },
+      "rules_sha256": "95897f7422d2fae4436550249030fdb6723ebdc2d094ad914d2a4eded263bb45",
+      "worker_tick_seconds": 30,
+      "query_payload_sha256": {
+        "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro": "9c42cf0b1a6bb0436b65eb8fbfbee505fe80218d4ce42993a18a145883ef04e7"
+      },
+      "terminal_conditions": [
+        "DEADLINE",
+        "ADMIN_STOP",
+        "MESSAGE_BUDGET",
+        "SHOPEE_PERMISSION_DENIED",
+        "QUERY_UNCERTAINTY_NO_RETRY"
+      ]
+    },
+    "scope_sha256": "409a896b00ae1f946bc53eff61cf5ae79c75e059d0bfcb1d3f25a66f04d5f7e8",
+    "state": "COMPLETED",
+    "reason": "MESSAGE_BUDGET",
+    "queries": [
+      {
+        "id": "1fe898037d3f4e2faf2fd5fcf22b39c7",
+        "state": "SUCCEEDED",
+        "at": "2026-11-05T02:35:49.581269+00:00",
+        "term": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+        "transport_consumed": true,
+        "transport_started_at": "2026-11-05T02:35:49.641528+00:00",
+        "payload_sha256": "9c42cf0b1a6bb0436b65eb8fbfbee505fe80218d4ce42993a18a145883ef04e7",
+        "error": null,
+        "capture": {
+          "capture_id": "1fe898037d3f4e2faf2fd5fcf22b39c7",
+          "authorization_id": "76350f50-29a2-4d68-85a0-fa74c0da765b",
+          "mode": "REAL_AUTO_PILOT",
+          "execution_environment": "PRODUCTION",
+          "source": "shopee:official_api",
+          "recorded_at": "2026-11-05T02:35:50.911264+00:00",
+          "comparison_sha256": "a261ccfe0c8317ea415b4cfa81e85d3753b2f9843aab609bd3d24006a1678b99",
+          "comparison": {
+            "proven_comparisons": [],
+            "proven_incompatible_products": [],
+            "unproven_candidates": [
+              {
+                "identity": "1018042820:22293101052",
+                "shop_id": "1018042820",
+                "item_id": "22293101052",
+                "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+                "image_url": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+                "source": "shopee:official_api",
+                "source_reference": "productOfferV2:1018042820:22293101052",
+                "announced_price": "59.00",
+                "reported_price_min": "59.00",
+                "reported_price_max": "59.00",
+                "currency": "BRL",
+                "observed_at": "2026-11-05 02:35:50.880225+00:00",
+                "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+                "seller": {
+                  "shop_name": "IDP Comercio de Variedades",
+                  "rating_star": "4.8",
+                  "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                  "sales": 0,
+                  "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                  "shop_types": [],
+                  "shop_type_semantics": "UNCONFIRMED_CODES"
+                },
+                "documented_ranking_signals": null,
+                "provider_observation": {
+                  "price_context": {
+                    "origin": "shopee:official_api",
+                    "operation": "productOfferV2",
+                    "product_identity": "1018042820:22293101052",
+                    "variant_identity": "UNKNOWN",
+                    "price_kind": "ITEM_QUOTE",
+                    "payment": "UNKNOWN",
+                    "coupon": "UNKNOWN",
+                    "eligibility": "UNKNOWN",
+                    "region": "UNKNOWN"
+                  },
+                  "price_basis": "v1:6d2b30fdf175443e04cd110e05065a222583d5a91ec9e091d69808130708e2ac",
+                  "commission_rate": "0.38",
+                  "commission_amount": "22.42",
+                  "advertised_discount_percent": 0,
+                  "offer_period_start_raw": 1787713200,
+                  "offer_period_end_raw": 32503651199,
+                  "period_time_unit": "UNCONFIRMED",
+                  "period_semantics": "UNCONFIRMED"
+                },
+                "attributes": {
+                  "brand": null,
+                  "model": null,
+                  "quantity": null,
+                  "condition": null,
+                  "packaging": null,
+                  "kit": null,
+                  "variant": null,
+                  "price_conditions": null,
+                  "net_content": null,
+                  "edition": null
+                },
+                "unknown_attributes": [
+                  "brand",
+                  "model",
+                  "quantity",
+                  "condition",
+                  "packaging",
+                  "kit",
+                  "variant",
+                  "price_conditions",
+                  "net_content",
+                  "edition"
+                ],
+                "price_status": "VALID_ANNOUNCED_PRICE",
+                "status": "CANDIDATE",
+                "reason": "EQUIVALENCE_UNPROVEN",
+                "inferred_attributes": {
+                  "model": [
+                    {
+                      "value": "8k",
+                      "matched_text": "8K",
+                      "source_field": "productName",
+                      "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                      "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                    },
+                    {
+                      "value": "ps5",
+                      "matched_text": "PS5",
+                      "source_field": "productName",
+                      "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                      "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                    }
+                  ]
+                },
+                "attribute_evidence_level": "UNPROVEN",
+                "reported_fields": {
+                  "shopId": "1018042820",
+                  "itemId": "22293101052",
+                  "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                  "announced_price": "59.00",
+                  "currency": "BRL",
+                  "seller_information": {
+                    "shop_name": "IDP Comercio de Variedades",
+                    "rating_star": "4.8",
+                    "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                    "sales": 0,
+                    "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                    "shop_types": [],
+                    "shop_type_semantics": "UNCONFIRMED_CODES"
+                  }
+                },
+                "equivalence_classification": "INCONCLUSIVE",
+                "textual_review_priority": {
+                  "score": 65,
+                  "band": "MEDIUM",
+                  "components": {
+                    "query_word_overlap": 50,
+                    "brand_mention": 0,
+                    "model_mention": 15,
+                    "quantity_mention": 0,
+                    "net_content_mention": 0,
+                    "edition_mention": 0,
+                    "variant_mention": 0
+                  },
+                  "warnings": [],
+                  "version": "TEXT_REVIEW_V1",
+                  "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                }
+              }
+            ],
+            "filtered_candidates": [],
+            "stores": [
+              {
+                "shop_id": "1018042820",
+                "listings": [
+                  {
+                    "identity": "1018042820:22293101052",
+                    "shop_id": "1018042820",
+                    "item_id": "22293101052",
+                    "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                    "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+                    "image_url": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+                    "source": "shopee:official_api",
+                    "source_reference": "productOfferV2:1018042820:22293101052",
+                    "announced_price": "59.00",
+                    "reported_price_min": "59.00",
+                    "reported_price_max": "59.00",
+                    "currency": "BRL",
+                    "observed_at": "2026-11-05 02:35:50.880225+00:00",
+                    "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+                    "seller": {
+                      "shop_name": "IDP Comercio de Variedades",
+                      "rating_star": "4.8",
+                      "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                      "sales": 0,
+                      "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                      "shop_types": [],
+                      "shop_type_semantics": "UNCONFIRMED_CODES"
+                    },
+                    "documented_ranking_signals": null,
+                    "provider_observation": {
+                      "price_context": {
+                        "origin": "shopee:official_api",
+                        "operation": "productOfferV2",
+                        "product_identity": "1018042820:22293101052",
+                        "variant_identity": "UNKNOWN",
+                        "price_kind": "ITEM_QUOTE",
+                        "payment": "UNKNOWN",
+                        "coupon": "UNKNOWN",
+                        "eligibility": "UNKNOWN",
+                        "region": "UNKNOWN"
+                      },
+                      "price_basis": "v1:6d2b30fdf175443e04cd110e05065a222583d5a91ec9e091d69808130708e2ac",
+                      "commission_rate": "0.38",
+                      "commission_amount": "22.42",
+                      "advertised_discount_percent": 0,
+                      "offer_period_start_raw": 1787713200,
+                      "offer_period_end_raw": 32503651199,
+                      "period_time_unit": "UNCONFIRMED",
+                      "period_semantics": "UNCONFIRMED"
+                    },
+                    "attributes": {
+                      "brand": null,
+                      "model": null,
+                      "quantity": null,
+                      "condition": null,
+                      "packaging": null,
+                      "kit": null,
+                      "variant": null,
+                      "price_conditions": null,
+                      "net_content": null,
+                      "edition": null
+                    },
+                    "unknown_attributes": [
+                      "brand",
+                      "model",
+                      "quantity",
+                      "condition",
+                      "packaging",
+                      "kit",
+                      "variant",
+                      "price_conditions",
+                      "net_content",
+                      "edition"
+                    ],
+                    "price_status": "VALID_ANNOUNCED_PRICE",
+                    "status": "CANDIDATE",
+                    "reason": "EQUIVALENCE_UNPROVEN",
+                    "inferred_attributes": {
+                      "model": [
+                        {
+                          "value": "8k",
+                          "matched_text": "8K",
+                          "source_field": "productName",
+                          "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                          "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                        },
+                        {
+                          "value": "ps5",
+                          "matched_text": "PS5",
+                          "source_field": "productName",
+                          "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                          "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                        }
+                      ]
+                    },
+                    "attribute_evidence_level": "UNPROVEN",
+                    "reported_fields": {
+                      "shopId": "1018042820",
+                      "itemId": "22293101052",
+                      "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                      "announced_price": "59.00",
+                      "currency": "BRL",
+                      "seller_information": {
+                        "shop_name": "IDP Comercio de Variedades",
+                        "rating_star": "4.8",
+                        "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                        "sales": 0,
+                        "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                        "shop_types": [],
+                        "shop_type_semantics": "UNCONFIRMED_CODES"
+                      }
+                    },
+                    "equivalence_classification": "INCONCLUSIVE",
+                    "textual_review_priority": {
+                      "score": 65,
+                      "band": "MEDIUM",
+                      "components": {
+                        "query_word_overlap": 50,
+                        "brand_mention": 0,
+                        "model_mention": 15,
+                        "quantity_mention": 0,
+                        "net_content_mention": 0,
+                        "edition_mention": 0,
+                        "variant_mention": 0
+                      },
+                      "warnings": [],
+                      "version": "TEXT_REVIEW_V1",
+                      "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                    }
+                  }
+                ],
+                "shop_name_variants": [
+                  "IDP Comercio de Variedades"
+                ]
+              }
+            ],
+            "pairwise_assessments": [],
+            "pairwise_assessments_truncated": false,
+            "lowest_price_highlights": [],
+            "review_queue": [
+              {
+                "identity": "1018042820:22293101052",
+                "shop_id": "1018042820",
+                "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                "priority": {
+                  "score": 65,
+                  "band": "MEDIUM",
+                  "components": {
+                    "query_word_overlap": 50,
+                    "brand_mention": 0,
+                    "model_mention": 15,
+                    "quantity_mention": 0,
+                    "net_content_mention": 0,
+                    "edition_mention": 0,
+                    "variant_mention": 0
+                  },
+                  "warnings": [],
+                  "version": "TEXT_REVIEW_V1",
+                  "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                },
+                "unknown_attributes": [
+                  "brand",
+                  "model",
+                  "quantity",
+                  "condition",
+                  "packaging",
+                  "kit",
+                  "variant",
+                  "price_conditions",
+                  "net_content",
+                  "edition"
+                ],
+                "observation_fingerprint": null,
+                "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff"
+              }
+            ],
+            "review_priority_semantics": "TEXTUAL_TRIAGE_ONLY_NOT_COMMERCIAL_PROOF",
+            "query": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+            "requested_product": null,
+            "candidates": [
+              {
+                "identity": "1018042820:22293101052",
+                "shop_id": "1018042820",
+                "item_id": "22293101052",
+                "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+                "image_url": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+                "source": "shopee:official_api",
+                "source_reference": "productOfferV2:1018042820:22293101052",
+                "announced_price": "59.00",
+                "reported_price_min": "59.00",
+                "reported_price_max": "59.00",
+                "currency": "BRL",
+                "observed_at": "2026-11-05 02:35:50.880225+00:00",
+                "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+                "seller": {
+                  "shop_name": "IDP Comercio de Variedades",
+                  "rating_star": "4.8",
+                  "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                  "sales": 0,
+                  "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                  "shop_types": [],
+                  "shop_type_semantics": "UNCONFIRMED_CODES"
+                },
+                "documented_ranking_signals": null,
+                "provider_observation": {
+                  "price_context": {
+                    "origin": "shopee:official_api",
+                    "operation": "productOfferV2",
+                    "product_identity": "1018042820:22293101052",
+                    "variant_identity": "UNKNOWN",
+                    "price_kind": "ITEM_QUOTE",
+                    "payment": "UNKNOWN",
+                    "coupon": "UNKNOWN",
+                    "eligibility": "UNKNOWN",
+                    "region": "UNKNOWN"
+                  },
+                  "price_basis": "v1:6d2b30fdf175443e04cd110e05065a222583d5a91ec9e091d69808130708e2ac",
+                  "commission_rate": "0.38",
+                  "commission_amount": "22.42",
+                  "advertised_discount_percent": 0,
+                  "offer_period_start_raw": 1787713200,
+                  "offer_period_end_raw": 32503651199,
+                  "period_time_unit": "UNCONFIRMED",
+                  "period_semantics": "UNCONFIRMED"
+                },
+                "attributes": {
+                  "brand": null,
+                  "model": null,
+                  "quantity": null,
+                  "condition": null,
+                  "packaging": null,
+                  "kit": null,
+                  "variant": null,
+                  "price_conditions": null,
+                  "net_content": null,
+                  "edition": null
+                },
+                "unknown_attributes": [
+                  "brand",
+                  "model",
+                  "quantity",
+                  "condition",
+                  "packaging",
+                  "kit",
+                  "variant",
+                  "price_conditions",
+                  "net_content",
+                  "edition"
+                ],
+                "price_status": "VALID_ANNOUNCED_PRICE",
+                "status": "CANDIDATE",
+                "reason": "EQUIVALENCE_UNPROVEN",
+                "inferred_attributes": {
+                  "model": [
+                    {
+                      "value": "8k",
+                      "matched_text": "8K",
+                      "source_field": "productName",
+                      "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                      "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                    },
+                    {
+                      "value": "ps5",
+                      "matched_text": "PS5",
+                      "source_field": "productName",
+                      "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                      "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                    }
+                  ]
+                },
+                "attribute_evidence_level": "UNPROVEN",
+                "reported_fields": {
+                  "shopId": "1018042820",
+                  "itemId": "22293101052",
+                  "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                  "announced_price": "59.00",
+                  "currency": "BRL",
+                  "seller_information": {
+                    "shop_name": "IDP Comercio de Variedades",
+                    "rating_star": "4.8",
+                    "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                    "sales": 0,
+                    "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                    "shop_types": [],
+                    "shop_type_semantics": "UNCONFIRMED_CODES"
+                  }
+                },
+                "equivalence_classification": "INCONCLUSIVE",
+                "textual_review_priority": {
+                  "score": 65,
+                  "band": "MEDIUM",
+                  "components": {
+                    "query_word_overlap": 50,
+                    "brand_mention": 0,
+                    "model_mention": 15,
+                    "quantity_mention": 0,
+                    "net_content_mention": 0,
+                    "edition_mention": 0,
+                    "variant_mention": 0
+                  },
+                  "warnings": [],
+                  "version": "TEXT_REVIEW_V1",
+                  "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                }
+              }
+            ],
+            "incompatible_products": [],
+            "inconclusive_products": [
+              {
+                "identity": "1018042820:22293101052",
+                "shop_id": "1018042820",
+                "item_id": "22293101052",
+                "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+                "image_url": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+                "source": "shopee:official_api",
+                "source_reference": "productOfferV2:1018042820:22293101052",
+                "announced_price": "59.00",
+                "reported_price_min": "59.00",
+                "reported_price_max": "59.00",
+                "currency": "BRL",
+                "observed_at": "2026-11-05 02:35:50.880225+00:00",
+                "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+                "seller": {
+                  "shop_name": "IDP Comercio de Variedades",
+                  "rating_star": "4.8",
+                  "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                  "sales": 0,
+                  "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                  "shop_types": [],
+                  "shop_type_semantics": "UNCONFIRMED_CODES"
+                },
+                "documented_ranking_signals": null,
+                "provider_observation": {
+                  "price_context": {
+                    "origin": "shopee:official_api",
+                    "operation": "productOfferV2",
+                    "product_identity": "1018042820:22293101052",
+                    "variant_identity": "UNKNOWN",
+                    "price_kind": "ITEM_QUOTE",
+                    "payment": "UNKNOWN",
+                    "coupon": "UNKNOWN",
+                    "eligibility": "UNKNOWN",
+                    "region": "UNKNOWN"
+                  },
+                  "price_basis": "v1:6d2b30fdf175443e04cd110e05065a222583d5a91ec9e091d69808130708e2ac",
+                  "commission_rate": "0.38",
+                  "commission_amount": "22.42",
+                  "advertised_discount_percent": 0,
+                  "offer_period_start_raw": 1787713200,
+                  "offer_period_end_raw": 32503651199,
+                  "period_time_unit": "UNCONFIRMED",
+                  "period_semantics": "UNCONFIRMED"
+                },
+                "attributes": {
+                  "brand": null,
+                  "model": null,
+                  "quantity": null,
+                  "condition": null,
+                  "packaging": null,
+                  "kit": null,
+                  "variant": null,
+                  "price_conditions": null,
+                  "net_content": null,
+                  "edition": null
+                },
+                "unknown_attributes": [
+                  "brand",
+                  "model",
+                  "quantity",
+                  "condition",
+                  "packaging",
+                  "kit",
+                  "variant",
+                  "price_conditions",
+                  "net_content",
+                  "edition"
+                ],
+                "price_status": "VALID_ANNOUNCED_PRICE",
+                "status": "CANDIDATE",
+                "reason": "EQUIVALENCE_UNPROVEN",
+                "inferred_attributes": {
+                  "model": [
+                    {
+                      "value": "8k",
+                      "matched_text": "8K",
+                      "source_field": "productName",
+                      "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                      "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                    },
+                    {
+                      "value": "ps5",
+                      "matched_text": "PS5",
+                      "source_field": "productName",
+                      "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                      "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                    }
+                  ]
+                },
+                "attribute_evidence_level": "UNPROVEN",
+                "reported_fields": {
+                  "shopId": "1018042820",
+                  "itemId": "22293101052",
+                  "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                  "announced_price": "59.00",
+                  "currency": "BRL",
+                  "seller_information": {
+                    "shop_name": "IDP Comercio de Variedades",
+                    "rating_star": "4.8",
+                    "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                    "sales": 0,
+                    "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                    "shop_types": [],
+                    "shop_type_semantics": "UNCONFIRMED_CODES"
+                  }
+                },
+                "equivalence_classification": "INCONCLUSIVE",
+                "textual_review_priority": {
+                  "score": 65,
+                  "band": "MEDIUM",
+                  "components": {
+                    "query_word_overlap": 50,
+                    "brand_mention": 0,
+                    "model_mention": 15,
+                    "quantity_mention": 0,
+                    "net_content_mention": 0,
+                    "edition_mention": 0,
+                    "variant_mention": 0
+                  },
+                  "warnings": [],
+                  "version": "TEXT_REVIEW_V1",
+                  "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                }
+              }
+            ],
+            "groups": [],
+            "candidate_price_order": [
+              {
+                "identity": "1018042820:22293101052",
+                "shop_id": "1018042820",
+                "announced_price": "59.00",
+                "currency": "BRL",
+                "equivalence_status": "CANDIDATE",
+                "rank": 1,
+                "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                "seller": {
+                  "shop_name": "IDP Comercio de Variedades",
+                  "rating_star": "4.8",
+                  "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                  "sales": 0,
+                  "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                  "shop_types": [],
+                  "shop_type_semantics": "UNCONFIRMED_CODES"
+                },
+                "same_shop_listing_count": 1,
+                "same_price_identities": [
+                  "1018042820:22293101052"
+                ]
+              }
+            ],
+            "candidate_ranking_semantics": "PRICE_ORDER_ONLY_NOT_EQUIVALENCE_OR_BUY_RECOMMENDATION",
+            "all_listing_price_order": [
+              {
+                "identity": "1018042820:22293101052",
+                "shop_id": "1018042820",
+                "announced_price": "59.00"
+              }
+            ],
+            "distinct_shops": 1,
+            "returned_listings": 1,
+            "review_warnings": [
+              "LOWEST_CANDIDATE_PRICE_EQUIVALENCE_UNPROVEN"
+            ],
+            "attribute_coverage": {
+              "identity": [
+                "shopId",
+                "itemId"
+              ],
+              "listing_name": [
+                "productName"
+              ],
+              "announced_price": [
+                "price",
+                "priceMin",
+                "priceMax"
+              ],
+              "seller_information": [
+                "shopName",
+                "ratingStar",
+                "sales",
+                "shopType"
+              ],
+              "structured_product_attributes": [],
+              "unsupported_attributes": [
+                "brand",
+                "model",
+                "quantity",
+                "condition",
+                "packaging",
+                "kit",
+                "variant",
+                "price_conditions",
+                "net_content",
+                "edition"
+              ],
+              "source": "LOCAL_OFFICIAL_EXPLORER_CONTRACT",
+              "contract_reference": "docs/CONTRATO_FONTES_SHOPEE_20261026.json",
+              "live_schema_revalidated": false
+            },
+            "status": "INSUFFICIENT_EQUIVALENCE",
+            "price_semantics": "ANNOUNCED_NOT_CONFIRMED_FINAL",
+            "comparison_kind": "CROSS_STORE_SAME_OBSERVATION",
+            "commercial_unknowns": [
+              "final_price",
+              "shipping",
+              "stock",
+              "seller_reputation"
+            ],
+            "publication_authorized": false,
+            "history_writes": 0,
+            "opportunity_view": {
+              "query": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+              "requested_product": null,
+              "product_search_key": "61e265045db0ca275cfb56679cbac7a71d8e1fcb0f5d101cab3c41d9c3f1e60e",
+              "view_version": "MULTISTORE_DISCOVERY_V1",
+              "review_selection_limit": 2,
+              "source_authorization_id": null,
+              "source_scope_sha256": null,
+              "returned_listings": 1,
+              "distinct_shops": 1,
+              "proven_comparisons": [],
+              "unproven_candidates": [
+                {
+                  "identity": "1018042820:22293101052",
+                  "shop_id": "1018042820",
+                  "item_id": "22293101052",
+                  "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                  "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+                  "image_url": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+                  "source": "shopee:official_api",
+                  "source_reference": "productOfferV2:1018042820:22293101052",
+                  "announced_price": "59.00",
+                  "reported_price_min": "59.00",
+                  "reported_price_max": "59.00",
+                  "currency": "BRL",
+                  "observed_at": "2026-11-05 02:35:50.880225+00:00",
+                  "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+                  "seller": {
+                    "shop_name": "IDP Comercio de Variedades",
+                    "rating_star": "4.8",
+                    "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                    "sales": 0,
+                    "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                    "shop_types": [],
+                    "shop_type_semantics": "UNCONFIRMED_CODES"
+                  },
+                  "documented_ranking_signals": null,
+                  "provider_observation": {
+                    "price_context": {
+                      "origin": "shopee:official_api",
+                      "operation": "productOfferV2",
+                      "product_identity": "1018042820:22293101052",
+                      "variant_identity": "UNKNOWN",
+                      "price_kind": "ITEM_QUOTE",
+                      "payment": "UNKNOWN",
+                      "coupon": "UNKNOWN",
+                      "eligibility": "UNKNOWN",
+                      "region": "UNKNOWN"
+                    },
+                    "price_basis": "v1:6d2b30fdf175443e04cd110e05065a222583d5a91ec9e091d69808130708e2ac",
+                    "commission_rate": "0.38",
+                    "commission_amount": "22.42",
+                    "advertised_discount_percent": 0,
+                    "offer_period_start_raw": 1787713200,
+                    "offer_period_end_raw": 32503651199,
+                    "period_time_unit": "UNCONFIRMED",
+                    "period_semantics": "UNCONFIRMED"
+                  },
+                  "attributes": {
+                    "brand": null,
+                    "model": null,
+                    "quantity": null,
+                    "condition": null,
+                    "packaging": null,
+                    "kit": null,
+                    "variant": null,
+                    "price_conditions": null,
+                    "net_content": null,
+                    "edition": null
+                  },
+                  "unknown_attributes": [
+                    "brand",
+                    "model",
+                    "quantity",
+                    "condition",
+                    "packaging",
+                    "kit",
+                    "variant",
+                    "price_conditions",
+                    "net_content",
+                    "edition"
+                  ],
+                  "price_status": "VALID_ANNOUNCED_PRICE",
+                  "status": "CANDIDATE",
+                  "reason": "EQUIVALENCE_UNPROVEN",
+                  "inferred_attributes": {
+                    "model": [
+                      {
+                        "value": "8k",
+                        "matched_text": "8K",
+                        "source_field": "productName",
+                        "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                        "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                      },
+                      {
+                        "value": "ps5",
+                        "matched_text": "PS5",
+                        "source_field": "productName",
+                        "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                        "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                      }
+                    ]
+                  },
+                  "attribute_evidence_level": "UNPROVEN",
+                  "reported_fields": {
+                    "shopId": "1018042820",
+                    "itemId": "22293101052",
+                    "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                    "announced_price": "59.00",
+                    "currency": "BRL",
+                    "seller_information": {
+                      "shop_name": "IDP Comercio de Variedades",
+                      "rating_star": "4.8",
+                      "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                      "sales": 0,
+                      "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                      "shop_types": [],
+                      "shop_type_semantics": "UNCONFIRMED_CODES"
+                    }
+                  },
+                  "equivalence_classification": "INCONCLUSIVE",
+                  "textual_review_priority": {
+                    "score": 65,
+                    "band": "MEDIUM",
+                    "components": {
+                      "query_word_overlap": 50,
+                      "brand_mention": 0,
+                      "model_mention": 15,
+                      "quantity_mention": 0,
+                      "net_content_mention": 0,
+                      "edition_mention": 0,
+                      "variant_mention": 0
+                    },
+                    "warnings": [],
+                    "version": "TEXT_REVIEW_V1",
+                    "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                  }
+                }
+              ],
+              "stores": [
+                {
+                  "shop_id": "1018042820",
+                  "listings": [
+                    {
+                      "identity": "1018042820:22293101052",
+                      "shop_id": "1018042820",
+                      "item_id": "22293101052",
+                      "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                      "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+                      "image_url": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+                      "source": "shopee:official_api",
+                      "source_reference": "productOfferV2:1018042820:22293101052",
+                      "announced_price": "59.00",
+                      "reported_price_min": "59.00",
+                      "reported_price_max": "59.00",
+                      "currency": "BRL",
+                      "observed_at": "2026-11-05 02:35:50.880225+00:00",
+                      "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+                      "seller": {
+                        "shop_name": "IDP Comercio de Variedades",
+                        "rating_star": "4.8",
+                        "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                        "sales": 0,
+                        "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                        "shop_types": [],
+                        "shop_type_semantics": "UNCONFIRMED_CODES"
+                      },
+                      "documented_ranking_signals": null,
+                      "provider_observation": {
+                        "price_context": {
+                          "origin": "shopee:official_api",
+                          "operation": "productOfferV2",
+                          "product_identity": "1018042820:22293101052",
+                          "variant_identity": "UNKNOWN",
+                          "price_kind": "ITEM_QUOTE",
+                          "payment": "UNKNOWN",
+                          "coupon": "UNKNOWN",
+                          "eligibility": "UNKNOWN",
+                          "region": "UNKNOWN"
+                        },
+                        "price_basis": "v1:6d2b30fdf175443e04cd110e05065a222583d5a91ec9e091d69808130708e2ac",
+                        "commission_rate": "0.38",
+                        "commission_amount": "22.42",
+                        "advertised_discount_percent": 0,
+                        "offer_period_start_raw": 1787713200,
+                        "offer_period_end_raw": 32503651199,
+                        "period_time_unit": "UNCONFIRMED",
+                        "period_semantics": "UNCONFIRMED"
+                      },
+                      "attributes": {
+                        "brand": null,
+                        "model": null,
+                        "quantity": null,
+                        "condition": null,
+                        "packaging": null,
+                        "kit": null,
+                        "variant": null,
+                        "price_conditions": null,
+                        "net_content": null,
+                        "edition": null
+                      },
+                      "unknown_attributes": [
+                        "brand",
+                        "model",
+                        "quantity",
+                        "condition",
+                        "packaging",
+                        "kit",
+                        "variant",
+                        "price_conditions",
+                        "net_content",
+                        "edition"
+                      ],
+                      "price_status": "VALID_ANNOUNCED_PRICE",
+                      "status": "CANDIDATE",
+                      "reason": "EQUIVALENCE_UNPROVEN",
+                      "inferred_attributes": {
+                        "model": [
+                          {
+                            "value": "8k",
+                            "matched_text": "8K",
+                            "source_field": "productName",
+                            "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                            "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                          },
+                          {
+                            "value": "ps5",
+                            "matched_text": "PS5",
+                            "source_field": "productName",
+                            "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                            "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+                          }
+                        ]
+                      },
+                      "attribute_evidence_level": "UNPROVEN",
+                      "reported_fields": {
+                        "shopId": "1018042820",
+                        "itemId": "22293101052",
+                        "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                        "announced_price": "59.00",
+                        "currency": "BRL",
+                        "seller_information": {
+                          "shop_name": "IDP Comercio de Variedades",
+                          "rating_star": "4.8",
+                          "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+                          "sales": 0,
+                          "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+                          "shop_types": [],
+                          "shop_type_semantics": "UNCONFIRMED_CODES"
+                        }
+                      },
+                      "equivalence_classification": "INCONCLUSIVE",
+                      "textual_review_priority": {
+                        "score": 65,
+                        "band": "MEDIUM",
+                        "components": {
+                          "query_word_overlap": 50,
+                          "brand_mention": 0,
+                          "model_mention": 15,
+                          "quantity_mention": 0,
+                          "net_content_mention": 0,
+                          "edition_mention": 0,
+                          "variant_mention": 0
+                        },
+                        "warnings": [],
+                        "version": "TEXT_REVIEW_V1",
+                        "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                      }
+                    }
+                  ],
+                  "shop_name_variants": [
+                    "IDP Comercio de Variedades"
+                  ]
+                }
+              ],
+              "candidate_decisions": [
+                {
+                  "identity": "1018042820:22293101052",
+                  "shop_id": "1018042820",
+                  "action": "REVIEW_INSUFFICIENT_EVIDENCE",
+                  "required_attributes": [
+                    "brand",
+                    "condition",
+                    "kit",
+                    "model",
+                    "packaging",
+                    "price_conditions",
+                    "quantity",
+                    "variant"
+                  ],
+                  "human_review_required": true,
+                  "attribute_states": {
+                    "brand": "UNKNOWN",
+                    "model": "INFERRED_ONLY",
+                    "quantity": "UNKNOWN",
+                    "condition": "UNKNOWN",
+                    "packaging": "UNKNOWN",
+                    "kit": "UNKNOWN",
+                    "variant": "UNKNOWN",
+                    "price_conditions": "UNKNOWN",
+                    "net_content": "UNKNOWN",
+                    "edition": "UNKNOWN"
+                  },
+                  "missing_information": [
+                    {
+                      "attribute": "brand",
+                      "reason": "UNPROVEN_ATTRIBUTE"
+                    },
+                    {
+                      "attribute": "condition",
+                      "reason": "UNPROVEN_ATTRIBUTE"
+                    },
+                    {
+                      "attribute": "kit",
+                      "reason": "UNPROVEN_ATTRIBUTE"
+                    },
+                    {
+                      "attribute": "model",
+                      "reason": "UNPROVEN_ATTRIBUTE"
+                    },
+                    {
+                      "attribute": "packaging",
+                      "reason": "UNPROVEN_ATTRIBUTE"
+                    },
+                    {
+                      "attribute": "price_conditions",
+                      "reason": "UNPROVEN_ATTRIBUTE"
+                    },
+                    {
+                      "attribute": "quantity",
+                      "reason": "UNPROVEN_ATTRIBUTE"
+                    },
+                    {
+                      "attribute": "variant",
+                      "reason": "UNPROVEN_ATTRIBUTE"
+                    }
+                  ],
+                  "conflicting_evidence": [],
+                  "evidence_reused_automatically": false,
+                  "fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff"
+                }
+              ],
+              "review_queue": [
+                {
+                  "identity": "1018042820:22293101052",
+                  "shop_id": "1018042820",
+                  "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                  "priority": {
+                    "score": 65,
+                    "band": "MEDIUM",
+                    "components": {
+                      "query_word_overlap": 50,
+                      "brand_mention": 0,
+                      "model_mention": 15,
+                      "quantity_mention": 0,
+                      "net_content_mention": 0,
+                      "edition_mention": 0,
+                      "variant_mention": 0
+                    },
+                    "warnings": [],
+                    "version": "TEXT_REVIEW_V1",
+                    "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                  },
+                  "unknown_attributes": [
+                    "brand",
+                    "model",
+                    "quantity",
+                    "condition",
+                    "packaging",
+                    "kit",
+                    "variant",
+                    "price_conditions",
+                    "net_content",
+                    "edition"
+                  ],
+                  "observation_fingerprint": null,
+                  "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff"
+                }
+              ],
+              "selected_for_review": [
+                {
+                  "identity": "1018042820:22293101052",
+                  "shop_id": "1018042820",
+                  "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+                  "priority": {
+                    "score": 65,
+                    "band": "MEDIUM",
+                    "components": {
+                      "query_word_overlap": 50,
+                      "brand_mention": 0,
+                      "model_mention": 15,
+                      "quantity_mention": 0,
+                      "net_content_mention": 0,
+                      "edition_mention": 0,
+                      "variant_mention": 0
+                    },
+                    "warnings": [],
+                    "version": "TEXT_REVIEW_V1",
+                    "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+                  },
+                  "unknown_attributes": [
+                    "brand",
+                    "model",
+                    "quantity",
+                    "condition",
+                    "packaging",
+                    "kit",
+                    "variant",
+                    "price_conditions",
+                    "net_content",
+                    "edition"
+                  ],
+                  "observation_fingerprint": null,
+                  "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff"
+                }
+              ],
+              "deferred_review_identities": [],
+              "counts": {
+                "automatic_compared": 0,
+                "human_review_required": 1,
+                "selected_for_review": 1,
+                "deferred_review": 0,
+                "awaiting_comparable_seller": 0,
+                "price_revalidation_required": 0,
+                "filtered_or_incompatible": 0
+              },
+              "commercial_handoff": {
+                "version": "MULTISTORE_CANDIDATE_PREVIEW_V1",
+                "reference_kind": "CROSS_STORE_ANNOUNCED_PRICE",
+                "historical_discount": null,
+                "execution_allowed": false,
+                "can_create_offer": false,
+                "publication_authorized": false,
+                "coupon_required": false,
+                "blockers": [
+                  "APPLICABLE_PUBLIC_PRICE_CONTEXT_NOT_VERIFIED",
+                  "AVAILABILITY_NOT_VERIFIED",
+                  "FRESHNESS_REVALIDATION_NOT_PERFORMED",
+                  "FINAL_PRICE_SHIPPING_COUPON_TERMS_NOT_VERIFIED",
+                  "EXISTING_AFFILIATE_LINK_AND_ACCOUNT_CHECK_NOT_PERFORMED",
+                  "CATEGORY_DESTINATION_AND_OFFER_APPROVAL_CHECKS_NOT_PERFORMED",
+                  "CROSS_STORE_ADAPTER_TO_OFFER_APPROVAL_NOT_ENABLED"
+                ],
+                "candidates": []
+              },
+              "selection_semantics": "TEXTUAL_REVIEW_PRIORITY_WITH_SHOP_DIVERSITY_NOT_BUY_RECOMMENDATION",
+              "publication_authorized": false,
+              "history_writes": 0,
+              "history_semantics": "CONSOLIDATION_ONLY_NO_TEMPORAL_BASELINE_OR_WRITES"
+            }
+          }
+        },
+        "proven_groups": 0
+      }
+    ],
+    "queue": [
+      {
+        "id": "713ddbaa713146ebba94c54400a05645",
+        "offer_id": 1,
+        "product_id": 1,
+        "identity": "1018042820:22293101052",
+        "documented_product_key": "listing:1018042820:22293101052",
+        "identity_evidence_sha256": "ccdd94ab8a99ff402c3653708fa7f8ef43ac38a30ec8f68e744bcabb198887df",
+        "shop_id": "1018042820",
+        "destination_id": 2,
+        "quote": {
+          "identity": "1018042820:22293101052",
+          "shop_id": "1018042820",
+          "item_id": "22293101052",
+          "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+          "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+          "image_url": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+          "source": "shopee:official_api",
+          "source_reference": "productOfferV2:1018042820:22293101052",
+          "announced_price": "59.00",
+          "reported_price_min": "59.00",
+          "reported_price_max": "59.00",
+          "currency": "BRL",
+          "observed_at": "2026-11-05 02:35:50.880225+00:00",
+          "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+          "seller": {
+            "shop_name": "IDP Comercio de Variedades",
+            "rating_star": "4.8",
+            "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+            "sales": 0,
+            "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+            "shop_types": [],
+            "shop_type_semantics": "UNCONFIRMED_CODES"
+          },
+          "documented_ranking_signals": null,
+          "provider_observation": {
+            "price_context": {
+              "origin": "shopee:official_api",
+              "operation": "productOfferV2",
+              "product_identity": "1018042820:22293101052",
+              "variant_identity": "UNKNOWN",
+              "price_kind": "ITEM_QUOTE",
+              "payment": "UNKNOWN",
+              "coupon": "UNKNOWN",
+              "eligibility": "UNKNOWN",
+              "region": "UNKNOWN"
+            },
+            "price_basis": "v1:6d2b30fdf175443e04cd110e05065a222583d5a91ec9e091d69808130708e2ac",
+            "commission_rate": "0.38",
+            "commission_amount": "22.42",
+            "advertised_discount_percent": 0,
+            "offer_period_start_raw": 1787713200,
+            "offer_period_end_raw": 32503651199,
+            "period_time_unit": "UNCONFIRMED",
+            "period_semantics": "UNCONFIRMED"
+          },
+          "attributes": {
+            "brand": null,
+            "model": null,
+            "quantity": null,
+            "condition": null,
+            "packaging": null,
+            "kit": null,
+            "variant": null,
+            "price_conditions": null,
+            "net_content": null,
+            "edition": null
+          },
+          "unknown_attributes": [
+            "brand",
+            "model",
+            "quantity",
+            "condition",
+            "packaging",
+            "kit",
+            "variant",
+            "price_conditions",
+            "net_content",
+            "edition"
+          ],
+          "price_status": "VALID_ANNOUNCED_PRICE",
+          "status": "CANDIDATE",
+          "reason": "EQUIVALENCE_UNPROVEN",
+          "inferred_attributes": {
+            "model": [
+              {
+                "value": "8k",
+                "matched_text": "8K",
+                "source_field": "productName",
+                "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+              },
+              {
+                "value": "ps5",
+                "matched_text": "PS5",
+                "source_field": "productName",
+                "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+              }
+            ]
+          },
+          "attribute_evidence_level": "UNPROVEN",
+          "reported_fields": {
+            "shopId": "1018042820",
+            "itemId": "22293101052",
+            "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+            "announced_price": "59.00",
+            "currency": "BRL",
+            "seller_information": {
+              "shop_name": "IDP Comercio de Variedades",
+              "rating_star": "4.8",
+              "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+              "sales": 0,
+              "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+              "shop_types": [],
+              "shop_type_semantics": "UNCONFIRMED_CODES"
+            }
+          },
+          "equivalence_classification": "INCONCLUSIVE",
+          "textual_review_priority": {
+            "score": 65,
+            "band": "MEDIUM",
+            "components": {
+              "query_word_overlap": 50,
+              "brand_mention": 0,
+              "model_mention": 15,
+              "quantity_mention": 0,
+              "net_content_mention": 0,
+              "edition_mention": 0,
+              "variant_mention": 0
+            },
+            "warnings": [],
+            "version": "TEXT_REVIEW_V1",
+            "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+          }
+        },
+        "state": "SENT",
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "reason": null
+      }
+    ],
+    "reservations": [
+      {
+        "id": "c6f5ea7edc344031a1108a2af2f5cbab",
+        "queue_id": "713ddbaa713146ebba94c54400a05645",
+        "state": "SENT",
+        "at": "2026-11-05T02:35:51.186520+00:00",
+        "identity": "1018042820:22293101052",
+        "documented_product_key": "listing:1018042820:22293101052",
+        "destination_id": 2,
+        "http_started": true,
+        "publication_id": 1,
+        "transport_consumed": true,
+        "transport_started_at": "2026-11-05T02:35:51.643348+00:00",
+        "payload_sha256": "12ddfd1fddeabeed4d73dc70cdc969e3242519d796a0f79844f4c5f43076e04e",
+        "reason": null
+      }
+    ],
+    "findings": [
+      {
+        "identity": "1018042820:22293101052",
+        "capture_id": "1fe898037d3f4e2faf2fd5fcf22b39c7",
+        "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+        "announced_price": "59.00",
+        "currency": "BRL",
+        "observed_at": "2026-11-05 02:35:50.880225+00:00",
+        "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+        "status": "QUEUED",
+        "reason": "ANNOUNCEMENT_ONLY_OFFICIAL_CAPTURE"
+      }
+    ],
+    "automatic_approvals": 1,
+    "approval": {
+      "scope_sha256": "409a896b00ae1f946bc53eff61cf5ae79c75e059d0bfcb1d3f25a66f04d5f7e8",
+      "actor": "eduardo.viana.3",
+      "confirmed_pilot_scope": true,
+      "acknowledge_unconfirmed_quotas_and_permissions": true,
+      "approved_at": "2026-11-05T02:35:49.373711+00:00"
+    },
+    "started_at": "2026-11-05T02:35:49.464920+00:00",
+    "runtime_expires_at": "2026-11-05T02:45:49.464920+00:00",
+    "opportunities": {
+      "analysis_queue": [
+        {
+          "capture_id": "1fe898037d3f4e2faf2fd5fcf22b39c7",
+          "query": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+          "identity": "1018042820:22293101052",
+          "shop_id": "1018042820",
+          "item_id": "22293101052",
+          "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+          "canonical_url": "https://shopee.com.br/product/1018042820/22293101052",
+          "image_url": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+          "source": "shopee:official_api",
+          "source_reference": "productOfferV2:1018042820:22293101052",
+          "announced_price": "59.00",
+          "reported_price_min": "59.00",
+          "reported_price_max": "59.00",
+          "currency": "BRL",
+          "observed_at": "2026-11-05 02:35:50.880225+00:00",
+          "quote_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+          "seller": {
+            "shop_name": "IDP Comercio de Variedades",
+            "rating_star": "4.8",
+            "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+            "sales": 0,
+            "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+            "shop_types": [],
+            "shop_type_semantics": "UNCONFIRMED_CODES"
+          },
+          "documented_ranking_signals": null,
+          "provider_observation": {
+            "price_context": {
+              "origin": "shopee:official_api",
+              "operation": "productOfferV2",
+              "product_identity": "1018042820:22293101052",
+              "variant_identity": "UNKNOWN",
+              "price_kind": "ITEM_QUOTE",
+              "payment": "UNKNOWN",
+              "coupon": "UNKNOWN",
+              "eligibility": "UNKNOWN",
+              "region": "UNKNOWN"
+            },
+            "price_basis": "v1:6d2b30fdf175443e04cd110e05065a222583d5a91ec9e091d69808130708e2ac",
+            "commission_rate": "0.38",
+            "commission_amount": "22.42",
+            "advertised_discount_percent": 0,
+            "offer_period_start_raw": 1787713200,
+            "offer_period_end_raw": 32503651199,
+            "period_time_unit": "UNCONFIRMED",
+            "period_semantics": "UNCONFIRMED"
+          },
+          "attributes": {
+            "brand": null,
+            "model": null,
+            "quantity": null,
+            "condition": null,
+            "packaging": null,
+            "kit": null,
+            "variant": null,
+            "price_conditions": null,
+            "net_content": null,
+            "edition": null
+          },
+          "unknown_attributes": [
+            "brand",
+            "model",
+            "quantity",
+            "condition",
+            "packaging",
+            "kit",
+            "variant",
+            "price_conditions",
+            "net_content",
+            "edition"
+          ],
+          "price_status": "VALID_ANNOUNCED_PRICE",
+          "status": "CANDIDATE",
+          "reason": "EQUIVALENCE_UNPROVEN",
+          "inferred_attributes": {
+            "model": [
+              {
+                "value": "8k",
+                "matched_text": "8K",
+                "source_field": "productName",
+                "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+              },
+              {
+                "value": "ps5",
+                "matched_text": "PS5",
+                "source_field": "productName",
+                "rule": "ALPHANUMERIC_MODEL_LIKE_TOKEN",
+                "evidence_level": "TITLE_INFERENCE_NOT_PROOF"
+              }
+            ]
+          },
+          "attribute_evidence_level": "UNPROVEN",
+          "reported_fields": {
+            "shopId": "1018042820",
+            "itemId": "22293101052",
+            "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+            "announced_price": "59.00",
+            "currency": "BRL",
+            "seller_information": {
+              "shop_name": "IDP Comercio de Variedades",
+              "rating_star": "4.8",
+              "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+              "sales": 0,
+              "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+              "shop_types": [],
+              "shop_type_semantics": "UNCONFIRMED_CODES"
+            }
+          },
+          "equivalence_classification": "INCONCLUSIVE",
+          "textual_review_priority": {
+            "score": 65,
+            "band": "MEDIUM",
+            "components": {
+              "query_word_overlap": 50,
+              "brand_mention": 0,
+              "model_mention": 15,
+              "quantity_mention": 0,
+              "net_content_mention": 0,
+              "edition_mention": 0,
+              "variant_mention": 0
+            },
+            "warnings": [],
+            "version": "TEXT_REVIEW_V1",
+            "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+          },
+          "opportunity": {
+            "kind": "UNPROVEN_PRICE_CANDIDATE",
+            "statistics": null,
+            "below_mean_percent": null,
+            "below_median_percent": null,
+            "semantics": "TEXT_AND_ANNOUNCED_PRICE_ONLY_NO_COMPARABLE_BENCHMARK"
+          },
+          "textual_confidence": {
+            "score": 65,
+            "band": "MEDIUM",
+            "components": {
+              "query_word_overlap": 50,
+              "brand_mention": 0,
+              "model_mention": 15,
+              "quantity_mention": 0,
+              "net_content_mention": 0,
+              "edition_mention": 0,
+              "variant_mention": 0
+            },
+            "warnings": [],
+            "version": "TEXT_REVIEW_V1",
+            "semantics": "HEURISTIC_REVIEW_PRIORITY_NOT_PROBABILITY_OR_EQUIVALENCE"
+          },
+          "discovery_state": "CAPTURED",
+          "classification_state": "CLASSIFIED",
+          "commercial_verification_state": "VERIFIED_AT_QUEUE_ENTRY",
+          "publication_state": "QUEUED",
+          "equivalence_proven": false,
+          "only_commercial_evidence_missing": false,
+          "missing_identity_information": [
+            {
+              "attribute": "brand",
+              "reason": "UNPROVEN_ATTRIBUTE"
+            },
+            {
+              "attribute": "condition",
+              "reason": "UNPROVEN_ATTRIBUTE"
+            },
+            {
+              "attribute": "kit",
+              "reason": "UNPROVEN_ATTRIBUTE"
+            },
+            {
+              "attribute": "model",
+              "reason": "UNPROVEN_ATTRIBUTE"
+            },
+            {
+              "attribute": "packaging",
+              "reason": "UNPROVEN_ATTRIBUTE"
+            },
+            {
+              "attribute": "price_conditions",
+              "reason": "UNPROVEN_ATTRIBUTE"
+            },
+            {
+              "attribute": "quantity",
+              "reason": "UNPROVEN_ATTRIBUTE"
+            },
+            {
+              "attribute": "variant",
+              "reason": "UNPROVEN_ATTRIBUTE"
+            }
+          ],
+          "publication_blockers": [],
+          "publication_authorized": false,
+          "analysis_priority_rank": 1,
+          "product_indicators": {
+            "identity": "1018042820:22293101052",
+            "observed_at": "2026-11-05 02:35:50.880225+00:00",
+            "source": "shopee:official_api",
+            "source_operation": "productOfferV2",
+            "observation_fingerprint": "31518c57284ff08ee91b804cfd566e22a0baf3b7cecb6e7dfe32e8bd201c52ff",
+            "fingerprint": "23d2b4f443c05e0b1d9915fee6765afc35306e08468659e79aadf1cf9fe31df1",
+            "fields": {
+              "ratingStar": "4.8",
+              "sales": 0,
+              "shopType": []
+            },
+            "field_presence": {
+              "ratingStar": true,
+              "sales": true,
+              "shopType": true
+            },
+            "semantics": {
+              "ProductOfferV2.ratingStar": {
+                "subject": "PRODUCT",
+                "scale_and_review_count": "UNDOCUMENTED"
+              },
+              "ProductOfferV2.sales": {
+                "subject": "PRODUCT",
+                "meaning": "SALES_COUNT",
+                "period": "UNDOCUMENTED"
+              },
+              "ProductOfferV2.shopType": {
+                "meaning": "PRODUCT_SHOP_TYPE",
+                "seller_reputation": "NOT_PROVEN"
+              },
+              "ShopOfferV2.ratingStar": {
+                "meaning": "UNDOCUMENTED",
+                "seller_reputation": "NOT_PROVEN"
+              }
+            },
+            "semantics_reference": "https://open-api.affiliate.shopee.com.br/explorer/v2",
+            "semantics_sha256": "1baf018f33a1a89c300b701e70db3797c7e819d8578fdcaace4c3f78a809d96d",
+            "source_html_sha256": "c48bed7c7caef93e815903e92f446caf81b51544a9e1b09fe293dd0c69054de4",
+            "current_for_metrics": true
+          },
+          "intelligent_ranking": {
+            "version": "OPPORTUNITY_100_V1",
+            "weights": {
+              "price": 35,
+              "reviews": 20,
+              "popularity": 15,
+              "trend": 15,
+              "seller": 15
+            },
+            "dimensions": {
+              "price": {
+                "score": null,
+                "max_score": 35,
+                "status": "UNKNOWN",
+                "evidence": [],
+                "reason": "NO_RELIABLE_COMPARABLE_PRICE_REFERENCE"
+              },
+              "reviews": {
+                "score": null,
+                "max_score": 20,
+                "status": "PARTIAL",
+                "evidence": [
+                  {
+                    "subject_identity": "1018042820:22293101052",
+                    "metric": "PRODUCT_RATING_STAR_UNSCALED",
+                    "value": "4.8",
+                    "sample_count": null,
+                    "population_size": null,
+                    "period_seconds": null,
+                    "series_key": "productOfferV2:1018042820:22293101052",
+                    "source": "OFFICIAL_API",
+                    "source_url": "https://open-api.affiliate.shopee.com.br/explorer/v2",
+                    "reference": "productOfferV2:1018042820:22293101052",
+                    "source_sha256": "23d2b4f443c05e0b1d9915fee6765afc35306e08468659e79aadf1cf9fe31df1",
+                    "actor": "shopee_connector",
+                    "semantics_reference": "local-official-schema:1baf018f33a1a89c300b701e70db3797c7e819d8578fdcaace4c3f78a809d96d",
+                    "confirmed_semantics": true,
+                    "observed_at": "2026-11-05T02:35:50.880225Z"
+                  }
+                ],
+                "reason": "PRODUCT_RATING_REPORTED_SCALE_AND_SAMPLE_UNDOCUMENTED"
+              },
+              "seller": {
+                "score": null,
+                "max_score": 15,
+                "status": "UNKNOWN",
+                "evidence": [],
+                "reason": "NO_CURRENT_DOCUMENTED_RATING_AND_SAMPLE"
+              },
+              "trend": {
+                "score": null,
+                "max_score": 15,
+                "status": "UNKNOWN",
+                "evidence": [],
+                "reason": "AT_LEAST_THREE_COMPARABLE_TEMPORAL_OBSERVATIONS_REQUIRED"
+              },
+              "popularity": {
+                "score": null,
+                "max_score": 15,
+                "status": "PARTIAL",
+                "evidence": [
+                  {
+                    "subject_identity": "1018042820:22293101052",
+                    "metric": "PRODUCT_SALES_UNSPECIFIED_PERIOD",
+                    "value": "0",
+                    "sample_count": null,
+                    "population_size": null,
+                    "period_seconds": null,
+                    "series_key": "productOfferV2:1018042820:22293101052",
+                    "source": "OFFICIAL_API",
+                    "source_url": "https://open-api.affiliate.shopee.com.br/explorer/v2",
+                    "reference": "productOfferV2:1018042820:22293101052",
+                    "source_sha256": "23d2b4f443c05e0b1d9915fee6765afc35306e08468659e79aadf1cf9fe31df1",
+                    "actor": "shopee_connector",
+                    "semantics_reference": "local-official-schema:1baf018f33a1a89c300b701e70db3797c7e819d8578fdcaace4c3f78a809d96d",
+                    "confirmed_semantics": true,
+                    "observed_at": "2026-11-05T02:35:50.880225Z"
+                  }
+                ],
+                "reason": "PRODUCT_SALES_COUNT_REPORTED_PERIOD_UNDOCUMENTED"
+              }
+            },
+            "known_points": "0",
+            "conservative_score": "0",
+            "known_max_score": 35,
+            "possible_max_points": "100",
+            "coverage_percent": "17.5",
+            "scorable_coverage_percent": 0,
+            "sufficient_evidence": false,
+            "priority": "INSUFFICIENT_DATA",
+            "priority_label": "Dados insuficientes",
+            "definitive_score": null,
+            "missing_dimensions": [
+              "price",
+              "reviews",
+              "seller",
+              "trend",
+              "popularity"
+            ],
+            "evidence_semantics": "DOCUMENTED_SOURCE_AND_SEMANTICS_NOT_AUTOMATIC_PLATFORM_ATTESTATION",
+            "experimental_thresholds": true,
+            "publication_authorized": false
+          },
+          "enrichment_dimensions": [
+            "price",
+            "reviews",
+            "seller",
+            "trend",
+            "popularity"
+          ],
+          "enrichment_requirements": {
+            "price": [
+              "current_quote_and_reliable_same_product_reference"
+            ],
+            "reviews": [
+              "rating_scale",
+              "product_review_count"
+            ],
+            "seller": [
+              "documented_seller_metric",
+              "seller_sample_size"
+            ],
+            "trend": [
+              "three_comparable_observations_over_24_hours"
+            ],
+            "popularity": [
+              "sales_period"
+            ]
+          },
+          "intelligent_rank": 1
+        }
+      ],
+      "proven_comparisons": [],
+      "classification_state": "COMPLETED",
+      "classified_at": "2026-11-05T02:35:51.020838+00:00",
+      "captured_listings": 1,
+      "ranking_semantics": "PROVEN_MEAN_AND_MEDIAN_THEN_TEXTUAL_TRIAGE_NOT_COMMERCIAL_APPROVAL",
+      "intelligent_ranking_semantics": "100_POINTS_WITH_EXPLICIT_UNKNOWN_AND_COVERAGE_NOT_PUBLICATION_AUTHORITY",
+      "history_writes": 0,
+      "publication_authorized": false
+    },
+    "counts": {
+      "found": 1,
+      "distinct_listings_found": 1,
+      "queries_reserved": 1,
+      "messages_reserved": 1,
+      "http_attempts": 1,
+      "automatically_approved": 1,
+      "published": 1,
+      "analysis_candidates": 1,
+      "proven_comparison_groups": 0,
+      "cheap_opportunities": 0,
+      "publishable_queue": 0,
+      "uncertain": 0,
+      "rejected": 0,
+      "inconclusive": 0,
+      "unfinalized_reservations": 0,
+      "transport_permits_consumed": 2
+    },
+    "real_activation_allowed": false,
+    "query_schedule": {
+      "interval_seconds": 600.0,
+      "next_query_at": null,
+      "remaining": 0,
+      "budget_exhausted": true,
+      "operating_policy": "WINDOWED"
+    },
+    "external_http_calls": 2,
+    "authority": "SIGNED_PILOT_SCOPE_AUTOMATIC_RULES",
+    "real_dispatch_implemented": true,
+    "effective_expires_at": "2026-11-05T02:45:49.464920+00:00",
+    "latest_activation_at": "2026-11-05T03:20:32+00:00",
+    "window_expired": false
+  },
+  "publications": [
+    {
+      "id": 1,
+      "status": "SENT",
+      "message_id": "13",
+      "error_code": null,
+      "message": "📢 <b>Publicidade • link de afiliado</b>\n\nTítulo do anúncio na Shopee:\nCabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro\n\n<b>Preço anunciado: R$ 59,00</b>\n\nConfira a opção, o conteúdo, o preço aplicável, o frete e a disponibilidade no anúncio. Preço final e estoque não verificados.\n\nhttps://s.shopee.com.br/LoWq4wlIk"
+    }
+  ],
+  "destination_enabled": false,
+  "finished_at": "2026-11-05T02:36:03.790403+00:00"
+}

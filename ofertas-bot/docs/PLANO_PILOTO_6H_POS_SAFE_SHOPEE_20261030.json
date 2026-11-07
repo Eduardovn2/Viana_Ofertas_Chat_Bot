@@ -1,0 +1,77 @@
+{
+  "safe_authorization_id": "0538bd35-9fd2-40bf-b25d-85713fa92bd5",
+  "safe_status": "SUCCEEDED",
+  "safe_consumed": true,
+  "safe_audit_ids": [
+    16,
+    17,
+    18,
+    19
+  ],
+  "safe_quote_hash_verified": true,
+  "previous_recurring_unchanged": true,
+  "baseline_history_id": 4,
+  "authorization_id": "59c8346b-6767-48c3-8f70-5de398b624ca",
+  "scope_sha256": "69be36bbd90033e2da39159046a43a99eee4a85d07d98bf1d60724b033c6b88a",
+  "status": "PREPARED",
+  "scope": {
+    "authorization_id": "59c8346b-6767-48c3-8f70-5de398b624ca",
+    "product_id": 2,
+    "shop_id": "1904573791",
+    "item_id": "23199869203",
+    "actor": "eduardo.viana.3",
+    "valid_from": "2026-10-30T16:00:00Z",
+    "expires_at": "2026-10-31T16:00:00Z",
+    "max_requests": 2,
+    "min_interval_seconds": 21600
+  },
+  "read_scope": {
+    "operation": "productOfferV2",
+    "mode": "REAL_SINGLE_READ",
+    "product_id": 2,
+    "shop_id": "1904573791",
+    "item_id": "23199869203",
+    "variant_id": "",
+    "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+    "origin_url_sha256": "9c7f0e7ec0f4f59e8fd57dab3ab4695ba55175eeb9d785292610cbfca03b0395",
+    "credential_scope": "15a76371acc6e77c230ff324",
+    "payload_sha256": "18f2c7ef42c88f857ac1facf3bfd67f20440f1fa6782bd9a29a81351f8225419",
+    "page": 1,
+    "limit": 1,
+    "max_http_calls": 1,
+    "ingest": false,
+    "persist_quote": false
+  },
+  "pilot_policy": {
+    "quotas": "UNCONFIRMED",
+    "max_posts": 2,
+    "minimum_spacing_seconds": 21600,
+    "maximum_window_seconds": 86400,
+    "publication_authorized": false,
+    "retry": false,
+    "contract_sha256": "db8ff1e44c4a22e6a52ccaa1c42b1c6d545f937a6fad55d2f60d3c313e25eeb6",
+    "known_periodic_prohibition": "NOT_IDENTIFIED_IN_LOCAL_MATERIAL"
+  },
+  "created_at": "2026-10-30T15:04:06.343470+00:00",
+  "used": 0,
+  "approval": null,
+  "real_http_calls": 0,
+  "new_observations": 0,
+  "all_existing_rows_preserved": true,
+  "other_tables_unchanged": true,
+  "env_unchanged": true,
+  "preparation_audit_ids": [
+    "20"
+  ],
+  "flags": {
+    "shopee_enabled": false,
+    "shopee_short_links_enabled": false,
+    "mercado_livre_enabled": false,
+    "telegram_publisher_enabled": false,
+    "telegram_real_sends_authorized": false,
+    "simulation_automation_enabled": false
+  },
+  "group_enabled": false,
+  "scheduler_enabled": false,
+  "baseline_price_basis_compatible": true
+}

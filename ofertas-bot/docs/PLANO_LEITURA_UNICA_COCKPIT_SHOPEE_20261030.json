@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-30",
+  "request": {
+    "request_id": "ee52b076-4084-4dc3-abd3-4a9e994db463",
+    "actor": "responsavel",
+    "product_id": 2,
+    "shop_id": "1904573791",
+    "item_id": "23199869203"
+  },
+  "authorization_id": "ee52b076-4084-4dc3-abd3-4a9e994db463",
+  "status": "PLAN_ONLY",
+  "mode": "REAL_SINGLE_READ",
+  "scope_sha256": "8b115275bfe09b6094e1e00ed4dca92b5f0e794a5cee13426e6fd7f0efd72f18",
+  "payload": {
+    "query": "query { productOfferV2(shopId:1904573791,itemId:23199869203,page:1,limit:1) { nodes { itemId shopId productName productLink imageUrl price priceMin priceMax productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime } pageInfo { page limit hasNextPage } } }"
+  },
+  "max_http_calls": 1,
+  "price_history_writes": 0,
+  "publication_authorized": false,
+  "authorization_registered": false,
+  "authorization_consumed": false,
+  "operational_quote_writes": 0,
+  "real_shopee_calls": 0,
+  "real_telegram_calls": 0,
+  "source_contract": "docs/CONTRATO_FONTES_SHOPEE_20261026.json",
+  "requires_new_explicit_owner_authorization": true
+}

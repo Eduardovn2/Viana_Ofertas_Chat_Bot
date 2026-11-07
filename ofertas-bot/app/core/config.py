@@ -1,10 +1,17 @@
+import ipaddress
+import re
 from decimal import Decimal
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
+from uuid import UUID
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
+
+from app.models.enums import Availability, PriceAccess
 
 
 class Settings(BaseSettings):
@@ -12,16 +19,137 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", extra="ignore", hide_input_in_errors=True
     )
 
-    app_env: Literal["development", "test"] = "development"
+    app_env: Literal["development", "test", "production"] = "development"
+    admin_allowed_networks: tuple[str, ...] = ()
+    auto_pilot_id: UUID | None = None
+    auto_pilot_scope_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    auto_pilot_worker_tick_seconds: int = Field(default=30, ge=30, le=30)
+    auto_pilot_health_file: Path = Path(".runtime/auto-pilot-worker-health.json")
     database_url: str = Field(
         default="postgresql+psycopg://ofertas_bot@127.0.0.1:5432/ofertas_bot", repr=False
     )
     admin_api_key: SecretStr | None = None
-    price_provider: Literal["simulated"] = "simulated"
+    price_provider: Literal["simulated", "marketplaces"] = "simulated"
+    mercado_livre_enabled: bool = False
+    mercado_livre_access_token: SecretStr | None = Field(default=None, repr=False)
+    mercadolivre_oauth_enabled: bool = False
+    mercadolivre_client_id: SecretStr | None = Field(default=None, repr=False)
+    mercadolivre_client_secret: SecretStr | None = Field(default=None, repr=False)
+    mercadolivre_redirect_uri: str | None = None
+    mercadolivre_pkce_enabled: bool = True
+    mercadolivre_oauth_state_ttl_seconds: int = Field(default=600, ge=60, le=900)
+    shopee_enabled: bool = False
+    shopee_app_id: SecretStr | None = Field(default=None, repr=False)
+    shopee_secret: SecretStr | None = Field(default=None, repr=False)
+    shopee_short_links_enabled: bool = False
+    shopee_discovery_enabled: bool = False
+    shopee_discovery_query: str | None = Field(default=None, min_length=1, max_length=100)
+    telegram_publisher_enabled: bool = False
+    telegram_real_sends_authorized: bool = False
+    telegram_bot_token: SecretStr | None = Field(default=None, repr=False)
+    telegram_allowed_chat_ids: tuple[str, ...] = Field(default=(), repr=False)
+    integration_timeout_seconds: float = Field(default=5, ge=1, le=15)
+    integration_max_retries: int = Field(default=1, ge=0, le=2)
+    integration_min_interval_seconds: float = Field(default=1, ge=0.1, le=3600)
+    integration_cache_seconds: int = Field(default=30, ge=0, le=300)
+    integration_max_retry_wait_seconds: float = Field(default=5, ge=1, le=30)
     mock_current_price: Decimal = Field(
         default=Decimal("99.90"), gt=0, max_digits=12, decimal_places=2
     )
+    mock_previous_price: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
+    mock_availability: Availability = Availability.AVAILABLE
+    mock_price_access: PriceAccess = PriceAccess.PUBLIC
+    scheduler_enabled: bool = True
+    simulation_automation_enabled: bool = False
+    simulation_batch_limit: int = Field(default=3, ge=1, le=5)
+    scheduler_tick_seconds: int = Field(default=1, ge=1, le=60)
+    priority_interval_seconds: int = Field(default=60, ge=1, le=86400)
+    general_interval_seconds: int = Field(default=300, ge=1, le=86400)
+    provider_min_interval_seconds: Decimal = Field(default=Decimal("1"), ge=0, le=3600)
+    monitoring_lease_seconds: int = Field(default=120, ge=10, le=3600)
+    monitoring_backoff_max_seconds: int = Field(default=3600, ge=60, le=86400)
+    price_max_age_seconds: int = Field(default=600, ge=1, le=86400)
+    queue_republish_seconds: int = Field(default=10800, ge=10800, le=604800)
+    max_queue_attempts: int = Field(default=3, ge=1, le=10)
+    score_price_drop: Decimal = Field(default=Decimal("40"), ge=0, le=100000)
+    score_confirmed_coupon: Decimal = Field(default=Decimal("30"), ge=0, le=100000)
+    score_priority: Decimal = Field(default=Decimal("20"), ge=0, le=100000)
+    score_discount_percent: Decimal = Field(default=Decimal("1"), ge=0, le=100000)
+    score_availability: Decimal = Field(default=Decimal("5"), ge=0, le=100000)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    @field_validator("admin_allowed_networks")
+    @classmethod
+    def private_admin_sources(cls, values):
+        for value in values:
+            network = ipaddress.ip_network(value, strict=True)
+            if not network.is_private or network.prefixlen != network.max_prefixlen:
+                raise ValueError(
+                    "Permita somente IPs privados individuais /32 ou /128 para acesso administrativo."
+                )
+        return values
+
+    @field_validator("telegram_bot_token", mode="before")
+    @classmethod
+    def validate_telegram_token(cls, value):
+        if value is None or value == "":
+            return None
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if not isinstance(raw, str) or len(raw) > 256 or any(ord(c) <= 32 for c in raw):
+            raise ValueError("Token Telegram inválido; configure-o somente no ambiente local.")
+        return value
+
+    @field_validator("telegram_allowed_chat_ids")
+    @classmethod
+    def validate_telegram_chats(cls, value):
+        if any(not re.fullmatch(r"-[1-9][0-9]{0,15}", v) or abs(int(v)) > 2**52 - 1 for v in value):
+            raise ValueError(
+                "Use somente IDs numéricos negativos de grupos explicitamente permitidos."
+            )
+        return tuple(dict.fromkeys(value))
+
+    @field_validator("mercadolivre_redirect_uri", mode="before")
+    @classmethod
+    def validate_oauth_redirect(cls, value):
+        if value in (None, ""):
+            return None
+        try:
+            if not isinstance(value, str) or len(value) > 2048:
+                raise ValueError
+            uri = urlsplit(value)
+            host = uri.hostname or ""
+            if (
+                uri.scheme != "https"
+                or uri.port not in (None, 443)
+                or not host
+                or "." not in host
+                or host.endswith(".")
+                or uri.username is not None
+                or uri.password is not None
+                or uri.netloc.lower() not in {host, host + ":443"}
+                or uri.path != "/oauth/mercadolivre/callback"
+                or uri.query
+                or uri.fragment
+                or any(char.isspace() or ord(char) < 32 for char in value)
+                or "\\" in value
+                or not re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}", host)
+                or host.endswith((".local", ".internal", ".localhost", ".localdomain"))
+                or host in {"localhost", "localhost.localdomain"}
+            ):
+                raise ValueError
+            import ipaddress
+
+            try:
+                ipaddress.ip_address(host)
+            except ValueError:
+                pass
+            else:
+                raise ValueError
+        except (TypeError, ValueError):
+            raise ValueError(
+                "MERCADOLIVRE_REDIRECT_URI requer HTTPS e o callback exato, sem parâmetros."
+            ) from None
+        return value
 
     @field_validator("admin_api_key", mode="before")
     @classmethod

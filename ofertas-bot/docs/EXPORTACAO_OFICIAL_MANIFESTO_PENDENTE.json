@@ -1,0 +1,19 @@
+{
+  "source_url": null,
+  "source_reference": null,
+  "account_reference": null,
+  "column_semantics_reference": null,
+  "exported_at": null,
+  "actor": "eduardo.viana.3",
+  "delimiter": ",",
+  "decimal_separator": ".",
+  "columns": {},
+  "available_value": null,
+  "public_value": null,
+  "all_options_true_value": "true",
+  "confirmed_official_document": false,
+  "confirmed_column_semantics": false,
+  "confirmed_commercial_import": false,
+  "identity_documents": {},
+  "confirmed_new_identity_documents": false
+}

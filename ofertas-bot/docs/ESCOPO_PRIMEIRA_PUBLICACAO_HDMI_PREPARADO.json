@@ -1,0 +1,50 @@
+{
+  "authorization_id": "5672bba2-c13b-4edc-8ad2-47b4e238bb6d",
+  "publication_scope_sha256": "6b9d5904778d23186608ac787f22950b7d8c609fe3504538aaa992c3e52d3255",
+  "state": "PREPARED",
+  "actor": "eduardo.viana.3",
+  "destination_id": 2,
+  "chat_id": "-5309308689",
+  "earliest_start_brasilia": "2026-11-04T22:49:36.317376-03:00",
+  "activation_window_end_brasilia": "2026-11-05T00:39:26.317376-03:00",
+  "duration_seconds": 600,
+  "max_telegram_attempts": 1,
+  "shopee_api_queries": 0,
+  "link_generation_calls": 0,
+  "retry": false,
+  "requested_source_update": {
+    "mode": "AUTHORIZED_OFFICIAL_PAGE_UI_READ",
+    "url": "https://shopee.com.br/product/1018042820/22293101052",
+    "options": [
+      "Cabo 2.1 8K Aquário 1M + 1M",
+      "Cabo Full HD 1M + 1M"
+    ],
+    "verify": [
+      "public price",
+      "availability",
+      "required coupon conditions"
+    ],
+    "one_read_session": true,
+    "stop_on_login_or_captcha": true
+  },
+  "publish_only_if": {
+    "both_options_available": true,
+    "both_public_prices_brl": "59.00",
+    "required_price_coupon": false,
+    "commercial_age_seconds_max": 600,
+    "exact_pinned_message": true,
+    "current_account_link_receipt_valid": true
+  },
+  "exact_message": {
+    "text": "<b>Cabo HDMI de 1 metro — selecione a versão no anúncio</b>\nPreço atual: <b>R$ 59,00</b>\n<a href=\"https://s.shopee.com.br/LoWq4wlIk\">Ver oferta pelo link de afiliado</a>\nPublicidade • link de afiliado",
+    "photo_url": null,
+    "parse_mode": "HTML",
+    "image_omitted": false
+  },
+  "expected_message_sha256": "e1fef3c35d4afd79349b2f216f0fe6da10805d4e38cd18a4426dacdfe6c9ecfb",
+  "restore_destination_after_end": true,
+  "legacy_scheduler_remains_disabled": true,
+  "previous_pilots_and_uncertain_reservations_preserved": true,
+  "prepared_only": true,
+  "real_messages_sent": 0
+}

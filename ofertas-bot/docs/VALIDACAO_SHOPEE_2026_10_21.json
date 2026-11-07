@@ -1,0 +1,105 @@
+{
+  "checked_at": "2026-10-21T12:37:41.908775+00:00",
+  "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+  "operation": "productOfferV2",
+  "keyword": "PlayStation 5",
+  "page": 1,
+  "limit": 1,
+  "credentials_present": true,
+  "status": "API_SUCCESS_CONNECTOR_BLOCKED",
+  "http_status": 200,
+  "http_attempts": 1,
+  "product_count": 1,
+  "products": [
+    {
+      "returned_fields": [
+        "commission",
+        "commissionRate",
+        "imageUrl",
+        "itemId",
+        "price",
+        "priceMax",
+        "priceMin",
+        "productCatIds",
+        "productLink",
+        "productName",
+        "shopId"
+      ],
+      "non_null_fields": [
+        "commission",
+        "commissionRate",
+        "imageUrl",
+        "itemId",
+        "price",
+        "priceMax",
+        "priceMin",
+        "productCatIds",
+        "productLink",
+        "productName",
+        "shopId"
+      ],
+      "values": {
+        "itemId": 22293101052,
+        "shopId": 1018042820,
+        "productName": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+        "productLink": "https://shopee.com.br/product/1018042820/22293101052",
+        "imageUrl": "https://cf.shopee.com.br/file/br-11134207-7r98o-lwioaf84ck8mad",
+        "price": "59",
+        "priceMin": "59",
+        "priceMax": "59",
+        "productCatIds": [
+          100535,
+          100583,
+          0
+        ],
+        "commissionRate": "0.38",
+        "commission": "22.42"
+      }
+    }
+  ],
+  "graphql_errors": [],
+  "automatic_retries": 0,
+  "pagination_calls": 0,
+  "short_link_mutations": 0,
+  "telegram_calls": 0,
+  "monitoring_started": false,
+  "connector_error_code": "INVALID_PAYLOAD",
+  "env_unchanged": true,
+  "shopee_enabled_permanent": false,
+  "telegram_real_flags_disabled": true,
+  "mercado_livre_enabled": false,
+  "database_writes": 0,
+  "api_read_operational": true,
+  "connector_normalization_operational": false,
+  "normalization_diagnostic": {
+    "field": "productCatIds",
+    "returned_values": [
+      100535,
+      100583,
+      0
+    ],
+    "rejected_value": 0,
+    "reason": "Local category validator accepts only positive IDs.",
+    "confirmed_by_offline_replay": true,
+    "original_connector_unchanged": true,
+    "diagnostic_copy_without_zero_normalizes": true
+  },
+  "permissions_confirmed": [
+    "Authenticated read of productOfferV2 for this account at this time"
+  ],
+  "permissions_not_verified": [
+    "generateShortLink",
+    "other_operations",
+    "quota",
+    "future_access"
+  ],
+  "unconfirmed_commercial_conditions": [
+    "previous_price",
+    "discount",
+    "coupon",
+    "stock",
+    "variant",
+    "public_price_access",
+    "installments"
+  ]
+}

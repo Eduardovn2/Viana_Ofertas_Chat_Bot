@@ -37,6 +37,9 @@ try {
     $null = Invoke-RestMethod -Method Put -Uri "$apiRoot/products/$createdProductId/affiliate-link" -Headers $requestHeaders -ContentType 'application/json' -Body $affiliateBody
 
     $null = Invoke-RestMethod -Method Post -Uri "$apiRoot/products/$createdProductId/monitor" -Headers $requestHeaders
+    # Respeita o intervalo padrão do provedor simulado nesta demonstração.
+    $monitoringConfig = Invoke-RestMethod -Uri "$apiRoot/monitoring/config" -Headers $requestHeaders
+    Start-Sleep -Milliseconds ([int][Math]::Ceiling(([double]$monitoringConfig.provider_min_interval_seconds + 0.1) * 1000))
     $null = Invoke-RestMethod -Method Post -Uri "$apiRoot/products/$createdProductId/monitor" -Headers $requestHeaders
 
     Write-Host 'Historico SIMULADO (nenhuma loja foi consultada):'

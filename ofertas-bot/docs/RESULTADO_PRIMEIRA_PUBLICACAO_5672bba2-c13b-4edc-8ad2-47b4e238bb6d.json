@@ -1,0 +1,15 @@
+{
+  "authorization_id": "5672bba2-c13b-4edc-8ad2-47b4e238bb6d",
+  "scope_sha256": "6b9d5904778d23186608ac787f22950b7d8c609fe3504538aaa992c3e52d3255",
+  "state": "PREPARED",
+  "status": "BLOCKED_OFFICIAL_PAGE_CAPTCHA",
+  "checked_at": "2026-11-05T01:51:41.099015+00:00",
+  "source_page": "https://shopee.com.br/product/1018042820/22293101052",
+  "commercial_observation_refreshed": false,
+  "telegram_attempts": 0,
+  "message_id": null,
+  "new_shopee_api_calls": 0,
+  "new_link_generation_calls": 0,
+  "destination_enabled": false,
+  "publications_total": 0
+}

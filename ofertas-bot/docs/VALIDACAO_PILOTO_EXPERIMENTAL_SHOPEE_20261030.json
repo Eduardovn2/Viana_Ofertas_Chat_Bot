@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-30",
+  "status": "PREPARED_NOT_APPROVED",
+  "authorization_id": "1cfbb654-f4ab-4146-b185-e9f48e702540",
+  "scope_sha256": "9492714e8d0bfe038574a63904bbf647bcecf3fe2aa8694f9b57b71056b5b24b",
+  "audit_ids": [
+    "15"
+  ],
+  "offline_tests_passed_distinct": 74,
+  "postgres_tests_passed_distinct": 37,
+  "total_tests_passed_distinct": 111,
+  "final_failures": 0,
+  "fixture_timing_failure_corrected": true,
+  "full_suite_executed": false,
+  "postgres_database": "ofertas_bot_test",
+  "postgres_schemas": "UUID_ISOLATED",
+  "alembic_current": "0009_shopee_discovery",
+  "alembic_check": "PASSED_IN_ISOLATED_SCHEMA",
+  "ruff": "PASSED",
+  "format": "191_FILES_PASSED",
+  "real_http_calls": 0,
+  "publications": 0,
+  "reservations_consumed": 0,
+  "previous_operational_rows_preserved": true,
+  "new_operational_rows": {
+    "app_settings": 1,
+    "integration_events": 1
+  },
+  "new_observations": 0,
+  "env_unchanged": true,
+  "flags": {
+    "shopee_enabled": false,
+    "shopee_short_links_enabled": false,
+    "mercado_livre_enabled": false,
+    "telegram_publisher_enabled": false,
+    "telegram_real_sends_authorized": false,
+    "simulation_automation_enabled": false
+  },
+  "scheduler_enabled": false,
+  "group_enabled": false,
+  "quotas": "UNCONFIRMED",
+  "official_recurring_permission": "UNCONFIRMED"
+}

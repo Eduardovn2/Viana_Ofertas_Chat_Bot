@@ -1,0 +1,62 @@
+{
+  "phase": "4.10 - dynamic operational preferences addendum",
+  "status": "IMPLEMENTED_AND_VALIDATED_OFFLINE",
+  "previous_phase": {
+    "full_suite_passed": 1267,
+    "postgres_real_passed": 49,
+    "reference": "VALIDACAO_FASE_4_10.json"
+  },
+  "tests": {
+    "full_suite_passed": 1341,
+    "postgres_real_passed": 58,
+    "added": 74,
+    "new_offline": 65,
+    "new_postgres": 9,
+    "targeted_passed": 164,
+    "additional_specific_tests_passed": 3,
+    "counts_overlap": true,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "warnings": 17,
+    "full_duration_seconds": 908.62
+  },
+  "checks": {
+    "ruff": "PASS",
+    "format": "PASS - 154 Python files",
+    "alembic_current": "0009_shopee_discovery (head)",
+    "alembic_check": "PASS - no schema drift",
+    "new_migration_required": false,
+    "git_diff_check": "PASS"
+  },
+  "persistence": "existing AppSetting; versioned global settings and destination overrides; audited transaction",
+  "runtime": "preferences reloaded per operation; existing scheduler updates intervals preserving paused/blocked jobs; no restart for edits",
+  "preservation": {
+    "previous_tables_preserved": true,
+    "previous_tables_compared": 31,
+    "env_unchanged": true,
+    "active_categories": 9,
+    "viana_ofertas_enabled": false,
+    "manual_approval_required": true,
+    "main_monitoring_enabled": false,
+    "flags": {
+      "shopee_enabled": false,
+      "mercado_livre_enabled": false,
+      "telegram_publisher_enabled": false,
+      "telegram_real_sends_authorized": false,
+      "simulation_automation_enabled": false
+    },
+    "production_preference_records": 0,
+    "revision": "0009_shopee_discovery"
+  },
+  "real_shopee_calls": 0,
+  "real_telegram_calls": 0,
+  "real_affiliate_mutations": 0,
+  "commit_created": false,
+  "phase5_or6_started": false,
+  "limitations": [
+    "collector frequencies and query limits are shared globally; destination windows/thresholds/filters/priorities/prediction limits are independent",
+    "no preference grants real operational authorization",
+    "official quotas, stock/public price/variant and own affiliate link remain pending before any separately authorized real use"
+  ]
+}

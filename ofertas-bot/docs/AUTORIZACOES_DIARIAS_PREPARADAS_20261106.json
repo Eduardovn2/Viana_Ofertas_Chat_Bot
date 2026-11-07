@@ -1,0 +1,112 @@
+{
+  "prepared_at": "2026-11-06T18:59:12.634205+00:00",
+  "real_test": {
+    "scope": {
+      "plan": {
+        "authorization_id": "bd6ca88f-8257-4007-b33c-7e72be2361c9",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "start_date": "2026-11-06",
+        "end_date": "2026-11-06",
+        "start_time": "16:30:00",
+        "end_time": "17:00:00",
+        "days": [
+          4
+        ],
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "terms": [
+          "Cockpit simulador Brave Bull",
+          "Suporte Cockpit Para Volante"
+        ],
+        "max_queries": 2,
+        "max_links": 2,
+        "max_messages": 2,
+        "messages_per_window": 1,
+        "query_interval_seconds": 900,
+        "cooldown_seconds": 10800,
+        "quota_reference": null,
+        "shopee_daily_quota": null,
+        "telegram_daily_quota": null
+      },
+      "timezone": "America/Sao_Paulo",
+      "chat_id": "-5309308689",
+      "template": "PRO_V2",
+      "operations": [
+        "productOfferV2",
+        "Telegram",
+        "generateShortLink"
+      ],
+      "max_external_posts": 6,
+      "window_seconds": 600,
+      "freshness_seconds": 600,
+      "retry": false,
+      "fallback": false,
+      "pagination": false,
+      "ranking": "OPPORTUNITY_100_V1"
+    },
+    "scope_sha256": "98a8ae8f259044830e4f5bc04ca055563850cb8cf8fe39e83fd05df903a174b8",
+    "approval": null,
+    "state": "PREPARED"
+  },
+  "recurring_draft": {
+    "scope": {
+      "plan": {
+        "authorization_id": "437b04ba-58ed-4d91-8f2f-2d9c68667aa9",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "start_date": "2026-11-07",
+        "end_date": "2026-12-06",
+        "start_time": "08:00:00",
+        "end_time": "23:00:00",
+        "days": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "terms": [
+          "Cockpit simulador Brave Bull",
+          "Suporte Cockpit Para Volante",
+          "Creatina 300 g",
+          "Fone bluetooth",
+          "Teclado mecanico",
+          "SSD 1 TB"
+        ],
+        "max_queries": 12,
+        "max_links": 3,
+        "max_messages": 5,
+        "messages_per_window": 3,
+        "query_interval_seconds": 4500,
+        "cooldown_seconds": 10800,
+        "quota_reference": null,
+        "shopee_daily_quota": null,
+        "telegram_daily_quota": null
+      },
+      "timezone": "America/Sao_Paulo",
+      "chat_id": "-5309308689",
+      "template": "PRO_V2",
+      "operations": [
+        "productOfferV2",
+        "Telegram",
+        "generateShortLink"
+      ],
+      "max_external_posts": 20,
+      "window_seconds": 600,
+      "freshness_seconds": 600,
+      "retry": false,
+      "fallback": false,
+      "pagination": false,
+      "ranking": "OPPORTUNITY_100_V1"
+    },
+    "scope_sha256": "7e1f41655acf1a5376424f52611878f67cb8386d769504366c0a3f3420cc9977",
+    "approval": null,
+    "state": "PREPARED"
+  },
+  "external_posts": 0,
+  "provider_quotas_confirmed": false,
+  "recurring_activation_blocker": "DOCUMENTED_PROVIDER_QUOTAS_REQUIRED"
+}

@@ -1,0 +1,65 @@
+{
+  "recording_kind": "SANITIZED_PREVIOUS_REAL_RESPONSE",
+  "source_file": "docs/RESULTADO_BUSCA_MULTILOJA_20261031_2210.json",
+  "query": "Cockpit simulador Brave Bull",
+  "candidates": [
+    {
+      "identity": "1754100018:58219916237",
+      "shop_id": "1754100018",
+      "item_id": "58219916237",
+      "name": "Cockpit simulador de corrida Brave Bull, estrutura em aço resistente. Volante, pedais e encosto ajustáveis.",
+      "announced_price": "1399.00",
+      "currency": "BRL",
+      "observed_at": "2026-11-01 01:11:22.482974+00:00",
+      "seller": {
+        "shop_name": "Brave Bull Oficial",
+        "rating_star": "0",
+        "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+        "sales": 2,
+        "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+        "shop_types": [],
+        "shop_type_semantics": "UNCONFIRMED_CODES"
+      },
+      "price_status": "VALID_ANNOUNCED_PRICE"
+    },
+    {
+      "identity": "1754100018:22799528968",
+      "shop_id": "1754100018",
+      "item_id": "22799528968",
+      "name": "Cockpit Suporte Para Volante Cadeira Cockpit Simulador Brave Bull",
+      "announced_price": "1399.00",
+      "currency": "BRL",
+      "observed_at": "2026-11-01 01:11:22.482974+00:00",
+      "seller": {
+        "shop_name": "Brave Bull Oficial",
+        "rating_star": "0",
+        "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+        "sales": 0,
+        "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+        "shop_types": [],
+        "shop_type_semantics": "UNCONFIRMED_CODES"
+      },
+      "price_status": "VALID_ANNOUNCED_PRICE"
+    },
+    {
+      "identity": "1595990092:58202217973",
+      "shop_id": "1595990092",
+      "item_id": "58202217973",
+      "name": "Suporte Cockpit Para Volante Pedais Para Simulador De Voo Brave Bull",
+      "announced_price": "639.00",
+      "currency": "BRL",
+      "observed_at": "2026-11-01 01:11:22.482974+00:00",
+      "seller": {
+        "shop_name": "3L LOJA——Brave Bull",
+        "rating_star": "4.9",
+        "rating_semantics": "UNCONFIRMED_NOT_SELLER_REPUTATION",
+        "sales": 7,
+        "sales_semantics": "UNCONFIRMED_NOT_REPUTATION",
+        "shop_types": [],
+        "shop_type_semantics": "UNCONFIRMED_CODES"
+      },
+      "price_status": "VALID_ANNOUNCED_PRICE"
+    }
+  ],
+  "incompatible_products": []
+}

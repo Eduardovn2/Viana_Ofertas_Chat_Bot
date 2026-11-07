@@ -1,0 +1,32 @@
+{
+  "kind": "OFFICIAL_PAGE_OBSERVATION",
+  "source_url": "https://shopee.com.br/product/1018042820/22293101052",
+  "identity": "1018042820:22293101052",
+  "captures": {
+    "8k_1m": {
+      "image": "docs\\evidencias\\hdmi_1018042820_22293101052\\8k_1m.png",
+      "image_sha256": "b9f4c71747e6344e2de069ca1f75dbd93684dabe178d0cd2d930979d6238da78",
+      "text": "docs\\evidencias\\hdmi_1018042820_22293101052\\8k_1m.txt",
+      "text_sha256": "0f5716e98cc6d709d830bde108791251ad9fa489f252b7ef01de2f5463c66fd2",
+      "captured_at": "2026-11-04T05:08:48.953023+00:00",
+      "displayed_price_brl": "59.00",
+      "displayed_available_units": 13
+    },
+    "full_hd_1m": {
+      "image": "docs\\evidencias\\hdmi_1018042820_22293101052\\full_hd_1m.png",
+      "image_sha256": "1b86c236e914cd77cbe5f17b85805a9ba10d8bd16ba3213cb7872c59fe38f621",
+      "text": "docs\\evidencias\\hdmi_1018042820_22293101052\\full_hd_1m.txt",
+      "text_sha256": "b0773c5c2f2433b0e3b6681d6e8f5539f3ae4e6a2c43fc81adecc3030007d32a",
+      "captured_at": "2026-11-04T05:09:05.136184+00:00",
+      "displayed_price_brl": "59.00",
+      "displayed_available_units": 30
+    }
+  },
+  "verified_at": "2026-11-04T05:08:48.953023+00:00",
+  "public_price_basis": "Displayed R$59.00 in each fully selected option, without a coupon requirement on the price",
+  "shipping_not_included": true,
+  "installment_total_not_claimed": true,
+  "both_options_available": true,
+  "official_sku_not_exposed": true,
+  "no_8k_claim_for_full_hd": true
+}

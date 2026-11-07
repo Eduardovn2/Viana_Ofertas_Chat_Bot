@@ -1,0 +1,118 @@
+{
+  "product_id": 2,
+  "product_created": true,
+  "platform": "SHOPEE",
+  "external_id": "1904573791:23199869203",
+  "variant_id": "",
+  "variant_scope": "UNCONFIRMED",
+  "monitoring_enabled": false,
+  "inserted_history_ids": [
+    2,
+    3
+  ],
+  "observations": [
+    {
+      "id": 2,
+      "context": "no_coupon_other_methods",
+      "price": "1099.00",
+      "currency": "BRL",
+      "source": "manual:visual_document:shopee:no_coupon_other_methods",
+      "source_type": "MANUAL",
+      "availability": "UNKNOWN",
+      "price_access": "UNKNOWN",
+      "public_price_verified": false,
+      "public_price_verified_column_exists": false,
+      "verification_representation": "price_access != PUBLIC; price_validation=DOCUMENTARY_DISPLAY_ONLY_NOT_PUBLICLY_VERIFIED; conditions_known=false",
+      "observed_at": "2026-10-26T00:11:00+00:00",
+      "timestamp_precision": "minute",
+      "documentary_direction": "INITIAL",
+      "raw_fingerprint": "c2f854f2140211c0fa04380675ac0df98e52a3d1fe7738d3cd6df992556a2247",
+      "source_name": "docs/EVIDENCIA_VISUAL_COCKPIT_BRAVE_BULL_20261025.json"
+    },
+    {
+      "id": 3,
+      "context": "pix_with_coupon",
+      "price": "956.13",
+      "currency": "BRL",
+      "source": "manual:visual_document:shopee:pix_with_coupon",
+      "source_type": "MANUAL",
+      "availability": "UNKNOWN",
+      "price_access": "CONDITIONAL",
+      "public_price_verified": false,
+      "public_price_verified_column_exists": false,
+      "verification_representation": "price_access != PUBLIC; price_validation=DOCUMENTARY_DISPLAY_ONLY_NOT_PUBLICLY_VERIFIED; conditions_known=false",
+      "observed_at": "2026-10-26T00:11:00+00:00",
+      "timestamp_precision": "minute",
+      "documentary_direction": "INITIAL",
+      "raw_fingerprint": "c2f854f2140211c0fa04380675ac0df98e52a3d1fe7738d3cd6df992556a2247",
+      "source_name": "docs/EVIDENCIA_VISUAL_COCKPIT_BRAVE_BULL_20261025.json"
+    }
+  ],
+  "previous_observations_preserved": true,
+  "dependent_counts": {
+    "affiliate_links": 0,
+    "offers": 0,
+    "publication_queue_items": 0,
+    "telegram_publications": 0,
+    "integration_events": 0
+  },
+  "controls": {
+    "flags": {
+      "shopee_enabled": false,
+      "mercado_livre_enabled": false,
+      "telegram_publisher_enabled": false,
+      "telegram_real_sends_authorized": false,
+      "simulation_automation_enabled": false,
+      "shopee_short_links_enabled": false
+    },
+    "group_enabled": false,
+    "monitoring_enabled": false,
+    "monitoring_config_sha256": "0414618c696a0609236c01f66265b24c4e3e02747f957a7aee02ed703d97cc7b"
+  },
+  "sql_insert_tables": [
+    "products",
+    "product_price_history",
+    "product_price_history"
+  ],
+  "source_documents": [
+    {
+      "path": "docs/EVIDENCIA_VISUAL_COCKPIT_BRAVE_BULL_20261025.json",
+      "sha256": "e1c5fb245fd56b69211ac3329a9e696c278ad48aec3d9e1c18f00f3921a101f8"
+    },
+    {
+      "path": "docs/EVIDENCIA_VISUAL_COCKPIT_BRAVE_BULL_20261025.md",
+      "sha256": "8b4bfcd8a8111ed48a5ad407aa67be8aa627bea70b401681c920b81e3dd045e3"
+    }
+  ],
+  "status": "REGISTERED_DOCUMENTARY_ONLY",
+  "registered_at": "2026-10-26T03:08:51.568032+00:00",
+  "idempotency_reexecution": {
+    "new_products": 0,
+    "new_history_rows": 0,
+    "same_ids": true
+  },
+  "protected_file_hashes": {
+    "docs/EVIDENCIA_VISUAL_COCKPIT_BRAVE_BULL_20261025.json": "e1c5fb245fd56b69211ac3329a9e696c278ad48aec3d9e1c18f00f3921a101f8",
+    "docs/EVIDENCIA_VISUAL_COCKPIT_BRAVE_BULL_20261025.md": "8b4bfcd8a8111ed48a5ad407aa67be8aa627bea70b401681c920b81e3dd045e3",
+    "docs/evidencias/cockpit_brave_bull/2026-10-25_2111_brt.png": "c2f854f2140211c0fa04380675ac0df98e52a3d1fe7738d3cd6df992556a2247",
+    ".env": "8b60344cfadc750e1244bcace267eb67c70878ae9f8696db2aaab98d914ccd4a",
+    "docs/RESULTADO_GENERATE_SHORTLINK_SHOPEE.json": "2d1cd0c14f512f8b5836943d4356a83dbe43ac9acb32bf3661275e13821d20a5",
+    "docs/RESULTADO_GENERATE_SHORTLINK_SHOPEE.md": "546617a8aa953239ea9e2550581798c5ecabe8dfb3449e5e7cfd200b32173973",
+    ".runtime/execute_authorized_shortlink_once.py": "071394a12369f3df503c521b1457444f8b4a3456dbae20882a711c97bc9f3487",
+    ".runtime\\shortlink-once-50f837480acf995acb3a4eabd3901a113407042b16177d9fdf1a80442e95d9f9.jsonl": "36f4d6221dfd997bb618d43cf229152a5ff34f8f6f99d20c84b89e0019b6c40e"
+  },
+  "preflight": "PASSED_ISOLATED_SQLITE_NO_PERSISTENT_DATA",
+  "public_price_verified": false,
+  "commercial_evaluation": "BLOCKED",
+  "affiliate_link_associated": false,
+  "offer_created": false,
+  "approval_created": false,
+  "outbox_created": false,
+  "shopee_calls": 0,
+  "mutations": 0,
+  "telegram_publications": 0,
+  "scheduler_started": false,
+  "credentials_modified": false,
+  "migration_executed": false,
+  "commit_or_push": false
+}

@@ -1,0 +1,84 @@
+{
+  "phase": "4.9",
+  "checked_at": "2026-10-21T23:14:25.419330+00:00",
+  "query": "PlayStation 5",
+  "page": 1,
+  "limit": 1,
+  "collection_id": "0d19d8fa-f466-47d1-8ddb-6bbebb3751d5",
+  "collection_status": "SUCCEEDED",
+  "http_status": 200,
+  "http_attempts": 1,
+  "graphql_errors": 0,
+  "returned_products": [
+    {
+      "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+      "image_present": true,
+      "shopId": 1018042820,
+      "itemId": 22293101052,
+      "price": "59",
+      "priceMin": "59",
+      "priceMax": "59"
+    }
+  ],
+  "publication_status": "BLOCKED",
+  "preview_created": false,
+  "commercial_approval": false,
+  "telegram_publication_calls": 0,
+  "short_link_mutations": 0,
+  "extra_pages": 0,
+  "retries": 0,
+  "product": {
+    "id": 1,
+    "identity": "1018042820:22293101052",
+    "name": "Cabo HDMI 2.1 8K PS5 Gamer 1 Metro Melhor Qualidade Disponivel! Ponta de Ouro",
+    "variant_id": "",
+    "image_present": true,
+    "categories": [
+      "games"
+    ],
+    "filter_status": "FILTERED",
+    "filter_reasons": [
+      "PRODUCT_FILTER_OR_AMBIGUOUS_INTENT"
+    ]
+  },
+  "history": {
+    "id": 1,
+    "price": "59.00",
+    "price_min": "59.00",
+    "price_max": "59.00",
+    "source": "shopee:official_api",
+    "source_type": "OFFICIAL_API",
+    "observed_at": "2026-10-21T23:14:25.115255+00:00",
+    "is_simulated": false,
+    "reported_direction": "INITIAL",
+    "historical_percentage": null,
+    "availability": "UNKNOWN",
+    "price_access": "UNKNOWN",
+    "previous_price": null
+  },
+  "affiliate_link": {
+    "present": false,
+    "valid_for_product": false,
+    "ownership_verified": false
+  },
+  "block_reasons": [
+    "PRODUCT_FILTER_OR_AMBIGUOUS_INTENT",
+    "AVAILABILITY_UNKNOWN",
+    "PUBLIC_PRICE_ACCESS_UNKNOWN",
+    "OWN_VERIFIED_AFFILIATE_LINK_REQUIRED"
+  ],
+  "persisted_collection_requests_reserved": 1,
+  "http_audit_id": 5,
+  "final_state": {
+    "env_unchanged": true,
+    "all_real_flags_disabled": true,
+    "group_paused": true,
+    "monitoring_disabled": true
+  },
+  "record_count_changes": {
+    "product_price_history": 1,
+    "offers": 0,
+    "telegram_publications": 0,
+    "telegram_technical_publications": 0
+  }
+}

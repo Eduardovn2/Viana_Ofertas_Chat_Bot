@@ -1,0 +1,54 @@
+{
+  "purpose": "BOUNDED_REAL_TRIAL_WITH_UNCONFIRMED_SHOPEE_QUOTAS",
+  "proposal": {
+    "scope": {
+      "plan": {
+        "authorization_id": "087f067f-e966-40d0-a867-fe245a2f411f",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "start_date": "2026-11-07",
+        "end_date": "2026-11-07",
+        "start_time": "09:00:00",
+        "end_time": "09:15:00",
+        "days": [
+          5
+        ],
+        "commercial_mode": "ANNOUNCEMENT_ONLY",
+        "terms": [
+          "Creatina 300 g"
+        ],
+        "max_queries": 1,
+        "max_links": 1,
+        "max_messages": 1,
+        "messages_per_window": 1,
+        "query_interval_seconds": 900,
+        "operation_version": "DAILY_V2",
+        "telegram_per_minute": 20,
+        "administrative_messages_per_hour": null,
+        "shopee_posts_per_minute": null,
+        "cooldown_seconds": 10800,
+        "quota_reference": null,
+        "shopee_daily_quota": null,
+        "telegram_daily_quota": null
+      },
+      "timezone": "America/Sao_Paulo",
+      "chat_id": "-5309308689",
+      "template": "PRO_V2",
+      "operations": [
+        "productOfferV2",
+        "Telegram",
+        "generateShortLink"
+      ],
+      "max_external_posts": 3,
+      "window_seconds": 600,
+      "freshness_seconds": 600,
+      "retry": false,
+      "fallback": false,
+      "pagination": false,
+      "ranking": "OPPORTUNITY_100_V1"
+    },
+    "scope_sha256": "6cd2345486b19ad884f81f9d0ee3872964498b5125cab7be288e8b8a2402de1a",
+    "approval": null,
+    "state": "PREPARED"
+  }
+}

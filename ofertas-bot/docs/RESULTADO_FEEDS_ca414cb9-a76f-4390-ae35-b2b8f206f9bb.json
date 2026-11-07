@@ -1,0 +1,79 @@
+{
+  "state": "SUCCEEDED",
+  "scope": {
+    "authorization_id": "ca414cb9-a76f-4390-ae35-b2b8f206f9bb",
+    "operation": "listItemFeeds",
+    "mode": "REAL_FEED_METADATA_READ",
+    "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+    "payload": {
+      "query": "query { listItemFeeds { feeds { datafeedId referenceId datafeedName description totalCount date feedMode } } }"
+    },
+    "payload_sha256": "7841a128e0dff5ce1b0fd728d2be48a16d3b02ec211513e91cd546dc40039594",
+    "credential_fingerprint": "da1d7794e5ddbd95be3fea7c35af10f725e9e00a1aa6aad905d7f738739e3cf3",
+    "account_evidence_id": "shopee_account_evidence:24fcf6cc2aa72e42415e2aa005cb3aea6134ab6cb0bea7077419fa18d7d606c9",
+    "account_reference": "VianaImports",
+    "not_before": "2026-11-05T02:30:32+00:00",
+    "expires_at": "2026-11-05T03:30:32+00:00",
+    "max_http_attempts": 1,
+    "retry": false,
+    "fallback": false,
+    "pagination": false,
+    "feed_row_reads": 0,
+    "link_generation": 0,
+    "telegram_messages": 0
+  },
+  "scope_sha256": "0ff6a235447a33df1989ca76a914e941084af88b1d23fceabae9c8ad13de3310",
+  "consumed": true,
+  "requests_reserved": 1,
+  "approval": {
+    "actor": "eduardo.viana.3",
+    "scope_sha256": "0ff6a235447a33df1989ca76a914e941084af88b1d23fceabae9c8ad13de3310",
+    "approved_at": "2026-11-05T02:38:17.213884+00:00",
+    "confirmed_single_metadata_read": true
+  },
+  "claimed_at": "2026-11-05T02:38:17.233260+00:00",
+  "http_started": true,
+  "http_started_at": "2026-11-05T02:38:17.376359+00:00",
+  "http_status": 200,
+  "feeds": [
+    {
+      "datafeedId": "428535457031659520_FULL_2026-11-04",
+      "referenceId": "428535457031659520",
+      "datafeedName": "Shopee Brasil - 2022",
+      "description": "",
+      "totalCount": 10000,
+      "date": "2026-11-04",
+      "feedMode": "FULL"
+    },
+    {
+      "datafeedId": "428536169534861312_FULL_2026-11-04",
+      "referenceId": "428536169534861312",
+      "datafeedName": "Shopee Oficial BR - 2022",
+      "description": "",
+      "totalCount": 100000,
+      "date": "2026-11-04",
+      "feedMode": "FULL"
+    },
+    {
+      "datafeedId": "428535457031659520_DELTA_2026-11-04",
+      "referenceId": "428535457031659520",
+      "datafeedName": "Shopee Brasil - 2022",
+      "description": "",
+      "totalCount": 19615,
+      "date": "2026-11-04",
+      "feedMode": "DELTA"
+    },
+    {
+      "datafeedId": "428536169534861312_DELTA_2026-11-04",
+      "referenceId": "428536169534861312",
+      "datafeedName": "Shopee Oficial BR - 2022",
+      "description": "",
+      "totalCount": 173150,
+      "date": "2026-11-04",
+      "feedMode": "DELTA"
+    }
+  ],
+  "feed_count": 4,
+  "rows_read": 0,
+  "finished_at": "2026-11-05T02:38:18.407143+00:00"
+}

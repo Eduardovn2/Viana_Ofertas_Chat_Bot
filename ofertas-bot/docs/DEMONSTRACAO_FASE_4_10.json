@@ -1,0 +1,33 @@
+{
+  "mode": "OFFLINE_FICTITIOUS_DATA",
+  "scheduler": "existing APScheduler; bounded CLI",
+  "virtual_clock": true,
+  "database": ".runtime/discovery-409bbb737eb44ad880ea408a830de022.simulation.db",
+  "categories": 9,
+  "discovery": 9,
+  "monitor": 18,
+  "evaluation": 1,
+  "mock_requests": 36,
+  "errors": [],
+  "dispositions_including_requeries": {
+    "SELECTED": 36,
+    "REVIEW": 0,
+    "FILTERED": 9,
+    "DUPLICATE": 9
+  },
+  "discovered_unique_products": 27,
+  "selected_products": 18,
+  "history_observations": 36,
+  "candidates": 36,
+  "prices": {
+    "first_fictitious": "100.00",
+    "requery_fictitious": "90.00"
+  },
+  "availability": "UNKNOWN",
+  "price_access": "UNKNOWN",
+  "prepared_outbox": 0,
+  "reason": "Unverified public price/stock and no own verified affiliate link",
+  "real_shopee_calls": 0,
+  "real_telegram_calls": 0,
+  "real_affiliate_mutations": 0
+}

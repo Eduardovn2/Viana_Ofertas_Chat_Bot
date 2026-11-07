@@ -1,0 +1,86 @@
+{
+  "status": "STABLE_PREPARATION_COMPLETE_PENDING_RESPONSIBLE_CONFIRMATIONS",
+  "product_id": 2,
+  "external_id": "1904573791:23199869203",
+  "correspondence": {
+    "original_url_identity_matches": true,
+    "returned_long_link_path_matches": true,
+    "existing_short_link_matches_audit": true,
+    "short_link_format_valid": true,
+    "account_ownership_proven": false,
+    "variant_linkage_proven": false,
+    "no_link_opened_or_generated": true
+  },
+  "link_association_draft": {
+    "submittable": false,
+    "reason": "OWNERSHIP_DECLARED_WAIT_FOR_DOCUMENTARY_REFERENCE_AND_BLUE_VARIANT_BINDING",
+    "method": "PUT",
+    "endpoint": "/api/v1/products/2/affiliate-link",
+    "body": {
+      "url": "https://s.shopee.com.br/1qczeLcPMR",
+      "operationally_verified": false
+    },
+    "source": "RESULTADO_GENERATE_SHORTLINK_SHOPEE.json#shortLink; copied unchanged, not generated"
+  },
+  "stable_confirmation_form": {
+    "responsible": null,
+    "account_reference_non_secret": null,
+    "evidence_reference": null,
+    "confirmation_date": null,
+    "owns_existing_affiliate_link": true,
+    "ownership_status": "DECLARED_BY_RESPONSIBLE_NOT_OPERATIONALLY_VERIFIED",
+    "ownership_declaration_source": "USER_MESSAGE_IN_THIS_CHAT_2026-11-01",
+    "declared_link_corresponds_to_listing": true,
+    "account_to_credential_provenance_reference_non_secret": null,
+    "model_as_documented": "Lagos",
+    "selected_colour_as_displayed": null,
+    "selected_colour_declared": "AZUL",
+    "selection_status": "DECLARED_INTENDED_OPTION_NOT_DOCUMENTED_OFFICIAL_SKU",
+    "quantity": 1,
+    "included_kit": null,
+    "excluded_accessories": null,
+    "official_variant_identifier": null,
+    "official_variant_identifier_status": "NOT_PROVIDED_NOT_ASSUMED_NONEXISTENT",
+    "no_official_identifier_available": null,
+    "listing_and_selected_option_correspondence": null,
+    "description_evidence_reference": "docs/EVIDENCIA_TRANSCRICAO_PRODUTO_2_20261103.json",
+    "documented_colour_options": [
+      "vermelho",
+      "azul"
+    ],
+    "construction_as_described": "Estrutura de aço resistente + assento tecido respirável"
+  },
+  "remaining_documentary_requirements": {
+    "account_link_reference": "Uma referência oficial reutilizável identificando a conta afiliada autorizada e o App ID configurado (comparado localmente, sem expor segredo). Para este recibo legado sem fingerprint, o mesmo conjunto documental deve também vincular o link preservado à conta. Origem, data, responsável e validade são registrados uma vez; não repetir por anúncio futuro quando houver recibo com vínculo de credencial e prova de conta válida.",
+    "blue_option_reference": "Captura da pagina oficial do anuncio 1904573791:23199869203 com AZUL selecionado e nome/modelo visiveis, com origem e data. Se o link nao fixa a cor, documentar a selecao manual, sem presumir que o link seleciona AZUL.",
+    "kit_reference": "Composição continua desconhecida. A mensagem limitada, textual e com aviso obrigatório não promete acessórios; uma mensagem com equipamentos, kit ou imagens exige comprovação adicional.",
+    "official_sku": "Registrar somente se exposto por fonte oficial; AZUL nao deve ser convertido em SKU. SKU nao informado nao significa SKU inexistente."
+  },
+  "live_commercial_form": "docs/FORMULARIO_OFERTA_MANUAL_PRODUTO_2_PENDENTE.json",
+  "existing_variant_id": "",
+  "do_not_invent_variant_id": true,
+  "scheduler": {
+    "persisted_enabled": false,
+    "startup_worker_creation_blocked_when_paused": true,
+    "startup_fails_closed_on_unreadable_or_invalid_configuration": true,
+    "no_scheduler_started": true
+  },
+  "operational_writes": 0,
+  "external_calls": 0,
+  "documentary_description_reference": "docs/EVIDENCIA_TRANSCRICAO_PRODUTO_2_20261103.json",
+  "limited_description_preparation": {
+    "proposed_message_scope": "CORE_ATTRIBUTES_ONLY",
+    "mandatory_content_notice": "Volante, pedais, câmbio e demais equipamentos: composição não confirmada. Confira os itens incluídos no anúncio.",
+    "publication_name_proposed": "Cockpit simulador de corrida Brave Bull",
+    "image_url": null,
+    "kit": null,
+    "excluded_items": null,
+    "composition_claims_allowed": false,
+    "historical_discount_allowed": false,
+    "commercial_verification_still_required": true,
+    "variant_policy": "Sem inventar SKU: VARIANT somente com identificador documentado; LISTING_ALL_OPTIONS somente com mesmo preço público e disponibilidade de todas as opções comprovados. Azul segue seleção declarada, não SKU.",
+    "publication_authorized": false
+  },
+  "reusable_account_evidence_endpoint": "/api/v1/integrations/shopee/account-evidence",
+  "reusable_account_evidence_registered": false
+}

@@ -1,0 +1,95 @@
+{
+  "prepared": {
+    "authorization_id": "0a0b9f7f-8154-49f7-9695-4a84870b7602",
+    "scope": {
+      "plan": {
+        "authorization_id": "0a0b9f7f-8154-49f7-9695-4a84870b7602",
+        "profile": "AUTO_PILOT",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "not_before": "2026-11-02T12:00:00Z",
+        "expires_at": "2026-11-02T14:00:00Z",
+        "terms": [
+          "Cockpit simulador Brave Bull",
+          "Creatina monohidratada 250g",
+          "Mouse Logitech G203"
+        ],
+        "max_messages": 20,
+        "max_queries": 12,
+        "page": 1,
+        "limit": 3,
+        "window_seconds": 600,
+        "messages_per_window": 5,
+        "cooldown_seconds": 10800
+      },
+      "credential_fingerprint": "0f9440eebe46602dc0db7e63e09052bd2b9637a0c629e9ca63f2f5e12a3bc752",
+      "mode": "REAL_AUTO_PILOT",
+      "shopee_operation": "productOfferV2",
+      "max_external_http": 32,
+      "shopee_endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "telegram_endpoint": "https://api.telegram.org",
+      "retries": 0,
+      "fallback": false,
+      "chat_id": "-5309308689",
+      "environment": "PRODUCTION",
+      "rules": {
+        "version": "REAL_AUTO_PILOT_V1",
+        "require_documented_identity": true,
+        "require_current_public_price": true,
+        "require_available": true,
+        "require_verified_existing_link": true,
+        "textual_score_is_not_evidence": true,
+        "coupon_required": false,
+        "historical_drop_required": false,
+        "individual_offer_requires_multistore": false,
+        "uncertain_never_retries": true,
+        "temporary_destination_activation": true,
+        "worker_tick_seconds": 30,
+        "links_created": 0
+      },
+      "rules_sha256": "c6c3de675c420f514f91c2ba2fb3e328fd2c805a29ecf8ddddec82597b18c52b",
+      "worker_tick_seconds": 30,
+      "query_payload_sha256": {
+        "Cockpit simulador Brave Bull": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709",
+        "Creatina monohidratada 250g": "a36c1c49202efa83e9383702cb7b811968cd5d0313784c19cf42bd8979766b33",
+        "Mouse Logitech G203": "17f47e3bcb828b2ca2df20f55c90fcab0d733586a15b985d2587b44fde923f61"
+      }
+    },
+    "scope_sha256": "a29f30db202b955dc8fe74958bfc81a7522bb4c98cf0ea75640ad05687c28797",
+    "state": "PREPARED",
+    "reason": null,
+    "queries": [],
+    "queue": [],
+    "reservations": [],
+    "findings": [],
+    "automatic_approvals": 0,
+    "approval": null,
+    "counts": {
+      "found": 0,
+      "distinct_listings_found": 0,
+      "queries_reserved": 0,
+      "messages_reserved": 0,
+      "http_attempts": 0,
+      "automatically_approved": 0,
+      "published": 0,
+      "uncertain": 0,
+      "rejected": 0,
+      "inconclusive": 0
+    },
+    "real_activation_allowed": false,
+    "external_http_calls": 0,
+    "authority": "SIGNED_PILOT_SCOPE_AUTOMATIC_RULES"
+  },
+  "inventory": {
+    "checked_at_utc": "2026-11-01T11:34:34.803319+00:00",
+    "shopee_offers_existing": 0,
+    "commercially_eligible": 0,
+    "eligible_offer_ids": [],
+    "rejected": []
+  },
+  "approved": false,
+  "worker_started": false,
+  "destination_activated": false,
+  "external_http_calls": 0,
+  "proposed_window_brasilia": "02/11/2026 09:00–11:00 (UTC-03)"
+}

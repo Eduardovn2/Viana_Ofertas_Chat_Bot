@@ -1,0 +1,108 @@
+{
+  "status": "AUTHORIZATION_CONSUMED",
+  "product": "Cockpit simulador de corrida Brave Bull",
+  "shop_id": "1904573791",
+  "item_id": "23199869203",
+  "origin_url": "https://shopee.com.br/Cockpit-simulador-de-corrida-Brave-Bull-estrutura-em-a%C3%A7o-resistente.-Volante-pedais-e-encosto-ajust%C3%A1veis.-i.1904573791.23199869203",
+  "origin_identity": "matches IDs supplied by owner; URL validated locally, not queried",
+  "documentation": "https://open-api.affiliate.shopee.com.br/explorer/v2",
+  "documentation_http": 200,
+  "contract": {
+    "mutation": {
+      "name": "generateShortLink",
+      "opType": "mutation",
+      "args": [
+        {
+          "name": "input",
+          "type": "ShortLinkInput",
+          "isList": false,
+          "required": true,
+          "defaultValue": "",
+          "description": "",
+          "enumName": ""
+        }
+      ],
+      "returnType": "ShortLinkResult",
+      "desc": "Generate Short Link"
+    },
+    "input": {
+      "name": "ShortLinkInput",
+      "fields": [
+        {
+          "name": "originUrl",
+          "type": "String",
+          "isList": false,
+          "required": true,
+          "defaultValue": "",
+          "description": "origin url",
+          "enumName": ""
+        },
+        {
+          "name": "subIds",
+          "type": "String",
+          "isList": true,
+          "required": false,
+          "defaultValue": "",
+          "description": "Sub id in utm content in tracking link, it has five sub ids",
+          "enumName": ""
+        }
+      ]
+    },
+    "output": {
+      "name": "ShortLinkResult",
+      "fields": [
+        {
+          "name": "shortLink",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Short link"
+        },
+        {
+          "name": "longLink",
+          "type": "String",
+          "rawType": "String!",
+          "isList": false,
+          "guaranteed": true,
+          "description": "Long link (tracking link before shortening)"
+        }
+      ]
+    }
+  },
+  "method": "POST",
+  "endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+  "payload": {
+    "query": "mutation { generateShortLink(input:{originUrl:\"https://shopee.com.br/Cockpit-simulador-de-corrida-Brave-Bull-estrutura-em-a%C3%A7o-resistente.-Volante-pedais-e-encosto-ajust%C3%A1veis.-i.1904573791.23199869203\"}) { shortLink longLink } }"
+  },
+  "body_sha256": "60c07179bdf9fc4f83be86ec5bb3cde4de1e500aae30469d92149fca03214174",
+  "real_mutations_executed": 1,
+  "max_future_mutations": 0,
+  "retry": false,
+  "fallback": false,
+  "cache": false,
+  "additional_commercial_queries": false,
+  "telegram_publications": false,
+  "permanent_env_changes": false,
+  "credentials_present": {
+    "app_id": true,
+    "secret": true
+  },
+  "flags": {
+    "shopee_enabled": false,
+    "shopee_short_links_enabled": false,
+    "mercado_livre_enabled": false,
+    "telegram_publisher_enabled": false,
+    "telegram_real_sends_authorized": false,
+    "simulation_automation_enabled": false
+  },
+  "offline_tests": {
+    "passed": 21,
+    "deselected": 99,
+    "all_transports": "synthetic/mock",
+    "real_mutations": 0
+  },
+  "origin_format_assessment": "Official schema declares originUrl String! as origin url; no additional URL-format enumeration. Exact owner-supplied HTTPS listing URL retained with matching shop/item IDs, no query/fragment. Acceptance and account permission remain unverified until specifically authorized mutation.",
+  "result_document": "docs/RESULTADO_GENERATE_SHORTLINK_SHOPEE.json",
+  "authorization_id": "50f837480acf995acb3a4eabd3901a113407042b16177d9fdf1a80442e95d9f9"
+}

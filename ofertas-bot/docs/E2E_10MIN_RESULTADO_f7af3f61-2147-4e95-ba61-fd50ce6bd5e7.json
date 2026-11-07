@@ -1,0 +1,211 @@
+{
+  "at": "2026-11-03T02:35:27.162404+00:00",
+  "report": {
+    "authorization_id": "f7af3f61-2147-4e95-ba61-fd50ce6bd5e7",
+    "scope": {
+      "plan": {
+        "authorization_id": "f7af3f61-2147-4e95-ba61-fd50ce6bd5e7",
+        "profile": "AUTO_PILOT",
+        "actor": "eduardo.viana.3",
+        "destination_id": 2,
+        "not_before": "2026-11-03T02:27:05.148395Z",
+        "expires_at": "2026-11-03T03:27:05.148395Z",
+        "terms": [
+          "Cockpit simulador Brave Bull",
+          "Creatina monohidratada 250g",
+          "Mouse Logitech G203"
+        ],
+        "max_messages": 5,
+        "max_queries": 3,
+        "page": 1,
+        "limit": 3,
+        "window_seconds": 600,
+        "messages_per_window": 5,
+        "cooldown_seconds": 10800,
+        "duration_seconds": 600
+      },
+      "credential_fingerprint": "0f9440eebe46602dc0db7e63e09052bd2b9637a0c629e9ca63f2f5e12a3bc752",
+      "mode": "REAL_AUTO_PILOT",
+      "shopee_operation": "productOfferV2",
+      "max_external_http": 8,
+      "shopee_endpoint": "https://open-api.affiliate.shopee.com.br/graphql",
+      "telegram_endpoint": "https://api.telegram.org",
+      "retries": 0,
+      "fallback": false,
+      "chat_id": "-5309308689",
+      "environment": "PRODUCTION",
+      "rules": {
+        "version": "REAL_AUTO_PILOT_V1",
+        "require_documented_identity": true,
+        "require_current_public_price": true,
+        "require_available": true,
+        "require_verified_existing_link": true,
+        "textual_score_is_not_evidence": true,
+        "coupon_required": false,
+        "historical_drop_required": false,
+        "individual_offer_requires_multistore": false,
+        "uncertain_never_retries": true,
+        "temporary_destination_activation": true,
+        "worker_tick_seconds": 30,
+        "links_created": 0,
+        "uncertain_query_payload_never_retried": true,
+        "max_commercial_age_seconds": 600
+      },
+      "rules_sha256": "a6f0571dde2c7ae0d1348d2eb531bd255d86c24f6d668ba3f277ac530df5fc91",
+      "worker_tick_seconds": 30,
+      "query_payload_sha256": {
+        "Cockpit simulador Brave Bull": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709",
+        "Creatina monohidratada 250g": "a36c1c49202efa83e9383702cb7b811968cd5d0313784c19cf42bd8979766b33",
+        "Mouse Logitech G203": "17f47e3bcb828b2ca2df20f55c90fcab0d733586a15b985d2587b44fde923f61"
+      }
+    },
+    "scope_sha256": "b880bdc2178e32bc08dc00b47cbf19feeae53e06e8b605ca4f6238ae500a32e8",
+    "state": "COMPLETED",
+    "reason": "QUERY_BUDGET",
+    "queries": [
+      {
+        "id": "7795a15a2e8a4e578f4bf92cb0249411",
+        "state": "SUCCEEDED",
+        "at": "2026-11-03T02:33:37.625154+00:00",
+        "term": "Cockpit simulador Brave Bull",
+        "transport_consumed": true,
+        "transport_started_at": "2026-11-03T02:33:37.681213+00:00",
+        "payload_sha256": "d40ad44f9d677400646faba05e6248be16e98275ecdc85b5b2a1c9524d1c1709",
+        "error": null,
+        "proven_groups": 0
+      },
+      {
+        "id": "d3058c093c5344abb0ee6637b7342e73",
+        "state": "SUCCEEDED",
+        "at": "2026-11-03T02:34:07.594085+00:00",
+        "term": "Creatina monohidratada 250g",
+        "transport_consumed": true,
+        "transport_started_at": "2026-11-03T02:34:07.647817+00:00",
+        "payload_sha256": "a36c1c49202efa83e9383702cb7b811968cd5d0313784c19cf42bd8979766b33",
+        "error": null,
+        "proven_groups": 0
+      },
+      {
+        "id": "e02b707791f2467aa5734485941e6e7b",
+        "state": "SUCCEEDED",
+        "at": "2026-11-03T02:34:37.601015+00:00",
+        "term": "Mouse Logitech G203",
+        "transport_consumed": true,
+        "transport_started_at": "2026-11-03T02:34:37.668903+00:00",
+        "payload_sha256": "17f47e3bcb828b2ca2df20f55c90fcab0d733586a15b985d2587b44fde923f61",
+        "error": null,
+        "proven_groups": 0
+      }
+    ],
+    "queue": [],
+    "reservations": [],
+    "findings": [
+      {
+        "identity": "1754100018:58219916237",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      },
+      {
+        "identity": "1754100018:22799528968",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      },
+      {
+        "identity": "1595990092:58202217973",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      },
+      {
+        "identity": "434195734:18997470049",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      },
+      {
+        "identity": "348503606:22098912549",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      },
+      {
+        "identity": "868635286:23692801923",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      },
+      {
+        "identity": "668573533:23693722106",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      },
+      {
+        "identity": "668573533:21098035012",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      },
+      {
+        "identity": "668573533:58216386981",
+        "status": "INCONCLUSIVE",
+        "reason": "NO_VERIFIED_COMMERCIAL_OFFER"
+      }
+    ],
+    "automatic_approvals": 0,
+    "approval": {
+      "scope_sha256": "b880bdc2178e32bc08dc00b47cbf19feeae53e06e8b605ca4f6238ae500a32e8",
+      "actor": "eduardo.viana.3",
+      "confirmed_pilot_scope": true,
+      "acknowledge_unconfirmed_quotas_and_permissions": true,
+      "approved_at": "2026-11-03T02:33:08.233498+00:00"
+    },
+    "started_at": "2026-11-03T02:33:08.471382+00:00",
+    "runtime_expires_at": "2026-11-03T02:43:08.471382+00:00",
+    "counts": {
+      "found": 9,
+      "distinct_listings_found": 9,
+      "queries_reserved": 3,
+      "messages_reserved": 0,
+      "http_attempts": 0,
+      "automatically_approved": 0,
+      "published": 0,
+      "uncertain": 0,
+      "rejected": 0,
+      "inconclusive": 9,
+      "unfinalized_reservations": 0,
+      "transport_permits_consumed": 3
+    },
+    "real_activation_allowed": false,
+    "external_http_calls": 3,
+    "authority": "SIGNED_PILOT_SCOPE_AUTOMATIC_RULES",
+    "real_dispatch_implemented": true,
+    "effective_expires_at": "2026-11-03T02:43:08.471382+00:00",
+    "latest_activation_at": "2026-11-03T03:17:05.148395+00:00",
+    "window_expired": false
+  },
+  "worker": {
+    "at": "2026-11-03T02:34:39.220142+00:00",
+    "worker_id": "41ad51f514e24ebf90b1a3677ac7e669",
+    "pilot_id": "f7af3f61-2147-4e95-ba61-fd50ce6bd5e7",
+    "phase": "TERMINAL",
+    "process_id": 17348,
+    "state": "COMPLETED",
+    "error_type": null,
+    "heartbeat_age_seconds": 47.431473,
+    "healthy": true
+  },
+  "destination_enabled": false,
+  "offers_existing": 0,
+  "histories_existing": 4,
+  "previous_authorizations_preserved": true,
+  "scheduler_running": false,
+  "final_verification": {
+    "pilot_worker_process_exited": true,
+    "original_worker_healthy": true,
+    "original_worker_phase": "WAITING",
+    "original_pilot_state": "PREPARED",
+    "backend_ready": true,
+    "postgres_healthy": true,
+    "destination_enabled": false,
+    "scheduler_running": false,
+    "telegram_message_ids": [],
+    "new_affiliate_links": 0,
+    "observed_terminal_at": "2026-11-03T02:34:39.220142+00:00",
+    "product_titles_and_prices_not_persisted_in_pilot_findings": true
+  }
+}

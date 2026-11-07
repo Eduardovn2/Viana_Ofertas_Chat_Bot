@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-31",
+  "tests_passed_distinct": 216,
+  "offline_passed_distinct": 205,
+  "postgres_passed_distinct": 11,
+  "runs": [
+    {
+      "name": "offline_regressions",
+      "passed": 204
+    },
+    {
+      "name": "final_multistore_offline",
+      "passed": 26
+    },
+    {
+      "name": "initial_postgres",
+      "passed": 10
+    },
+    {
+      "name": "final_postgres",
+      "passed": 11
+    },
+    {
+      "name": "additional_incomplete_title_regression",
+      "passed": 1
+    }
+  ],
+  "failures": 0,
+  "full_suite_executed": false,
+  "postgres_database": "ofertas_bot_test",
+  "schemas": "UUID_ISOLATED",
+  "ruff": "PASSED",
+  "format": "198_FILES_PASSED",
+  "alembic_current": "0009_shopee_discovery",
+  "alembic_check": "PASSED_ISOLATED",
+  "real_http_calls": 0,
+  "telegram_publications": 0,
+  "previous_operational_rows_preserved": true,
+  "env_unchanged": true,
+  "approved_identity_payloads_unchanged": true,
+  "new_prepared_authorization": "bce2459b-a77a-4e30-86fa-30d8069cf4bf",
+  "scope_sha256": "f64562375158a13c35fd8364d0f1d8035ccca8540a4a9b7a3c42bdd05302dd0a",
+  "preparation_audit_ids": [
+    "25"
+  ],
+  "new_operational_observations": 0,
+  "flags": {
+    "shopee_enabled": false,
+    "shopee_short_links_enabled": false,
+    "mercado_livre_enabled": false,
+    "telegram_publisher_enabled": false,
+    "telegram_real_sends_authorized": false,
+    "simulation_automation_enabled": false
+  },
+  "scheduler_enabled": false,
+  "group_enabled": false,
+  "real_search_dispatch": "BLOCKED_PENDING_EXPLICIT_AUTHORIZATION_AND_ADMINISTRATIVE_CLAIM_PATH",
+  "known_quotas": "UNCONFIRMED",
+  "warning": "Existing Starlette/httpx deprecation warning"
+}

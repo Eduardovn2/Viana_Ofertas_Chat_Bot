@@ -39,6 +39,8 @@ from app.services.shopee_single_read import ReadApproval, ReadConfirmation, Shop
 from app.services.simulation_safety import require_simulation_scope
 
 PREFIX = "shopee_multistore:"
+# Keys that carry product or affiliate URLs; stripped from the durable sanitized result.
+_URL_KEYS = frozenset({"canonical_url", "productLink", "url"})
 
 
 def _known_fact(value):
@@ -807,7 +809,10 @@ class ShopeeMultistoreAdapter(ShopeeSingleReadAdapter):
 
         def clean(value):
             if isinstance(value, dict):
-                return {k: clean(v) for k, v in value.items()}
+                # The durable result never keeps product or affiliate URLs; identity
+                # (shop:item), price and fingerprints are enough to review a quote.
+                # The discovery pilot builds its own rows through compare_offers.
+                return {k: clean(v) for k, v in value.items() if k not in _URL_KEYS}
             if isinstance(value, (tuple, list)):
                 return [clean(v) for v in value]
             if isinstance(value, str):

@@ -48,7 +48,7 @@ def test_postgres_simulation_metadata_and_non_destructive_downgrade(categories_p
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0009_shopee_discovery"
+            == "0010_beta_posts"
         )
         assert connection.scalar(select(func.count()).select_from(ProductPriceHistory)) == 2
 

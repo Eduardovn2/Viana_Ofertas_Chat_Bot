@@ -583,7 +583,19 @@ Quotas oficiais e permissão para recorrência seguem não confirmadas. Sem comm
 Zero chamadas externas, histórico operacional alterado, links ou publicações.
 Piloto aprovado de amanhã preservado; sem scheduler, commit ou push. Fases 5/6 não iniciadas.
 
-## Fase 5 — Ampliar cupons e operação da fila
+## Beta Shopee — publicação automática filtrada (17/11/2026)
+
+Política aprovada pelo responsável: publicar com base nos dados da API oficial de afiliados
+(`productOfferV2` com `offerLink`), com reconferência imediata do preço e aviso de que preço e
+estoque podem mudar. Detalhes e operação em `docs/BETA_SHOPEE.md`.
+
+- [x] Worker `app.beta_worker` com filtros, pontuação, rodízio de termos, deduplicação, limites,
+  horário de silêncio, pausa por arquivo e dry-run; tabela `beta_posts` (migração 0010).
+- [x] CI no GitHub (ruff + testes offline + PostgreSQL).
+- [ ] Simulação no PC, grupo de teste e grupo real, com autorização do responsável a cada etapa.
+- [ ] Conferir no painel Shopee que os cliques dos links publicados são atribuídos à conta.
+- [ ] Operação 24h: serviço no Windows, backup diário e alertas no Telegram; depois VPS.
+
 
 - Expandir a avaliação conservadora de cupons da fase 2 com cadastro administrativo e fontes autorizadas de confirmação.
 - Ajustar pesos e prioridades com evidência de uso, mantendo cupom opcional.

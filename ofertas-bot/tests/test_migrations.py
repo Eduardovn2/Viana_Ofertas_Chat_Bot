@@ -84,6 +84,8 @@ EXPECTED_TABLES = PHASE410_TABLES | {
     "telegram_simulations",
     "simulation_audit",
 }
+# Beta Shopee mode (0010) is the newest revision.
+HEAD_TABLES = EXPECTED_TABLES | {"beta_posts"}
 PHASE4_TABLES = {"manual_offer_details", "telegram_publications"}
 PHASE46_TABLES = {"telegram_technical_publications", "telegram_technical_audit"}
 PHASE47_TABLES = {
@@ -116,7 +118,7 @@ def migration_database(tmp_path, monkeypatch, request):
 
 def test_initial_revision_matches_models_and_round_trips(migration_database):
     config, engine = migration_database
-    assert set(inspect(engine).get_table_names()) == EXPECTED_TABLES | {"alembic_version"}
+    assert set(inspect(engine).get_table_names()) == HEAD_TABLES | {"alembic_version"}
     with engine.connect() as connection:
         context = MigrationContext.configure(
             connection, opts={"compare_type": True, "compare_server_default": True}
@@ -126,7 +128,7 @@ def test_initial_revision_matches_models_and_round_trips(migration_database):
     command.downgrade(config, "base")
     assert set(inspect(engine).get_table_names()) == {"alembic_version"}
     command.upgrade(config, "head")
-    assert set(inspect(engine).get_table_names()) == EXPECTED_TABLES | {"alembic_version"}
+    assert set(inspect(engine).get_table_names()) == HEAD_TABLES | {"alembic_version"}
 
 
 def test_migrated_schema_preserves_decimal_utc_and_cascade(migration_database):

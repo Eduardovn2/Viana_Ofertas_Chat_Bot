@@ -1,6 +1,7 @@
 """Public model and enum exports; importing this module registers all tables."""
 
 from app.models.base import Base, UTCDateTime, utcnow
+from app.models.beta import BetaPost
 from app.models.entities import (
     AffiliateLink,
     AppSetting,
@@ -54,6 +55,7 @@ from app.models.simulation import (
 from app.models.telegram_technical import TelegramTechnicalAudit, TelegramTechnicalPublication
 
 __all__ = [
+    "BetaPost",
     "SimulationAudit",
     "SimulationPolicy",
     "SimulationProduct",

@@ -21,7 +21,15 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.beta.offers import BetaOffer, OfferRejected, parse_offer, rejection_reason, render, score
+from app.beta.offers import (
+    BetaOffer,
+    OfferRejected,
+    matches_keyword,
+    parse_offer,
+    rejection_reason,
+    render,
+    score,
+)
 from app.integrations.errors import IntegrationError
 from app.integrations.telegram import TelegramPublishError
 from app.models.beta import BetaPost
@@ -152,6 +160,12 @@ def collect_candidates(session, settings, connector, now, report, dry_run, sleep
                 report.reject(error.reason)
                 continue
             reason = rejection_reason(offer, settings)
+            if (
+                reason is None
+                and settings.beta_require_keyword_in_title
+                and not matches_keyword(offer.title, keyword, settings.beta_broad_keywords)
+            ):
+                reason = "OFF_TOPIC"
             if reason is None and is_duplicate(session, settings, offer, now, dry_run):
                 reason = "DUPLICATE"
             if reason is not None:

@@ -645,3 +645,40 @@ def test_worker_once_dry_run_against_database(tmp_path, monkeypatch, capsys):
     assert output["mode"] == "DRY_RUN" and output["published"] == 1
     assert beta_worker.main(["report"]) == 0
     assert "DRY_RUN" in capsys.readouterr().out
+
+
+# --- relevance filter ----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("title", "keyword", "expected"),
+    [
+        ("Console PlayStation 5 Slim Digital", "playstation 5", True),
+        ("Controle sem fio para PS5", "playstation 5", False),
+        ("Smart TV 50 polegadas 4K", "tv", True),
+        ("Coqueiro artificial 120cm", "tv", False),
+        ("Fone de ouvido Bluetooth 5.3", "fone bluetooth", True),
+        ("Fone com fio P2", "fone bluetooth", False),
+        ("Kit Eletrônicos para Arduino", "eletronicos", True),
+        ("Blusa manga 3/4 feminina", "moda", True),
+        ("Brinco dourado", "geral", True),
+        ("Fritadeira AIR FRYER 4L", "Air Fryer", True),
+        ("Computador Gamer i5", "computador", True),
+        ("Computadores", "computador", False),
+    ],
+)
+def test_matches_keyword(title, keyword, expected):
+    broad = make_settings().beta_broad_keywords
+    assert offers.matches_keyword(title, keyword, broad) is expected
+
+
+def test_off_topic_offers_are_rejected_only_when_enabled(factory):
+    nodes = [
+        node(1, productName="Smart TV 50 polegadas"),
+        node(2, productName="Coqueiro artificial", priceDiscountRate=90),
+    ]
+    settings = make_settings(beta_keywords=("tv",), beta_require_keyword_in_title=True)
+    with factory() as session:
+        report = run_cycle(session, settings, FakeConnector(nodes), FakePublisher(), now=NOON)
+    assert report.rejected == {"OFF_TOPIC": 1}
+    assert [r.item_key for r in rows(factory)] == ["900:1"]

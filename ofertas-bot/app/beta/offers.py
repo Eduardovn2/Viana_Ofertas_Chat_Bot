@@ -6,6 +6,7 @@ Shopee Affiliate API response; nothing (original price, stock, coupon) is inferr
 
 import math
 import re
+import unicodedata
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from html import escape
@@ -155,6 +156,27 @@ def rejection_reason(offer: BetaOffer, settings) -> str | None:
     if offer.price_min > settings.beta_max_price:
         return "PRICE_TOO_HIGH"
     return None
+
+
+def _normalize(text: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", text.casefold())
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
+
+
+def _tokens(text: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9]+", _normalize(text)))
+
+
+def matches_keyword(title: str, keyword: str, broad_keywords=()) -> bool:
+    """Title contains every significant word of the keyword (accents/case ignored).
+
+    Broad keywords ("geral", "moda"...) describe a category, not words in a title,
+    so they always match. Single characters ("5" in "playstation 5") are ignored.
+    """
+    if _normalize(" ".join(keyword.split())) in {_normalize(b) for b in broad_keywords}:
+        return True
+    wanted = {token for token in _tokens(keyword) if len(token) >= 2}
+    return wanted <= _tokens(title) if wanted else True
 
 
 def score(offer: BetaOffer) -> Decimal:

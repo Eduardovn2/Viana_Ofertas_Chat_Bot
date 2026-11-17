@@ -257,7 +257,7 @@ def run_cycle(
         if fresh is None:
             continue
         try:
-            rendered = render(fresh)
+            rendered = render(fresh, ad_label=settings.beta_ad_label)
         except MessageTemplateError:
             report.reject("RENDER_FAILED")
             continue

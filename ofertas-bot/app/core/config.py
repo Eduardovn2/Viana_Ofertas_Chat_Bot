@@ -101,6 +101,8 @@ class Settings(BaseSettings):
     beta_max_price: Decimal = Field(default=Decimal("2000"), gt=0)
     beta_repost_cooldown_days: int = Field(default=7, ge=1, le=90)
     beta_repost_min_price_drop_percent: int = Field(default=10, ge=1, le=90)
+    # Linha "Publicidade • link de afiliado" no fim da mensagem.
+    beta_ad_label: bool = True
     beta_pause_file: Path = Path(".runtime/beta.pause")
     beta_health_file: Path = Path(".runtime/beta-worker-health.json")
 

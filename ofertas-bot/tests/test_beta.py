@@ -191,6 +191,21 @@ def test_render_message_is_escaped_and_has_notice():
     assert message.parse_mode == "HTML"
 
 
+def test_ad_label_can_be_turned_off(factory):
+    offer = offers.parse_offer(node())
+    assert offers.ADVERTISING_LABEL not in offers.render(offer, ad_label=False).text
+    assert offers.PRICE_NOTICE in offers.render(offer, ad_label=False).text
+    with factory() as session:
+        run_cycle(
+            session,
+            make_settings(beta_ad_label=False),
+            FakeConnector([node(1)]),
+            FakePublisher(),
+            now=NOON,
+        )
+    assert offers.ADVERTISING_LABEL not in rows(factory)[0].text
+
+
 def test_render_truncates_long_titles():
     message = offers.render(offers.parse_offer(node(productName="x" * 400)))
     assert "x" * 119 + "…" in message.text

@@ -181,7 +181,7 @@ def _sales(value: int) -> str:
     return f"{value} vendido" + ("s" if value != 1 else "")
 
 
-def render(offer: BetaOffer) -> RenderedMessage:
+def render(offer: BetaOffer, *, ad_label: bool = True) -> RenderedMessage:
     title = offer.title if len(offer.title) <= _MAX_TITLE else offer.title[: _MAX_TITLE - 1] + "…"
     lines = []
     if offer.discount_percent > 0:
@@ -199,7 +199,8 @@ def render(offer: BetaOffer) -> RenderedMessage:
     lines.append(f'🛒 <a href="{escape(offer.offer_link, quote=True)}">Comprar na Shopee</a>')
     lines.append("")
     lines.append(PRICE_NOTICE)
-    lines.append(ADVERTISING_LABEL)
+    if ad_label:
+        lines.append(ADVERTISING_LABEL)
     text = "\n".join(lines)
     photo = offer.image_url
     if photo and telegram_text_length(text) > 1024:

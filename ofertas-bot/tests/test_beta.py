@@ -191,6 +191,21 @@ def test_render_message_is_escaped_and_has_notice():
     assert message.parse_mode == "HTML"
 
 
+def test_ad_label_can_be_turned_off(factory):
+    offer = offers.parse_offer(node())
+    assert offers.ADVERTISING_LABEL not in offers.render(offer, ad_label=False).text
+    assert offers.PRICE_NOTICE in offers.render(offer, ad_label=False).text
+    with factory() as session:
+        run_cycle(
+            session,
+            make_settings(beta_ad_label=False),
+            FakeConnector([node(1)]),
+            FakePublisher(),
+            now=NOON,
+        )
+    assert offers.ADVERTISING_LABEL not in rows(factory)[0].text
+
+
 def test_render_truncates_long_titles():
     message = offers.render(offers.parse_offer(node(productName="x" * 400)))
     assert "x" * 119 + "…" in message.text
@@ -410,11 +425,47 @@ def test_recheck_missing_item_falls_through_to_next(factory):
     assert [r.item_key for r in rows(factory)] == ["900:1"]
 
 
-def test_search_error_is_reported_and_cycle_survives(factory):
+def test_search_error_is_retried_then_reported(factory):
     connector = FakeConnector(IntegrationError("UPSTREAM_GRAPHQL_ERROR", "x"))
+    waits = []
     with factory() as session:
-        report = run_cycle(session, make_settings(), connector, FakePublisher(), now=NOON)
+        report = run_cycle(
+            session, make_settings(), connector, FakePublisher(), now=NOON, sleep=waits.append
+        )
     assert report.status == "ERROR" and report.errors == ["SEARCH_UPSTREAM_GRAPHQL_ERROR"]
+    assert len(connector.searches) == 3 and waits == [2, 5] and report.retries == 2
+
+
+def test_transient_search_error_recovers_on_retry(factory):
+    connector = FakeConnector([node(1)])
+    original = connector.beta_search
+    failures = [IntegrationError("UPSTREAM_GRAPHQL_ERROR", "x")]
+
+    def flaky(keyword, **kwargs):
+        if failures:
+            connector.searches.append((keyword, kwargs))
+            raise failures.pop()
+        return original(keyword, **kwargs)
+
+    connector.beta_search = flaky
+    with factory() as session:
+        report = run_cycle(
+            session, make_settings(), connector, FakePublisher(), now=NOON, sleep=lambda _: None
+        )
+    assert report.status == "OK" and report.published == 1
+    assert report.errors == [] and report.retries == 1
+
+
+def test_disabled_connector_is_not_retried(factory):
+    from app.integrations.errors import ConnectorDisabled
+
+    connector = FakeConnector(ConnectorDisabled())
+    waits = []
+    with factory() as session:
+        report = run_cycle(
+            session, make_settings(), connector, FakePublisher(), now=NOON, sleep=waits.append
+        )
+    assert report.errors == ["SEARCH_CONNECTOR_DISABLED"] and waits == []
 
 
 @pytest.mark.parametrize(
@@ -594,3 +645,40 @@ def test_worker_once_dry_run_against_database(tmp_path, monkeypatch, capsys):
     assert output["mode"] == "DRY_RUN" and output["published"] == 1
     assert beta_worker.main(["report"]) == 0
     assert "DRY_RUN" in capsys.readouterr().out
+
+
+# --- relevance filter ----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("title", "keyword", "expected"),
+    [
+        ("Console PlayStation 5 Slim Digital", "playstation 5", True),
+        ("Controle sem fio para PS5", "playstation 5", False),
+        ("Smart TV 50 polegadas 4K", "tv", True),
+        ("Coqueiro artificial 120cm", "tv", False),
+        ("Fone de ouvido Bluetooth 5.3", "fone bluetooth", True),
+        ("Fone com fio P2", "fone bluetooth", False),
+        ("Kit Eletrônicos para Arduino", "eletronicos", True),
+        ("Blusa manga 3/4 feminina", "moda", True),
+        ("Brinco dourado", "geral", True),
+        ("Fritadeira AIR FRYER 4L", "Air Fryer", True),
+        ("Computador Gamer i5", "computador", True),
+        ("Computadores", "computador", False),
+    ],
+)
+def test_matches_keyword(title, keyword, expected):
+    broad = make_settings().beta_broad_keywords
+    assert offers.matches_keyword(title, keyword, broad) is expected
+
+
+def test_off_topic_offers_are_rejected_only_when_enabled(factory):
+    nodes = [
+        node(1, productName="Smart TV 50 polegadas"),
+        node(2, productName="Coqueiro artificial", priceDiscountRate=90),
+    ]
+    settings = make_settings(beta_keywords=("tv",), beta_require_keyword_in_title=True)
+    with factory() as session:
+        report = run_cycle(session, settings, FakeConnector(nodes), FakePublisher(), now=NOON)
+    assert report.rejected == {"OFF_TOPIC": 1}
+    assert [r.item_key for r in rows(factory)] == ["900:1"]

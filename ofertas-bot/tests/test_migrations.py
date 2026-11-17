@@ -1388,7 +1388,7 @@ def test_initial_revision_on_isolated_postgresql_schema(monkeypatch):
             with pytest.raises(IntegrityError):
                 session.commit()
             session.rollback()
-        assert set(inspect(isolated_engine).get_table_names()) == EXPECTED_TABLES | {
+        assert set(inspect(isolated_engine).get_table_names()) == HEAD_TABLES | {
             "alembic_version"
         }
         with isolated_engine.connect() as connection:

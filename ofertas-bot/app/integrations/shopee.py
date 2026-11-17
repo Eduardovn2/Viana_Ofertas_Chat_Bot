@@ -570,6 +570,52 @@ class ShopeeConnector:
         )
         return graphql
 
+    @staticmethod
+    def beta_query(
+        *,
+        keyword: str | None = None,
+        shop_id: str | None = None,
+        item_id: str | None = None,
+        limit: int = 20,
+        sort_type: int | None = None,
+    ) -> str:
+        """Beta mode query: listing fields plus offerLink, rating and sales."""
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise InvalidPayload("Use limite de 1 a 50.")
+        if keyword is not None:
+            if shop_id is not None or item_id is not None:
+                raise InvalidPayload("Use busca por termo ou por item, não ambos.")
+            if not isinstance(keyword, str) or not keyword.strip() or len(keyword) > 100:
+                raise InvalidPayload("Busca Shopee inválida.")
+            arguments = f"keyword:{json.dumps(keyword.strip(), ensure_ascii=False)}"
+        else:
+            arguments = f"shopId:{_positive_id(shop_id)},itemId:{_positive_id(item_id)}"
+            limit = 1
+        if sort_type is not None:
+            if type(sort_type) is not int or not 1 <= sort_type <= 5:
+                raise InvalidPayload("Ordenação Shopee inválida.")
+            arguments += f",sortType:{sort_type}"
+        arguments += f",page:1,limit:{limit}"
+        fields = _PRODUCT_FIELDS + " shopName ratingStar sales offerLink"
+        return (
+            f"query {{ productOfferV2({arguments}) "
+            f"{{ nodes {{ {fields} }} pageInfo {{ {_PAGE_FIELDS} }} }} }}"
+        )
+
+    def beta_search(self, keyword: str, *, limit: int = 20, sort_type: int | None = None):
+        """Raw nodes for the beta filter; validation happens in app.beta.offers."""
+        response = self._request(self.beta_query(keyword=keyword, limit=limit, sort_type=sort_type))
+        nodes, _ = self._connection(response, page=1, limit=limit)
+        return nodes, response.fetched_at
+
+    def beta_lookup(self, shop_id: str, item_id: str):
+        """Fresh (uncached) read of one listing right before publishing."""
+        response = self._request(
+            self.beta_query(shop_id=shop_id, item_id=item_id), cache=False, retry=True
+        )
+        nodes, _ = self._connection(response, page=1, limit=1)
+        return (nodes[0] if nodes else None), response.fetched_at
+
     def fetch_coupons(self, ref: ProductRef) -> list:
         raise UnsupportedCapability(
             "O esquema oficial consultado não comprova consulta/aplicação de cupons."

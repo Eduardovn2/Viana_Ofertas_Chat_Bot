@@ -77,6 +77,32 @@ class Settings(BaseSettings):
     score_discount_percent: Decimal = Field(default=Decimal("1"), ge=0, le=100000)
     score_availability: Decimal = Field(default=Decimal("5"), ge=0, le=100000)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    # Modo Beta Shopee: worker enxuto que publica ofertas filtradas. Desligado por padrão
+    # e em dry-run por padrão; envio real exige também as flags/lista do Telegram acima.
+    beta_enabled: bool = False
+    beta_dry_run: bool = True
+    beta_chat_id: str | None = Field(default=None, pattern=r"^-[1-9][0-9]{0,15}$")
+    beta_keywords: tuple[str, ...] = ()
+    beta_keywords_per_cycle: int = Field(default=2, ge=1, le=10)
+    beta_search_limit: int = Field(default=20, ge=1, le=50)
+    beta_sort_type: int = Field(default=2, ge=1, le=5)
+    beta_interval_minutes: int = Field(default=15, ge=5, le=1440)
+    beta_max_posts_per_cycle: int = Field(default=1, ge=1, le=5)
+    beta_max_posts_per_hour: int = Field(default=2, ge=1, le=30)
+    beta_max_posts_per_day: int = Field(default=20, ge=1, le=200)
+    beta_timezone: str = Field(default="America/Sao_Paulo", min_length=1, max_length=64)
+    beta_quiet_hours_start: int = Field(default=22, ge=0, le=23)
+    beta_quiet_hours_end: int = Field(default=8, ge=0, le=23)
+    beta_min_discount_percent: int = Field(default=20, ge=0, le=99)
+    beta_min_rating: Decimal = Field(default=Decimal("4.5"), ge=0, le=5)
+    beta_min_sales: int = Field(default=50, ge=0)
+    beta_min_commission_rate: Decimal = Field(default=Decimal("0"), ge=0, le=1)
+    beta_min_price: Decimal = Field(default=Decimal("10"), ge=0)
+    beta_max_price: Decimal = Field(default=Decimal("2000"), gt=0)
+    beta_repost_cooldown_days: int = Field(default=7, ge=1, le=90)
+    beta_repost_min_price_drop_percent: int = Field(default=10, ge=1, le=90)
+    beta_pause_file: Path = Path(".runtime/beta.pause")
+    beta_health_file: Path = Path(".runtime/beta-worker-health.json")
 
     @field_validator("admin_allowed_networks")
     @classmethod
@@ -107,6 +133,14 @@ class Settings(BaseSettings):
                 "Use somente IDs numéricos negativos de grupos explicitamente permitidos."
             )
         return tuple(dict.fromkeys(value))
+
+    @field_validator("beta_keywords")
+    @classmethod
+    def validate_beta_keywords(cls, value):
+        cleaned = tuple(dict.fromkeys(" ".join(v.split()) for v in value))
+        if any(not v or len(v) > 100 for v in cleaned) or len(cleaned) > 100:
+            raise ValueError("BETA_KEYWORDS: use até 100 termos não vazios de até 100 caracteres.")
+        return cleaned
 
     @field_validator("mercadolivre_redirect_uri", mode="before")
     @classmethod

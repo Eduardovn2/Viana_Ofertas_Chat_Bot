@@ -4,6 +4,11 @@ Backend local para cadastrar produtos, guardar links de afiliado e acompanhar pr
 
 A fase 3 preserva as fases anteriores e adiciona conectores independentes Mercado Livre/Shopee, proveniência, variantes e evidências de cupom. **Estado atual:** consulta automática Mercado Livre suspensa após HTTP 403; OAuth e tokens protegidos preservados; leitura Shopee `productOfferV2` confirmada em consulta pontual (HTTP 200), mantendo a integração desativada; a categoria zero foi corrigida e validada offline posteriormente. A fase 4 acrescenta cadastro, prévia e aprovação administrativa de ofertas manuais, com envios desativados. A fila simulada anterior mantém seus controles, inclusive quando seu estado se chama `PUBLISHED`; isso não representa uma mensagem externa. A [matriz oficial de capacidades](docs/INTEGRACOES_FASE_3.md) distingue documentação, configuração e acesso comprovado. As seções de validação abaixo preservam os resultados históricos das fases anteriores.
 
+## Modo Beta Shopee (ofertas automáticas)
+
+Para publicar ofertas filtradas da Shopee no Telegram de forma automática, veja
+[docs/BETA_SHOPEE.md](docs/BETA_SHOPEE.md). Vem desligado e em simulação por padrão.
+
 ## O que já pode ser usado
 
 - Verificação de saúde da API e da conexão com o banco.

@@ -12,6 +12,7 @@ Safety rails, all configurable in .env:
 """
 
 import logging
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -28,6 +29,8 @@ from app.services.message_templates import MessageTemplateError
 
 logger = logging.getLogger("ofertas_bot.beta")
 _PUBLISHED = ("SENT", "SENDING", "UNCERTAIN")
+# Shopee answers "System Error" (code 10000) intermittently; retry before giving up.
+SEARCH_RETRY_WAITS = (2, 5)
 
 
 @dataclass
@@ -37,6 +40,7 @@ class CycleReport:
     keywords: list[str] = field(default_factory=list)
     found: int = 0
     eligible: int = 0
+    retries: int = 0
     published: int = 0
     rejected: dict[str, int] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
@@ -110,17 +114,35 @@ def is_duplicate(
     return offer.price_min > last_price * threshold
 
 
-def collect_candidates(session, settings, connector, now, report, dry_run):
-    secret = settings.shopee_secret.get_secret_value() if settings.shopee_secret else None
-    best: dict[str, tuple[Decimal, BetaOffer, str]] = {}
-    for keyword in report.keywords:
+def search_with_retry(connector, settings, keyword, report, sleep):
+    waits = (*SEARCH_RETRY_WAITS, None)
+    for attempt, wait in enumerate(waits, start=1):
         try:
             nodes, _ = connector.beta_search(
                 keyword, limit=settings.beta_search_limit, sort_type=settings.beta_sort_type
             )
+            return nodes
         except IntegrationError as error:
-            report.errors.append(f"SEARCH_{error.code}")
-            logger.warning("beta: busca Shopee falhou (%s) para %r", error.code, keyword)
+            if wait is None or error.code == "CONNECTOR_DISABLED":
+                report.errors.append(f"SEARCH_{error.code}")
+                logger.warning(
+                    "beta: busca Shopee falhou (%s) para %r após %s tentativa(s)",
+                    error.code,
+                    keyword,
+                    attempt,
+                )
+                return None
+            report.retries += 1
+            sleep(wait)
+    return None
+
+
+def collect_candidates(session, settings, connector, now, report, dry_run, sleep=time.sleep):
+    secret = settings.shopee_secret.get_secret_value() if settings.shopee_secret else None
+    best: dict[str, tuple[Decimal, BetaOffer, str]] = {}
+    for keyword in report.keywords:
+        nodes = search_with_retry(connector, settings, keyword, report, sleep)
+        if nodes is None:
             continue
         report.found += len(nodes)
         for node in nodes:
@@ -202,6 +224,7 @@ def run_cycle(
     now: datetime,
     paused: bool = False,
     force_dry_run: bool = False,
+    sleep=time.sleep,
 ) -> CycleReport:
     dry_run = bool(settings.beta_dry_run or force_dry_run)
     report = CycleReport(mode="DRY_RUN" if dry_run else "LIVE")
@@ -225,7 +248,7 @@ def run_cycle(
     if not report.keywords:
         report.status = "NO_KEYWORDS"
         return report
-    candidates = collect_candidates(session, settings, connector, now, report, dry_run)
+    candidates = collect_candidates(session, settings, connector, now, report, dry_run, sleep)
     # Bound the fresh reads per cycle even when many candidates fail the recheck.
     for value, offer, keyword in candidates[: allowance * 3]:
         if report.published >= allowance:

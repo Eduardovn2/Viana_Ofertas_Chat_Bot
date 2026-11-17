@@ -410,11 +410,47 @@ def test_recheck_missing_item_falls_through_to_next(factory):
     assert [r.item_key for r in rows(factory)] == ["900:1"]
 
 
-def test_search_error_is_reported_and_cycle_survives(factory):
+def test_search_error_is_retried_then_reported(factory):
     connector = FakeConnector(IntegrationError("UPSTREAM_GRAPHQL_ERROR", "x"))
+    waits = []
     with factory() as session:
-        report = run_cycle(session, make_settings(), connector, FakePublisher(), now=NOON)
+        report = run_cycle(
+            session, make_settings(), connector, FakePublisher(), now=NOON, sleep=waits.append
+        )
     assert report.status == "ERROR" and report.errors == ["SEARCH_UPSTREAM_GRAPHQL_ERROR"]
+    assert len(connector.searches) == 3 and waits == [2, 5] and report.retries == 2
+
+
+def test_transient_search_error_recovers_on_retry(factory):
+    connector = FakeConnector([node(1)])
+    original = connector.beta_search
+    failures = [IntegrationError("UPSTREAM_GRAPHQL_ERROR", "x")]
+
+    def flaky(keyword, **kwargs):
+        if failures:
+            connector.searches.append((keyword, kwargs))
+            raise failures.pop()
+        return original(keyword, **kwargs)
+
+    connector.beta_search = flaky
+    with factory() as session:
+        report = run_cycle(
+            session, make_settings(), connector, FakePublisher(), now=NOON, sleep=lambda _: None
+        )
+    assert report.status == "OK" and report.published == 1
+    assert report.errors == [] and report.retries == 1
+
+
+def test_disabled_connector_is_not_retried(factory):
+    from app.integrations.errors import ConnectorDisabled
+
+    connector = FakeConnector(ConnectorDisabled())
+    waits = []
+    with factory() as session:
+        report = run_cycle(
+            session, make_settings(), connector, FakePublisher(), now=NOON, sleep=waits.append
+        )
+    assert report.errors == ["SEARCH_CONNECTOR_DISABLED"] and waits == []
 
 
 @pytest.mark.parametrize(

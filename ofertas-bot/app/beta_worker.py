@@ -8,6 +8,7 @@ Comandos (PowerShell, na pasta ofertas-bot):
   .venv/Scripts/python.exe -m app.beta_worker pause     # pausa sem parar o processo
   .venv/Scripts/python.exe -m app.beta_worker resume
   .venv/Scripts/python.exe -m app.beta_worker health    # saída 0 se o worker está vivo
+  .venv/Scripts/python.exe -m app.beta_worker whatsapp  # estado do gateway e grupos WhatsApp
 """
 
 import argparse
@@ -28,6 +29,7 @@ from app.db import build_engine, build_session_factory
 from app.integrations.http import JsonTransport
 from app.integrations.shopee import ShopeeConnector
 from app.integrations.telegram import TelegramPublisher
+from app.integrations.whatsapp import WhatsAppPublisher
 from app.models.beta import BetaPost
 
 logger = logging.getLogger("ofertas_bot.beta")
@@ -67,7 +69,7 @@ def check_health(settings: Settings, now: datetime | None = None) -> bool:
     return now - last <= timedelta(minutes=settings.beta_interval_minutes * 2 + 5)
 
 
-def cycle(settings, factory, connector, publisher, *, force_dry_run=False):
+def cycle(settings, factory, connector, publisher, *, force_dry_run=False, whatsapp=None):
     now = datetime.now(UTC)
     with factory() as session:
         report = run_cycle(
@@ -78,6 +80,7 @@ def cycle(settings, factory, connector, publisher, *, force_dry_run=False):
             now=now,
             paused=settings.beta_pause_file.exists(),
             force_dry_run=force_dry_run,
+            whatsapp=whatsapp,
         )
     data = asdict(report)
     logger.info("beta_cycle %s", json.dumps(data, ensure_ascii=False))
@@ -101,16 +104,19 @@ def print_report(settings, factory) -> None:
     print(f"Últimas 24h: {counts or 'nenhuma oferta'}")
     for row in rows:
         when = row.created_at.astimezone().strftime("%d/%m %H:%M")
+        wa = f" WA:{row.whatsapp_status}" if row.whatsapp_status else ""
         print(
-            f"{when} {row.status:<9} {row.discount_percent:>2}% R$ {row.price_min:>9} "
+            f"{when} {row.status:<9}{wa} {row.discount_percent:>2}% R$ {row.price_min:>9} "
             f"{row.title[:60]}"
         )
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Worker do modo Beta Shopee")
-    parser.add_argument("command", choices=["run", "once", "report", "pause", "resume", "health"])
-    parser.add_argument("--dry-run", action="store_true", help="Força simulação, sem Telegram")
+    parser.add_argument(
+        "command", choices=["run", "once", "report", "pause", "resume", "health", "whatsapp"]
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Força simulação, sem envios")
     args = parser.parse_args(argv)
     settings = Settings()
     configure_logging(settings.log_level)
@@ -125,6 +131,13 @@ def main(argv=None):
         return 0
     if args.command == "health":
         return 0 if check_health(settings) else 1
+    if args.command == "whatsapp":
+        publisher = WhatsAppPublisher(settings)
+        try:
+            print(json.dumps(publisher.status(), ensure_ascii=False, indent=2))
+        finally:
+            publisher.close()
+        return 0
     engine = build_engine(settings.database_url)
     factory = build_session_factory(engine)
     if args.command == "report":
@@ -135,11 +148,19 @@ def main(argv=None):
         return 0
     connector = build_connector(settings)
     publisher = TelegramPublisher(settings)
+    whatsapp = WhatsAppPublisher(settings) if "whatsapp" in settings.beta_channels else None
     stop = Event()
     handlers = {}
     try:
         if args.command == "once":
-            report = cycle(settings, factory, connector, publisher, force_dry_run=args.dry_run)
+            report = cycle(
+                settings,
+                factory,
+                connector,
+                publisher,
+                force_dry_run=args.dry_run,
+                whatsapp=whatsapp,
+            )
             print(json.dumps(asdict(report), ensure_ascii=False, indent=2))
             return 0 if report.status != "ERROR" else 1
         for number in (signal.SIGINT, signal.SIGTERM):
@@ -147,7 +168,14 @@ def main(argv=None):
         logger.info("beta_worker iniciado (intervalo %s min)", settings.beta_interval_minutes)
         while not stop.is_set():
             try:
-                cycle(settings, factory, connector, publisher, force_dry_run=args.dry_run)
+                cycle(
+                    settings,
+                    factory,
+                    connector,
+                    publisher,
+                    force_dry_run=args.dry_run,
+                    whatsapp=whatsapp,
+                )
             except Exception as error:  # keep running; the next cycle may recover
                 logger.error("beta_cycle_failed", extra={"error_type": type(error).__name__})
             stop.wait(settings.beta_interval_minutes * 60)
@@ -157,6 +185,8 @@ def main(argv=None):
         for number, handler in handlers.items():
             signal.signal(number, handler)
         publisher.close()
+        if whatsapp is not None:
+            whatsapp.close()
         connector.transport.close()
         engine.dispose()
 

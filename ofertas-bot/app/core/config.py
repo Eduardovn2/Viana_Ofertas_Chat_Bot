@@ -106,6 +106,18 @@ class Settings(BaseSettings):
     # Só publica se o título tiver as palavras do termo buscado (exceto termos amplos).
     beta_require_keyword_in_title: bool = False
     beta_broad_keywords: tuple[str, ...] = ("geral", "moda", "eletronicos", "eletrônicos")
+    # Ofertas cujo título contém algum destes termos são descartadas (ex.: "masculino").
+    beta_excluded_terms: tuple[str, ...] = ()
+    # Onde cada oferta é publicada: "telegram", "whatsapp" ou os dois.
+    beta_channels: tuple[Literal["telegram", "whatsapp"], ...] = ("telegram",)
+    # WhatsApp via gateway local (whatsapp-gateway/, Baileys). Desligado por padrão.
+    whatsapp_publisher_enabled: bool = False
+    whatsapp_gateway_url: str = "http://127.0.0.1:3100"
+    whatsapp_gateway_token: SecretStr | None = Field(default=None, repr=False)
+    whatsapp_chat_id: str | None = Field(
+        default=None, pattern=r"^([0-9]{5,20}(-[0-9]{5,20})?@g\.us|[0-9]{5,30}@newsletter)$"
+    )
+    whatsapp_send_images: bool = True
     beta_pause_file: Path = Path(".runtime/beta.pause")
     beta_health_file: Path = Path(".runtime/beta-worker-health.json")
 
@@ -146,6 +158,23 @@ class Settings(BaseSettings):
         if any(not v or len(v) > 100 for v in cleaned) or len(cleaned) > 100:
             raise ValueError("BETA_KEYWORDS: use até 100 termos não vazios de até 100 caracteres.")
         return cleaned
+
+    @field_validator("beta_channels")
+    @classmethod
+    def validate_beta_channels(cls, value):
+        return tuple(dict.fromkeys(value))
+
+    @field_validator("whatsapp_gateway_url")
+    @classmethod
+    def validate_whatsapp_gateway(cls, value):
+        url = urlsplit(value)
+        if (
+            url.scheme != "http"
+            or url.hostname not in {"127.0.0.1", "localhost"}
+            or url.path not in {"", "/"}
+        ):
+            raise ValueError("WHATSAPP_GATEWAY_URL deve ser local, ex.: http://127.0.0.1:3100")
+        return value.rstrip("/")
 
     @field_validator("mercadolivre_redirect_uri", mode="before")
     @classmethod

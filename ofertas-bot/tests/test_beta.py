@@ -664,7 +664,7 @@ def test_worker_once_dry_run_against_database(tmp_path, monkeypatch, capsys):
         ("Brinco dourado", "geral", True),
         ("Fritadeira AIR FRYER 4L", "Air Fryer", True),
         ("Computador Gamer i5", "computador", True),
-        ("Computadores", "computador", False),
+        ("Computadores", "computador", True),  # plural folded
     ],
 )
 def test_matches_keyword(title, keyword, expected):
@@ -682,3 +682,182 @@ def test_off_topic_offers_are_rejected_only_when_enabled(factory):
         report = run_cycle(session, settings, FakeConnector(nodes), FakePublisher(), now=NOON)
     assert report.rejected == {"OFF_TOPIC": 1}
     assert [r.item_key for r in rows(factory)] == ["900:1"]
+
+
+# --- moda feminina: relevance and exclusions ----------------------------------------------
+
+
+def test_keyword_match_ignores_gender_and_plural():
+    assert offers.matches_keyword("Vestido Midi Feminino Canelado", "vestido feminina")
+    assert offers.matches_keyword("Kit 3 Blusas Femininas Básicas", "blusa feminina")
+    assert offers.matches_keyword("Calça Pantalona Feminina", "calça feminina")
+    assert not offers.matches_keyword("Calça Jeans Masculina", "calça feminina")
+
+
+def test_excluded_terms_drop_offers(factory):
+    settings = make_settings(
+        beta_keywords=("vestido",),
+        beta_require_keyword_in_title=True,
+        beta_excluded_terms=("masculino", "infantil"),
+    )
+    nodes = [
+        node(1, productName="Vestido Infantil Menina"),
+        node(2, productName="Vestido Longo Feminino"),
+        node(3, productName="Camisa Masculina Social"),
+    ]
+    with factory() as session:
+        report = run_cycle(session, settings, FakeConnector(nodes), FakePublisher(), now=NOON)
+    assert report.rejected == {"EXCLUDED_TERM": 2}
+    assert [r.item_key for r in rows(factory)] == ["900:2"]
+
+
+# --- WhatsApp ---------------------------------------------------------------------------
+
+from app.integrations.whatsapp import WhatsAppPublisher, WhatsAppPublishError  # noqa: E402
+
+WA = "120363000000000000@g.us"
+
+
+class FakeWhatsApp:
+    def __init__(self, error=None):
+        self.sent = []
+        self.error = error
+
+    def send(self, jid, message):
+        if self.error:
+            raise self.error
+        self.sent.append((jid, message))
+        return f"WA{len(self.sent)}"
+
+
+def wa_settings(**overrides):
+    values = dict(
+        beta_dry_run=False,
+        beta_channels=("telegram", "whatsapp"),
+        whatsapp_publisher_enabled=True,
+        whatsapp_chat_id=WA,
+    )
+    values.update(overrides)
+    return make_settings(**values)
+
+
+def test_render_whatsapp_uses_whatsapp_formatting():
+    offer = offers.parse_offer(node(1, productName="Vestido *Midi* Feminino"))
+    message = offers.render_whatsapp(offer, ad_label=False)
+    assert message.text.startswith("🔥 *40% OFF*\n*Vestido Midi Feminino*")
+    assert "🛒 Comprar na Shopee: https://s.shopee.com.br/abc1" in message.text
+    assert "<" not in message.text and message.photo_url
+
+
+def test_offer_goes_to_telegram_and_whatsapp(factory):
+    telegram, whatsapp = FakePublisher(), FakeWhatsApp()
+    with factory() as session:
+        report = run_cycle(
+            session, wa_settings(), FakeConnector([node(1)]), telegram, now=NOON, whatsapp=whatsapp
+        )
+    assert report.published == 1 and len(telegram.sent) == 1
+    assert [jid for jid, _ in whatsapp.sent] == [WA]
+    [row] = rows(factory)
+    assert (row.status, row.whatsapp_status, row.whatsapp_message_id) == ("SENT", "SENT", "WA1")
+
+
+def test_whatsapp_only(factory):
+    telegram, whatsapp = FakePublisher(), FakeWhatsApp()
+    settings = wa_settings(beta_channels=("whatsapp",), beta_chat_id=None)
+    with factory() as session:
+        report = run_cycle(
+            session, settings, FakeConnector([node(1)]), telegram, now=NOON, whatsapp=whatsapp
+        )
+    assert report.published == 1 and telegram.sent == [] and len(whatsapp.sent) == 1
+    assert rows(factory)[0].chat_id is None
+
+
+def test_whatsapp_down_does_not_block_telegram(factory):
+    telegram = FakePublisher()
+    whatsapp = FakeWhatsApp(WhatsAppPublishError("GATEWAY_DOWN"))
+    settings = wa_settings(beta_max_posts_per_cycle=2)
+    with factory() as session:
+        report = run_cycle(
+            session,
+            settings,
+            FakeConnector([node(1), node(2)]),
+            telegram,
+            now=NOON,
+            whatsapp=whatsapp,
+        )
+    assert report.published == 2 and len(telegram.sent) == 2
+    assert report.errors == ["WHATSAPP_GATEWAY_DOWN"]  # tried once, then skipped this cycle
+    stored = rows(factory)
+    assert [(r.status, r.whatsapp_status) for r in stored] == [("SENT", "FAILED"), ("SENT", None)]
+    assert stored[0].error_code == "WHATSAPP_GATEWAY_DOWN"
+
+
+def test_both_channels_failing_marks_row_failed(factory):
+    telegram = FakePublisher(TelegramPublishError("TELEGRAM_FORBIDDEN", status=403))
+    whatsapp = FakeWhatsApp(WhatsAppPublishError("NOT_CONNECTED"))
+    with factory() as session:
+        report = run_cycle(
+            session,
+            wa_settings(beta_max_posts_per_cycle=3),
+            FakeConnector([node(1), node(2)]),
+            telegram,
+            now=NOON,
+            whatsapp=whatsapp,
+        )
+    assert report.status == "ERROR" and report.published == 0
+    [row] = rows(factory)
+    assert row.status == "FAILED" and row.whatsapp_status == "FAILED"
+
+
+def _wa_publisher(handler, **overrides):
+    settings = wa_settings(**overrides)
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    return WhatsAppPublisher(settings, client=client)
+
+
+def test_whatsapp_publisher_posts_to_local_gateway():
+    calls = []
+
+    def handler(request):
+        calls.append((request.url.path, json.loads(request.content), request.headers))
+        return httpx.Response(200, json={"id": "ABC"})
+
+    publisher = _wa_publisher(handler, whatsapp_gateway_token=SecretStr("t0k3n"))
+    message = offers.render_whatsapp(offers.parse_offer(node(1)))
+    assert publisher.send(WA, message) == "ABC"
+    [(path, body, headers)] = calls
+    assert path == "/send" and body["jid"] == WA and body["imageUrl"].startswith("https://")
+    assert headers["authorization"] == "Bearer t0k3n"
+
+
+@pytest.mark.parametrize(
+    ("status", "body", "code", "uncertain"),
+    [
+        (503, {"error": "NOT_CONNECTED"}, "NOT_CONNECTED", False),
+        (401, {"error": "UNAUTHORIZED"}, "GATEWAY_UNAUTHORIZED", False),
+        (502, {"error": "WHATSAPP_REJECTED"}, "WHATSAPP_REJECTED", False),
+        (500, {"error": "INTERNAL"}, "DELIVERY_UNCERTAIN", True),
+    ],
+)
+def test_whatsapp_publisher_errors(status, body, code, uncertain):
+    publisher = _wa_publisher(lambda request: httpx.Response(status, json=body))
+    with pytest.raises(WhatsAppPublishError) as caught:
+        publisher.send(WA, offers.render_whatsapp(offers.parse_offer(node(1))))
+    assert caught.value.code == code and caught.value.uncertain is uncertain
+
+
+def test_whatsapp_publisher_gates():
+    def handler(request):
+        raise AssertionError("no HTTP expected")
+
+    message = offers.render_whatsapp(offers.parse_offer(node(1)))
+    with pytest.raises(WhatsAppPublishError, match="desativado"):
+        _wa_publisher(handler, whatsapp_publisher_enabled=False).send(WA, message)
+    with pytest.raises(WhatsAppPublishError) as caught:
+        _wa_publisher(handler).send("120363999999999999@g.us", message)
+    assert caught.value.code == "CHAT_NOT_ALLOWED"
+
+
+def test_whatsapp_gateway_must_be_local():
+    with pytest.raises(ValueError):
+        make_settings(whatsapp_gateway_url="http://example.com:3100")

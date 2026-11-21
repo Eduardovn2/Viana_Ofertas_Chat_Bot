@@ -74,3 +74,56 @@ comissão. `BETA_KEYWORDS` é uma lista JSON de termos; cada ciclo usa
 - `health`: saída 0 se o worker registrou um ciclo recentemente
   (`.runtime/beta-worker-health.json`).
 - Parar de vez: `Ctrl+C` no terminal do `run`, ou `BETA_ENABLED=false` e reiniciar.
+
+## Filtro por nicho (ex.: moda feminina)
+
+- `BETA_KEYWORDS`: termos buscados na Shopee, em rodízio.
+- `BETA_REQUIRE_KEYWORD_IN_TITLE=true`: o título precisa conter as palavras do termo.
+  Masculino/feminino e singular/plural contam como a mesma palavra
+  ("blusa feminina" aceita "Blusas Femininas"; "vestido feminina" aceita "Vestido Feminino").
+- `BETA_EXCLUDED_TERMS`: descarta títulos com algum desses termos
+  (ex.: `["masculino","infantil"]`). Aparece no relatório como `EXCLUDED_TERM`.
+
+## WhatsApp
+
+O WhatsApp não tem API oficial para postar em grupos comuns, então o bot usa um
+gateway local (`whatsapp-gateway/`, biblioteca Baileys) que se conecta a um número
+como "aparelho conectado", do mesmo jeito que o WhatsApp Web.
+
+**Risco:** é uma integração não oficial. O WhatsApp pode banir números que mandam
+muitas mensagens com link. Use um número separado (chip só para o bot), poste em
+um grupo/canal seu e comece com poucos envios por hora.
+
+`BETA_CHANNELS` define onde cada oferta sai. Com `["telegram","whatsapp"]` a mesma
+oferta vai para os dois; se um canal falhar, o outro segue normalmente. A coluna
+`whatsapp_status` da tabela `beta_posts` guarda o resultado do WhatsApp.
+
+### Ligando no PC (PowerShell, pasta `ofertas-bot`)
+
+1. Requer Node.js 20+ (`node -v`). Instale as dependências do gateway uma vez:
+
+   ```powershell
+   cd whatsapp-gateway; npm install; cd ..
+   .venv/Scripts/python.exe -m alembic upgrade head   # coluna whatsapp_status
+   ```
+
+2. Inicie o gateway num terminal separado e deixe aberto:
+
+   ```powershell
+   cd whatsapp-gateway; npm start
+   ```
+
+   Conecte o número: abra `http://127.0.0.1:3100/qr` e leia o QR no celular
+   (WhatsApp > Aparelhos conectados > Conectar aparelho). Alternativa: defina
+   `WHATSAPP_PAIRING_NUMBER` no `.env` e digite o código mostrado no terminal em
+   "Conectar com número de telefone". A sessão fica salva em `.runtime/whatsapp-auth`.
+
+3. Descubra o ID do grupo: `.venv/Scripts/python.exe -m app.beta_worker whatsapp`
+   mostra o estado, e `http://127.0.0.1:3100/groups` lista os grupos do número.
+
+4. No `.env`: `WHATSAPP_PUBLISHER_ENABLED=true`, `WHATSAPP_CHAT_ID=<id>@g.us` e
+   `BETA_CHANNELS=["telegram","whatsapp"]`. Reinicie o `beta_worker run`.
+
+Se o gateway estiver fechado ou desconectado, o ciclo registra
+`WHATSAPP_GATEWAY_DOWN`/`WHATSAPP_NOT_CONNECTED` e continua postando no Telegram.
+Para desconectar de vez: remova o aparelho no celular e apague `.runtime/whatsapp-auth`.

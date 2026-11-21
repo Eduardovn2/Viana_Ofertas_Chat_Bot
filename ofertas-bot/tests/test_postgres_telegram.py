@@ -124,7 +124,7 @@ def test_postgres_telegram_checks_fks_and_non_destructive_downgrade(categories_p
     with engine.connect() as connection:
         assert (
             connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0010_beta_posts"
+            == "0011_beta_whatsapp"
         )
         assert connection.scalar(text("SELECT count(*) FROM telegram_publications")) == 1
         assert connection.scalar(text("SELECT count(*) FROM manual_offer_details")) == 1

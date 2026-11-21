@@ -40,5 +40,7 @@ class BetaPost(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20))
     chat_id: Mapped[str | None] = mapped_column(String(32))
     telegram_message_id: Mapped[str | None] = mapped_column(String(64))
+    whatsapp_status: Mapped[str | None] = mapped_column(String(20))
+    whatsapp_message_id: Mapped[str | None] = mapped_column(String(128))
     error_code: Mapped[str | None] = mapped_column(String(100))
     sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime())

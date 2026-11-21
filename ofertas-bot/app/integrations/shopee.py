@@ -255,6 +255,9 @@ class ShopeeConnector:
         if not isinstance(response.data, dict):
             raise InvalidPayload()
         if response.data.get("errors"):
+            # The error came with HTTP 200 and was cached; drop it so a retry really asks again.
+            if cache_key and (forget := getattr(self.transport, "forget", None)):
+                forget(cache_key)
             # Never propagate an upstream message: it can echo submitted credentials or URLs.
             raise IntegrationError("UPSTREAM_GRAPHQL_ERROR", "A API Shopee recusou a operação.")
         if not isinstance(response.data.get("data"), dict):

@@ -56,26 +56,32 @@ async function connect() {
     auth,
     version,
     logger,
-    browser: Browsers.windows('Viana Ofertas'),
+    // O WhatsApp só aceita nomes de navegador conhecidos; um nome próprio faz o QR/código falhar.
+    browser: Browsers.windows('Chrome'),
     markOnlineOnConnect: false,
     syncFullHistory: false,
   })
   state.sock = sock
   sock.ev.on('creds.update', saveCreds)
 
-  if (PAIRING_NUMBER && !auth.creds.registered) {
-    setTimeout(async () => {
-      try {
-        state.pairingCode = await sock.requestPairingCode(PAIRING_NUMBER)
-        console.log(`\nCódigo de pareamento: ${state.pairingCode}`)
-        console.log('No celular: WhatsApp > Aparelhos conectados > Conectar com número de telefone.\n')
-      } catch (error) {
-        console.error('Não foi possível gerar o código de pareamento:', error?.message)
-      }
-    }, 3000)
+  let pairingRequested = false
+  async function requestPairing() {
+    pairingRequested = true
+    try {
+      state.pairingCode = await sock.requestPairingCode(PAIRING_NUMBER)
+      console.log(`\nCódigo de pareamento: ${state.pairingCode}`)
+      console.log('No celular: WhatsApp > Aparelhos conectados > Conectar com número de telefone.\n')
+    } catch (error) {
+      pairingRequested = false
+      console.error('Não foi possível gerar o código de pareamento:', error?.message)
+    }
   }
 
   sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
+    // O código só pode ser pedido quando o servidor já está pronto para parear (evento qr).
+    if (qr && PAIRING_NUMBER && !auth.creds.registered && !pairingRequested) {
+      requestPairing()
+    }
     if (qr && !PAIRING_NUMBER) {
       state.qr = qr
       console.log(`\nLeia o QR code (ou abra http://127.0.0.1:${PORT}/qr):`)

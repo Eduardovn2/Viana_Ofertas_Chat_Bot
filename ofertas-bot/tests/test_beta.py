@@ -861,3 +861,36 @@ def test_whatsapp_publisher_gates():
 def test_whatsapp_gateway_must_be_local():
     with pytest.raises(ValueError):
         make_settings(whatsapp_gateway_url="http://example.com:3100")
+
+
+def test_graphql_error_is_not_cached_so_retry_reaches_shopee():
+    """Shopee answers System Error with HTTP 200; a retry must not get that from the cache."""
+    from app.integrations.http import JsonTransport
+
+    answers = [
+        {"errors": [{"message": "System Error", "extensions": {"code": 10000}}]},
+        {
+            "data": {
+                "productOfferV2": {
+                    "nodes": [node(1)],
+                    "pageInfo": {"page": 1, "limit": 20, "hasNextPage": False},
+                }
+            }
+        },
+    ]
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json=answers[min(len(calls) - 1, 1)])
+
+    transport = JsonTransport(
+        client=httpx.Client(transport=httpx.MockTransport(handler)), min_interval=0.1
+    )
+    connector = ShopeeConnector(
+        transport, app_id=SecretStr("app123"), secret=SecretStr("s3cr3t"), enabled=True
+    )
+    with pytest.raises(IntegrationError):
+        connector.beta_search("biquíni")
+    nodes, _ = connector.beta_search("biquíni")
+    assert nodes == [node(1)] and len(calls) == 2

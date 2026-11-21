@@ -82,6 +82,11 @@ class JsonTransport:
         with self._lock:
             self._cache.clear()
 
+    def forget(self, cache_key: str) -> None:
+        """Drop one cached answer (e.g. an HTTP 200 that carried an API error)."""
+        with self._lock:
+            self._cache.pop(cache_key, None)
+
     def _retry_wait(self, response: httpx.Response | None, attempt: int) -> float:
         delay = min(2**attempt + self.jitter(), self.max_retry_wait)
         if response is not None and (header := response.headers.get("Retry-After")):

@@ -20,3 +20,4 @@ build/
 .tools/
 *.sqlite3-wal
 *.sqlite3-shm
+node_modules/

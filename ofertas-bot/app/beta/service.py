@@ -24,14 +24,17 @@ from sqlalchemy.orm import Session
 from app.beta.offers import (
     BetaOffer,
     OfferRejected,
+    has_excluded_term,
     matches_keyword,
     parse_offer,
     rejection_reason,
     render,
+    render_whatsapp,
     score,
 )
 from app.integrations.errors import IntegrationError
 from app.integrations.telegram import TelegramPublishError
+from app.integrations.whatsapp import WhatsAppPublishError
 from app.models.beta import BetaPost
 from app.services.message_templates import MessageTemplateError
 
@@ -160,6 +163,8 @@ def collect_candidates(session, settings, connector, now, report, dry_run, sleep
                 report.reject(error.reason)
                 continue
             reason = rejection_reason(offer, settings)
+            if reason is None and has_excluded_term(offer.title, settings.beta_excluded_terms):
+                reason = "EXCLUDED_TERM"
             if (
                 reason is None
                 and settings.beta_require_keyword_in_title
@@ -207,6 +212,15 @@ def recheck(connector, settings, offer: BetaOffer, report) -> BetaOffer | None:
     return fresh
 
 
+def active_channels(settings, whatsapp) -> list[str]:
+    channels = []
+    if "telegram" in settings.beta_channels and settings.beta_chat_id:
+        channels.append("telegram")
+    if "whatsapp" in settings.beta_channels and settings.whatsapp_chat_id and whatsapp:
+        channels.append("whatsapp")
+    return channels
+
+
 def _row(offer, keyword, value, rendered, status, chat_id, now):
     return BetaPost(
         item_key=offer.item_key,
@@ -239,7 +253,9 @@ def run_cycle(
     paused: bool = False,
     force_dry_run: bool = False,
     sleep=time.sleep,
+    whatsapp=None,
 ) -> CycleReport:
+    """`publisher` sends to Telegram; `whatsapp` (optional) to the WhatsApp gateway."""
     dry_run = bool(settings.beta_dry_run or force_dry_run)
     report = CycleReport(mode="DRY_RUN" if dry_run else "LIVE")
     if not settings.beta_enabled:
@@ -248,7 +264,8 @@ def run_cycle(
     if paused:
         report.status = "PAUSED"
         return report
-    if not dry_run and not settings.beta_chat_id:
+    channels = active_channels(settings, whatsapp)
+    if not dry_run and not channels:
         report.status = "MISSING_CHAT"
         return report
     if in_quiet_hours(settings, now):
@@ -265,13 +282,14 @@ def run_cycle(
     candidates = collect_candidates(session, settings, connector, now, report, dry_run, sleep)
     # Bound the fresh reads per cycle even when many candidates fail the recheck.
     for value, offer, keyword in candidates[: allowance * 3]:
-        if report.published >= allowance:
+        if report.published >= allowance or (not dry_run and not channels):
             break
         fresh = recheck(connector, settings, offer, report)
         if fresh is None:
             continue
         try:
             rendered = render(fresh, ad_label=settings.beta_ad_label)
+            wa_rendered = render_whatsapp(fresh, ad_label=settings.beta_ad_label)
         except MessageTemplateError:
             report.reject("RENDER_FAILED")
             continue
@@ -283,26 +301,54 @@ def run_cycle(
                 "beta[dry-run]: %s | %s | %s%%", fresh.item_key, fresh.title, fresh.discount_percent
             )
             continue
-        row = _row(fresh, keyword, value, rendered, "SENDING", settings.beta_chat_id, now)
+        chat_id = settings.beta_chat_id if "telegram" in channels else None
+        row = _row(fresh, keyword, value, rendered, "SENDING", chat_id, now)
+        if "whatsapp" in channels:
+            row.whatsapp_status = "SENDING"
         session.add(row)
         session.commit()
-        try:
-            result = publisher.send(settings.beta_chat_id, rendered)
-        except TelegramPublishError as error:
-            row.status = "UNCERTAIN" if error.uncertain else "FAILED"
-            row.error_code = error.code
-            session.commit()
-            report.errors.append(f"TELEGRAM_{error.code}")
-            logger.warning("beta: envio Telegram falhou (%s) para %s", error.code, fresh.item_key)
-            if error.code != "INVALID_MESSAGE":
-                break  # configuration, permission or rate problems: stop this cycle
-            continue
-        row.status = "SENT"
-        row.telegram_message_id = str(result.message_id)
-        row.sent_at = now
+        sent = uncertain = False
+        for channel in list(channels):
+            if channel == "telegram":
+                try:
+                    result = publisher.send(settings.beta_chat_id, rendered)
+                except TelegramPublishError as error:
+                    uncertain = uncertain or error.uncertain
+                    row.error_code = row.error_code or error.code
+                    report.errors.append(f"TELEGRAM_{error.code}")
+                    logger.warning(
+                        "beta: envio Telegram falhou (%s) para %s", error.code, fresh.item_key
+                    )
+                    if error.code != "INVALID_MESSAGE":
+                        channels.remove("telegram")  # config/permission/rate: skip this cycle
+                    continue
+                row.telegram_message_id = str(result.message_id)
+                sent = True
+            else:
+                try:
+                    message_id = whatsapp.send(settings.whatsapp_chat_id, wa_rendered)
+                except WhatsAppPublishError as error:
+                    uncertain = uncertain or error.uncertain
+                    row.whatsapp_status = "UNCERTAIN" if error.uncertain else "FAILED"
+                    row.error_code = row.error_code or f"WHATSAPP_{error.code}"
+                    report.errors.append(f"WHATSAPP_{error.code}")
+                    logger.warning(
+                        "beta: envio WhatsApp falhou (%s) para %s", error.code, fresh.item_key
+                    )
+                    if error.code != "INVALID_MESSAGE":
+                        channels.remove("whatsapp")
+                    continue
+                row.whatsapp_status = "SENT"
+                row.whatsapp_message_id = message_id
+                sent = True
+        if sent:
+            row.status = "SENT"
+            row.sent_at = now
+            report.published += 1
+            logger.info("beta: publicado %s | %s", fresh.item_key, fresh.title)
+        else:
+            row.status = "UNCERTAIN" if uncertain else "FAILED"
         session.commit()
-        report.published += 1
-        logger.info("beta: publicado %s | %s", fresh.item_key, fresh.title)
     if report.errors and report.published == 0:
         report.status = "ERROR"
     return report

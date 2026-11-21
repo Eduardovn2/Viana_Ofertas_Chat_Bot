@@ -163,8 +163,27 @@ def _normalize(text: str) -> str:
     return "".join(c for c in decomposed if not unicodedata.combining(c))
 
 
+def _stem(token: str) -> str:
+    """Fold Portuguese gender/plural endings: feminino/feminina/femininas -> feminin."""
+    if len(token) >= 5:
+        for suffix in ("as", "os", "es", "a", "o", "s"):
+            if token.endswith(suffix) and len(token) - len(suffix) >= 4:
+                return token[: -len(suffix)]
+    return token
+
+
 def _tokens(text: str) -> set[str]:
-    return set(re.findall(r"[a-z0-9]+", _normalize(text)))
+    return {_stem(token) for token in re.findall(r"[a-z0-9]+", _normalize(text))}
+
+
+def has_excluded_term(title: str, excluded_terms=()) -> bool:
+    """True when every significant word of any excluded term appears in the title."""
+    tokens = _tokens(title)
+    for term in excluded_terms:
+        wanted = {token for token in _tokens(term) if len(token) >= 2}
+        if wanted and wanted <= tokens:
+            return True
+    return False
 
 
 def matches_keyword(title: str, keyword: str, broad_keywords=()) -> bool:
@@ -230,3 +249,33 @@ def render(offer: BetaOffer, *, ad_label: bool = True) -> RenderedMessage:
     if telegram_text_length(text) > 4096:
         raise MessageTemplateError("Mensagem excede o limite de texto do Telegram.")
     return RenderedMessage(text, photo_url=photo)
+
+
+_WA_FORMATTING = re.compile(r"[*_~`]")
+
+
+def render_whatsapp(offer: BetaOffer, *, ad_label: bool = True) -> RenderedMessage:
+    """Same content as `render`, in WhatsApp formatting (*bold*, plain link)."""
+    title = _WA_FORMATTING.sub("", offer.title)
+    title = " ".join(title.split()) or "Oferta"
+    if len(title) > _MAX_TITLE:
+        title = title[: _MAX_TITLE - 1] + "…"
+    lines = []
+    if offer.discount_percent > 0:
+        lines.append(f"🔥 *{offer.discount_percent}% OFF*")
+    lines.append(f"*{title}*")
+    prefix = "A partir de " if offer.price_max and offer.price_max > offer.price_min else ""
+    lines.append(f"💰 {prefix}*{_money(offer.price_min)}*")
+    details = []
+    if offer.rating is not None and offer.rating > 0:
+        details.append(f"⭐ {str(offer.rating.normalize()).replace('.', ',')}")
+    if offer.sales:
+        details.append(_sales(offer.sales))
+    if details:
+        lines.append(" · ".join(details))
+    lines.append(f"🛒 Comprar na Shopee: {offer.offer_link}")
+    lines.append("")
+    lines.append(f"_{PRICE_NOTICE}_")
+    if ad_label:
+        lines.append(ADVERTISING_LABEL)
+    return RenderedMessage("\n".join(lines), photo_url=offer.image_url, parse_mode="WHATSAPP")

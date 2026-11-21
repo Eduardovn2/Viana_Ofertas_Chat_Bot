@@ -1,4 +1,4 @@
-"""Contrato reservado para uma integração WhatsApp autorizada no futuro."""
+"""Contrato abstrato antigo; o envio real do beta está em app/integrations/whatsapp.py."""
 
 from abc import ABC, abstractmethod
 

@@ -37,7 +37,6 @@ class IntegrationError(Exception):
     def __init__(self, code: str, message: str):
         self.code = code
         self.message = message
-        self.upstream_code: int | None = None  # numeric provider code only, never its text
         super().__init__(message)
 
 

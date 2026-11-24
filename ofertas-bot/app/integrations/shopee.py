@@ -162,6 +162,13 @@ def _image(value) -> str | None:
     return value if valid else None
 
 
+def _graphql_error_code(errors) -> int | None:
+    first = errors[0] if isinstance(errors, list) and errors else None
+    extensions = first.get("extensions") if isinstance(first, dict) else None
+    code = extensions.get("code") if isinstance(extensions, dict) else None
+    return code if type(code) is int and 0 <= code < 10**7 else None
+
+
 class ShopeeConnector:
     platform = Platform.SHOPEE
 
@@ -255,8 +262,14 @@ class ShopeeConnector:
         if not isinstance(response.data, dict):
             raise InvalidPayload()
         if response.data.get("errors"):
+            # The error came with HTTP 200 and was cached; drop it so a retry really asks again.
+            if cache_key and (forget := getattr(self.transport, "forget", None)):
+                forget(cache_key)
             # Never propagate an upstream message: it can echo submitted credentials or URLs.
-            raise IntegrationError("UPSTREAM_GRAPHQL_ERROR", "A API Shopee recusou a operação.")
+            # Only the numeric Shopee code (e.g. 10000 System Error, 10020 rate limit) is kept.
+            error = IntegrationError("UPSTREAM_GRAPHQL_ERROR", "A API Shopee recusou a operação.")
+            error.upstream_code = _graphql_error_code(response.data["errors"])
+            raise error
         if not isinstance(response.data.get("data"), dict):
             raise InvalidPayload()
         if (
@@ -578,10 +591,13 @@ class ShopeeConnector:
         item_id: str | None = None,
         limit: int = 20,
         sort_type: int | None = None,
+        page: int = 1,
     ) -> str:
         """Beta mode query: listing fields plus offerLink, rating and sales."""
         if type(limit) is not int or not 1 <= limit <= 50:
             raise InvalidPayload("Use limite de 1 a 50.")
+        if type(page) is not int or not 1 <= page <= 100:
+            raise InvalidPayload("Use página de 1 a 100.")
         if keyword is not None:
             if shop_id is not None or item_id is not None:
                 raise InvalidPayload("Use busca por termo ou por item, não ambos.")
@@ -590,23 +606,29 @@ class ShopeeConnector:
             arguments = f"keyword:{json.dumps(keyword.strip(), ensure_ascii=False)}"
         else:
             arguments = f"shopId:{_positive_id(shop_id)},itemId:{_positive_id(item_id)}"
-            limit = 1
+            limit, page = 1, 1
         if sort_type is not None:
             if type(sort_type) is not int or not 1 <= sort_type <= 5:
                 raise InvalidPayload("Ordenação Shopee inválida.")
             arguments += f",sortType:{sort_type}"
-        arguments += f",page:1,limit:{limit}"
+        arguments += f",page:{page},limit:{limit}"
         fields = _PRODUCT_FIELDS + " shopName ratingStar sales offerLink"
         return (
             f"query {{ productOfferV2({arguments}) "
             f"{{ nodes {{ {fields} }} pageInfo {{ {_PAGE_FIELDS} }} }} }}"
         )
 
-    def beta_search(self, keyword: str, *, limit: int = 20, sort_type: int | None = None):
-        """Raw nodes for the beta filter; validation happens in app.beta.offers."""
-        response = self._request(self.beta_query(keyword=keyword, limit=limit, sort_type=sort_type))
-        nodes, _ = self._connection(response, page=1, limit=limit)
-        return nodes, response.fetched_at
+    def beta_search(
+        self, keyword: str, *, limit: int = 20, sort_type: int | None = None, page: int = 1
+    ):
+        """Raw nodes for the beta filter and whether a next page exists.
+
+        Validation of each node happens in app.beta.offers.
+        """
+        response = self._request(
+            self.beta_query(keyword=keyword, limit=limit, sort_type=sort_type, page=page)
+        )
+        return self._connection(response, page=page, limit=limit)
 
     def beta_lookup(self, shop_id: str, item_id: str):
         """Fresh (uncached) read of one listing right before publishing."""

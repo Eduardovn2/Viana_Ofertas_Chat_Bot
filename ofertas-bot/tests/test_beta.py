@@ -65,24 +65,37 @@ def make_settings(**overrides):
 
 
 class FakeConnector:
-    def __init__(self, nodes, lookup=None):
+    """`nodes` is page 1 of every keyword; `pages` maps keyword -> list of pages."""
+
+    def __init__(self, nodes, lookup=None, pages=None):
         self.nodes = nodes
         self.lookup = lookup or {}
+        self.pages = pages or {}
         self.searches = []
         self.lookups = []
 
-    def beta_search(self, keyword, *, limit, sort_type):
-        self.searches.append((keyword, limit, sort_type))
+    def beta_search(self, keyword, *, limit, sort_type, page=1):
+        self.searches.append((keyword, limit, sort_type) if page == 1 else (keyword, page))
         if isinstance(self.nodes, Exception):
             raise self.nodes
-        return list(self.nodes), NOON
+        pages = self.pages.get(keyword, [self.nodes])
+        if page > len(pages):
+            return [], False
+        return list(pages[page - 1]), page < len(pages)
+
+    def _all_nodes(self):
+        if isinstance(self.nodes, list):
+            yield from self.nodes
+        for pages in self.pages.values():
+            for page in pages:
+                yield from page
 
     def beta_lookup(self, shop_id, item_id):
         self.lookups.append((shop_id, item_id))
         key = f"{shop_id}:{item_id}"
         if key in self.lookup:
             return self.lookup[key], NOON
-        for row in self.nodes:
+        for row in self._all_nodes():
             if f"{row['shopId']}:{row['itemId']}" == key:
                 return row, NOON
         return None, NOON
@@ -554,6 +567,11 @@ def test_beta_query_shapes():
         ShopeeConnector.beta_query(keyword="x", shop_id="1", item_id="2")
     with pytest.raises(InvalidPayload):
         ShopeeConnector.beta_query(keyword="x", sort_type=9)
+    assert "sortType:2,page:3,limit:20" in ShopeeConnector.beta_query(
+        keyword="x", sort_type=2, page=3
+    )
+    with pytest.raises(InvalidPayload):
+        ShopeeConnector.beta_query(keyword="x", page=0)
 
 
 def test_beta_search_signs_request_and_returns_nodes():
@@ -579,8 +597,8 @@ def test_beta_search_signs_request_and_returns_nodes():
     connector = ShopeeConnector(
         transport, app_id=SecretStr("app123"), secret=SecretStr("s3cr3t"), enabled=True
     )
-    nodes, fetched_at = connector.beta_search("fone", limit=20, sort_type=2)
-    assert nodes == [node(1)] and fetched_at.tzinfo is not None
+    nodes, has_next = connector.beta_search("fone", limit=20, sort_type=2)
+    assert nodes == [node(1)] and has_next is False
     assert seen[0].headers["Authorization"].startswith("SHA256 Credential=app123, Timestamp=")
     item, _ = connector.beta_lookup("900", "1")
     assert item == node(1)
@@ -861,3 +879,126 @@ def test_whatsapp_publisher_gates():
 def test_whatsapp_gateway_must_be_local():
     with pytest.raises(ValueError):
         make_settings(whatsapp_gateway_url="http://example.com:3100")
+
+
+def test_graphql_error_is_not_cached_so_retry_reaches_shopee():
+    """Shopee answers System Error with HTTP 200; a retry must not get that from the cache."""
+    from app.integrations.http import JsonTransport
+
+    answers = [
+        {"errors": [{"message": "System Error", "extensions": {"code": 10000}}]},
+        {
+            "data": {
+                "productOfferV2": {
+                    "nodes": [node(1)],
+                    "pageInfo": {"page": 1, "limit": 20, "hasNextPage": False},
+                }
+            }
+        },
+    ]
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json=answers[min(len(calls) - 1, 1)])
+
+    transport = JsonTransport(
+        client=httpx.Client(transport=httpx.MockTransport(handler)), min_interval=0.1
+    )
+    connector = ShopeeConnector(
+        transport, app_id=SecretStr("app123"), secret=SecretStr("s3cr3t"), enabled=True
+    )
+    with pytest.raises(IntegrationError) as caught:
+        connector.beta_search("biquíni")
+    assert caught.value.upstream_code == 10000 and "System Error" not in str(caught.value)
+    nodes, _ = connector.beta_search("biquíni")
+    assert nodes == [node(1)] and len(calls) == 2
+
+
+# --- keep searching until the cycle's goal is met ------------------------------------------------
+
+
+def test_cycle_goes_to_next_page_when_first_page_is_all_duplicates(factory):
+    settings = make_settings(
+        beta_dry_run=True, beta_max_posts_per_cycle=2, beta_max_posts_per_hour=10
+    )
+    connector = FakeConnector(
+        [], pages={"fone bluetooth": [[node(1), node(2)], [node(3), node(4)]]}
+    )
+    with factory() as session:
+        first = run_cycle(session, settings, connector, None, now=NOON)
+        second = run_cycle(session, settings, connector, None, now=NOON + timedelta(minutes=1))
+    assert first.published == 2 and first.searches == ["fone bluetooth"]
+    assert second.published == 2 and second.rejected == {"DUPLICATE": 2}
+    assert second.searches == ["fone bluetooth", "fone bluetooth p2"]
+    assert sorted(r.item_key for r in rows(factory)) == ["900:1", "900:2", "900:3", "900:4"]
+
+
+def test_cycle_moves_on_to_more_keywords_when_slice_has_nothing(factory):
+    settings = make_settings(
+        beta_dry_run=True,
+        beta_keywords=("a", "b", "c", "d"),
+        beta_keywords_per_cycle=2,
+        beta_max_pages_per_keyword=1,
+    )
+    slice_now = keywords_for_cycle(settings, NOON)
+    others = [k for k in ("a", "b", "c", "d") if k not in slice_now]
+    pages = {k: [[]] for k in slice_now}
+    pages[others[0]] = [[node(7)]]
+    connector = FakeConnector([], pages=pages)
+    with factory() as session:
+        report = run_cycle(session, settings, connector, None, now=NOON)
+    assert report.status == "OK" and report.published == 1
+    assert report.keywords == slice_now and report.searches == [*slice_now, others[0]]
+
+
+def test_search_error_skips_keyword_and_cycle_continues(factory):
+    settings = make_settings(
+        beta_dry_run=False, beta_keywords=("quebrado", "fone bluetooth"), beta_keywords_per_cycle=2
+    )
+    connector = FakeConnector([node(1)])
+    original = connector.beta_search
+
+    def search(keyword, **kwargs):
+        if keyword == "quebrado":
+            connector.searches.append((keyword, kwargs))
+            raise IntegrationError("UPSTREAM_GRAPHQL_ERROR", "x")
+        return original(keyword, **kwargs)
+
+    connector.beta_search = search
+    publisher = FakePublisher()
+    with factory() as session:
+        report = run_cycle(session, settings, connector, publisher, now=NOON, sleep=lambda _: None)
+    assert report.status == "OK" and report.published == 1 and len(publisher.sent) == 1
+    assert report.errors == ["SEARCH_UPSTREAM_GRAPHQL_ERROR"]
+    # the failing keyword is not searched again (3 attempts only) in deeper pages
+    assert [s[0] for s in connector.searches].count("quebrado") == 3
+
+
+def test_extra_searches_are_bounded_and_report_no_offers(factory):
+    settings = make_settings(
+        beta_dry_run=True,
+        beta_keywords=("a", "b", "c"),
+        beta_keywords_per_cycle=1,
+        beta_max_pages_per_keyword=5,
+        beta_max_searches_per_cycle=4,
+    )
+    endless = [[node(1, priceDiscountRate=0)]] * 10  # never passes the discount filter
+    connector = FakeConnector([], pages={k: endless for k in "abc"})
+    with factory() as session:
+        report = run_cycle(session, settings, connector, None, now=NOON)
+    assert report.status == "NO_OFFERS" and report.published == 0
+    assert len(connector.searches) == 4 and len(report.searches) == 4
+
+
+def test_first_slice_is_fully_searched_before_publishing(factory):
+    """The best offer of the usual slice still wins over the first one found."""
+    settings = make_settings(beta_dry_run=True, beta_keywords=("a", "b"), beta_keywords_per_cycle=2)
+    pages = {
+        "a": [[node(1, priceDiscountRate=25)]],
+        "b": [[node(2, priceDiscountRate=60)]],
+    }
+    connector = FakeConnector([], pages=pages)
+    with factory() as session:
+        report = run_cycle(session, settings, connector, None, now=NOON)
+    assert report.published == 1 and rows(factory)[0].item_key == "900:2"

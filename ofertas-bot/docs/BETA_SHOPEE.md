@@ -33,6 +33,15 @@ ciclo tenta de novo. Nenhum segredo é gravado em log.
 comissão. `BETA_KEYWORDS` é uma lista JSON de termos; cada ciclo usa
 `BETA_KEYWORDS_PER_CYCLE` termos, em rodízio.
 
+Se essas buscas não renderem ofertas novas (tudo repetido, fora do tema ou abaixo dos
+filtros), o ciclo **não desiste**: busca as próximas páginas dos mesmos termos (até
+`BETA_MAX_PAGES_PER_KEYWORD`, padrão 3) e depois os próximos termos do rodízio, até
+publicar `BETA_MAX_POSTS_PER_CYCLE` ofertas ou fazer `BETA_MAX_SEARCHES_PER_CYCLE`
+buscas (padrão 15). Um termo que dá erro na Shopee (ex.: `UPSTREAM_GRAPHQL_ERROR`)
+é pulado só naquele ciclo e a busca segue com os outros. O log `beta_cycle` mostra
+em `searches` cada busca feita (`"biquíni p2"` = página 2) e o status `NO_OFFERS`
+quando nada passou nos filtros.
+
 ## Rodando no PC (Windows/PowerShell), na pasta `ofertas-bot`
 
 1. Banco no ar e migração nova (cria só a tabela `beta_posts`):

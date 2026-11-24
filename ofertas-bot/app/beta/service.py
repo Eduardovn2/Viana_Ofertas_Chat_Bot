@@ -52,6 +52,7 @@ class CycleReport:
     found: int = 0
     eligible: int = 0
     retries: int = 0
+    searches: list[str] = field(default_factory=list)
     published: int = 0
     rejected: dict[str, int] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
@@ -76,15 +77,47 @@ def in_quiet_hours(settings, now: datetime) -> bool:
     return start <= hour < end if start < end else hour >= start or hour < end
 
 
-def keywords_for_cycle(settings, now: datetime) -> list[str]:
-    """Rotate through BETA_KEYWORDS so each cycle searches a different slice."""
+def _rotation(settings, now: datetime) -> tuple[list[str], int]:
+    """All keywords starting at this cycle's slot, and how many make up one slice."""
     keywords = list(settings.beta_keywords)
     if not keywords:
-        return []
+        return [], 0
     count = min(settings.beta_keywords_per_cycle, len(keywords))
     slot = int(now.timestamp() // (settings.beta_interval_minutes * 60))
     start = (slot * count) % len(keywords)
-    return [keywords[(start + i) % len(keywords)] for i in range(count)]
+    return [keywords[(start + i) % len(keywords)] for i in range(len(keywords))], count
+
+
+def keywords_for_cycle(settings, now: datetime) -> list[str]:
+    """Rotate through BETA_KEYWORDS so each cycle searches a different slice."""
+    ordered, count = _rotation(settings, now)
+    return ordered[:count]
+
+
+class SearchPlan:
+    """Order of (keyword, page) searches for one cycle.
+
+    First page 1 of this cycle's slice (the usual searches). If that is not
+    enough, deeper pages of the same slice, then the next slices of the rotation.
+    A keyword that failed or has no next page is skipped from then on.
+    """
+
+    def __init__(self, settings, now: datetime):
+        ordered, count = _rotation(settings, now)
+        self.groups = [ordered[i : i + count] for i in range(0, len(ordered), count or 1)]
+        self.max_pages = settings.beta_max_pages_per_keyword
+        self.done: set[str] = set()
+        self._steps = self._iterate()
+
+    def _iterate(self):
+        for group in self.groups:
+            for page in range(1, self.max_pages + 1):
+                for keyword in group:
+                    if keyword not in self.done:
+                        yield keyword, page
+
+    def next(self) -> tuple[str, int] | None:
+        return next(self._steps, None)
 
 
 def _statuses(dry_run: bool):
@@ -125,21 +158,28 @@ def is_duplicate(
     return offer.price_min > last_price * threshold
 
 
-def search_with_retry(connector, settings, keyword, report, sleep):
+def search_with_retry(connector, settings, keyword, report, sleep, page=1):
+    """(nodes, has_next) or None when the search kept failing; never raises."""
     waits = (*SEARCH_RETRY_WAITS, None)
     for attempt, wait in enumerate(waits, start=1):
         try:
-            nodes, _ = connector.beta_search(
-                keyword, limit=settings.beta_search_limit, sort_type=settings.beta_sort_type
+            return connector.beta_search(
+                keyword,
+                limit=settings.beta_search_limit,
+                sort_type=settings.beta_sort_type,
+                page=page,
             )
-            return nodes
         except IntegrationError as error:
             if wait is None or error.code == "CONNECTOR_DISABLED":
                 report.errors.append(f"SEARCH_{error.code}")
+                upstream = getattr(error, "upstream_code", None)
                 logger.warning(
-                    "beta: busca Shopee falhou (%s) para %r após %s tentativa(s)",
+                    "beta: busca Shopee falhou (%s%s) para %r página %s após %s tentativa(s);"
+                    " seguindo para a próxima busca",
                     error.code,
+                    f" código {upstream}" if upstream is not None else "",
                     keyword,
+                    page,
                     attempt,
                 )
                 return None
@@ -148,39 +188,51 @@ def search_with_retry(connector, settings, keyword, report, sleep):
     return None
 
 
-def collect_candidates(session, settings, connector, now, report, dry_run, sleep=time.sleep):
+def evaluate_nodes(session, settings, nodes, keyword, now, report, dry_run, best) -> None:
+    """Filter one page of results into `best` (item_key -> (score, offer, keyword))."""
     secret = settings.shopee_secret.get_secret_value() if settings.shopee_secret else None
-    best: dict[str, tuple[Decimal, BetaOffer, str]] = {}
-    for keyword in report.keywords:
-        nodes = search_with_retry(connector, settings, keyword, report, sleep)
-        if nodes is None:
+    report.found += len(nodes)
+    for node in nodes:
+        try:
+            offer = parse_offer(node, secret=secret)
+        except OfferRejected as error:
+            report.reject(error.reason)
             continue
-        report.found += len(nodes)
-        for node in nodes:
-            try:
-                offer = parse_offer(node, secret=secret)
-            except OfferRejected as error:
-                report.reject(error.reason)
-                continue
-            reason = rejection_reason(offer, settings)
-            if reason is None and has_excluded_term(offer.title, settings.beta_excluded_terms):
-                reason = "EXCLUDED_TERM"
-            if (
-                reason is None
-                and settings.beta_require_keyword_in_title
-                and not matches_keyword(offer.title, keyword, settings.beta_broad_keywords)
-            ):
-                reason = "OFF_TOPIC"
-            if reason is None and is_duplicate(session, settings, offer, now, dry_run):
-                reason = "DUPLICATE"
-            if reason is not None:
-                report.reject(reason)
-                continue
-            value = score(offer)
-            if offer.item_key not in best or best[offer.item_key][0] < value:
-                best[offer.item_key] = (value, offer, keyword)
-    report.eligible = len(best)
-    return sorted(best.values(), key=lambda row: (row[0], row[1].item_key), reverse=True)
+        reason = rejection_reason(offer, settings)
+        if reason is None and has_excluded_term(offer.title, settings.beta_excluded_terms):
+            reason = "EXCLUDED_TERM"
+        if (
+            reason is None
+            and settings.beta_require_keyword_in_title
+            and not matches_keyword(offer.title, keyword, settings.beta_broad_keywords)
+        ):
+            reason = "OFF_TOPIC"
+        if reason is None and is_duplicate(session, settings, offer, now, dry_run):
+            reason = "DUPLICATE"
+        if reason is not None:
+            report.reject(reason)
+            continue
+        value = score(offer)
+        if offer.item_key not in best or best[offer.item_key][0] < value:
+            best[offer.item_key] = (value, offer, keyword)
+
+
+def run_search(session, settings, connector, plan, now, report, dry_run, best, sleep) -> bool:
+    """Run the next planned search; False when the plan is exhausted."""
+    step = plan.next()
+    if step is None:
+        return False
+    keyword, page = step
+    report.searches.append(keyword if page == 1 else f"{keyword} p{page}")
+    result = search_with_retry(connector, settings, keyword, report, sleep, page=page)
+    if result is None:
+        plan.done.add(keyword)  # skip this term for the rest of the cycle
+        return True
+    nodes, has_next = result
+    if not has_next or not nodes:
+        plan.done.add(keyword)
+    evaluate_nodes(session, settings, nodes, keyword, now, report, dry_run, best)
+    return True
 
 
 def recheck(connector, settings, offer: BetaOffer, report) -> BetaOffer | None:
@@ -279,11 +331,22 @@ def run_cycle(
     if not report.keywords:
         report.status = "NO_KEYWORDS"
         return report
-    candidates = collect_candidates(session, settings, connector, now, report, dry_run, sleep)
+    plan = SearchPlan(settings, now)
+    best: dict[str, tuple[Decimal, BetaOffer, str]] = {}
+    tried: set[str] = set()
+    rechecks = 0
     # Bound the fresh reads per cycle even when many candidates fail the recheck.
-    for value, offer, keyword in candidates[: allowance * 3]:
-        if report.published >= allowance or (not dry_run and not channels):
+    max_rechecks = allowance * 3
+    for value, offer, keyword in _candidates(
+        session, settings, connector, plan, now, report, dry_run, best, tried, allowance, sleep
+    ):
+        if (
+            report.published >= allowance
+            or (not dry_run and not channels)
+            or rechecks >= max_rechecks
+        ):
             break
+        rechecks += 1
         fresh = recheck(connector, settings, offer, report)
         if fresh is None:
             continue
@@ -349,6 +412,43 @@ def run_cycle(
         else:
             row.status = "UNCERTAIN" if uncertain else "FAILED"
         session.commit()
-    if report.errors and report.published == 0:
-        report.status = "ERROR"
+    report.eligible = len(best)
+    if report.published == 0:
+        searches_failed = report.found == 0 and any(e.startswith("SEARCH_") for e in report.errors)
+        send_failed = any(not e.startswith("SEARCH_") for e in report.errors)
+        report.status = "ERROR" if searches_failed or send_failed else "NO_OFFERS"
     return report
+
+
+def _candidates(
+    session, settings, connector, plan, now, report, dry_run, best, tried, allowance, sleep
+):
+    """Yield the best untried candidates, searching more until the cycle's goal is met.
+
+    The usual slice (page 1 of this cycle's keywords) is always searched first so the
+    best of it wins. Only when that does not give enough new offers does the cycle go
+    to deeper pages and further keywords, up to BETA_MAX_SEARCHES_PER_CYCLE.
+    """
+    budget = settings.beta_max_searches_per_cycle
+    initial = min(len(report.keywords), budget)
+    while True:
+        while len(report.searches) < budget:
+            untried = [key for key in best if key not in tried]
+            if len(report.searches) >= initial and len(untried) >= allowance - report.published:
+                break
+            if not run_search(
+                session, settings, connector, plan, now, report, dry_run, best, sleep
+            ):
+                break
+        pending = sorted(
+            (row for key, row in best.items() if key not in tried),
+            key=lambda row: (row[0], row[1].item_key),
+            reverse=True,
+        )
+        if not pending:
+            return
+        for row in pending:
+            tried.add(row[1].item_key)
+            yield row
+            if report.published >= allowance:
+                return

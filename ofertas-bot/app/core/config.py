@@ -88,6 +88,11 @@ class Settings(BaseSettings):
     beta_sort_type: int = Field(default=2, ge=1, le=5)
     beta_interval_minutes: int = Field(default=15, ge=5, le=1440)
     beta_max_posts_per_cycle: int = Field(default=1, ge=1, le=5)
+    # Se as primeiras buscas não renderem ofertas novas, o ciclo continua: próximas
+    # páginas dos mesmos termos e depois os próximos termos do rodízio, até publicar
+    # a meta do ciclo ou gastar este número de buscas.
+    beta_max_searches_per_cycle: int = Field(default=15, ge=1, le=60)
+    beta_max_pages_per_keyword: int = Field(default=3, ge=1, le=20)
     beta_max_posts_per_hour: int = Field(default=2, ge=1, le=30)
     beta_max_posts_per_day: int = Field(default=20, ge=1, le=200)
     beta_timezone: str = Field(default="America/Sao_Paulo", min_length=1, max_length=64)

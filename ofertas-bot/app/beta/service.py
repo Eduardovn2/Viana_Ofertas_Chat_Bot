@@ -23,10 +23,12 @@ from sqlalchemy.orm import Session
 
 from app.beta.offers import (
     BetaOffer,
+    CouponCampaign,
     OfferRejected,
     has_excluded_term,
     matches_keyword,
     parse_offer,
+    pick_coupon_campaign,
     rejection_reason,
     render,
     render_whatsapp,
@@ -56,6 +58,8 @@ class CycleReport:
     published: int = 0
     rejected: dict[str, int] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
+    # FOUND, NONE, DISABLED or ERROR_<code>; None when no offer reached rendering.
+    coupon: str | None = None
 
     def reject(self, reason: str):
         self.rejected[reason] = self.rejected.get(reason, 0) + 1
@@ -264,6 +268,29 @@ def recheck(connector, settings, offer: BetaOffer, report) -> BetaOffer | None:
     return fresh
 
 
+def coupon_campaign(connector, settings, now: datetime, report) -> CouponCampaign | None:
+    """Official Shopee coupon campaign for this cycle; never blocks a post."""
+    if not settings.beta_coupon_campaigns_enabled:
+        report.coupon = "DISABLED"
+        return None
+    secret = settings.shopee_secret.get_secret_value() if settings.shopee_secret else None
+    report.coupon = "NONE"
+    for keyword in settings.beta_coupon_keywords:
+        try:
+            nodes = connector.beta_coupon_campaigns(keyword)
+        except IntegrationError as error:
+            code = getattr(error, "upstream_code", None)
+            report.coupon = f"ERROR_{code or error.code}"
+            logger.warning("beta: busca de cupons falhou (%s)", report.coupon)
+            continue
+        campaign = pick_coupon_campaign(nodes, now=now, secret=secret)
+        if campaign is not None:
+            report.coupon = "FOUND"
+            logger.info("beta: campanha de cupom %s", campaign.name)
+            return campaign
+    return None
+
+
 def active_channels(settings, whatsapp) -> list[str]:
     channels = []
     if "telegram" in settings.beta_channels and settings.beta_chat_id:
@@ -335,6 +362,8 @@ def run_cycle(
     best: dict[str, tuple[Decimal, BetaOffer, str]] = {}
     tried: set[str] = set()
     rechecks = 0
+    coupon_checked = False
+    coupon = None
     # Bound the fresh reads per cycle even when many candidates fail the recheck.
     max_rechecks = allowance * 3
     for value, offer, keyword in _candidates(
@@ -350,9 +379,12 @@ def run_cycle(
         fresh = recheck(connector, settings, offer, report)
         if fresh is None:
             continue
+        if not coupon_checked:
+            coupon_checked = True
+            coupon = coupon_campaign(connector, settings, now, report)
         try:
-            rendered = render(fresh, ad_label=settings.beta_ad_label)
-            wa_rendered = render_whatsapp(fresh, ad_label=settings.beta_ad_label)
+            rendered = render(fresh, ad_label=settings.beta_ad_label, coupon=coupon)
+            wa_rendered = render_whatsapp(fresh, ad_label=settings.beta_ad_label, coupon=coupon)
         except MessageTemplateError:
             report.reject("RENDER_FAILED")
             continue

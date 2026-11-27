@@ -115,6 +115,10 @@ class Settings(BaseSettings):
     beta_excluded_terms: tuple[str, ...] = ()
     # Onde cada oferta é publicada: "telegram", "whatsapp" ou os dois.
     beta_channels: tuple[Literal["telegram", "whatsapp"], ...] = ("telegram",)
+    # Cupons: a API oficial não tem cupom por produto. Com isto ligado, o bot procura
+    # campanhas oficiais de cupom (shopeeOfferV2) e põe o link de afiliado nos posts.
+    beta_coupon_campaigns_enabled: bool = True
+    beta_coupon_keywords: tuple[str, ...] = ("cupom", "cupons", "voucher")
     # WhatsApp via gateway local (whatsapp-gateway/, Baileys). Desligado por padrão.
     whatsapp_publisher_enabled: bool = False
     whatsapp_gateway_url: str = "http://127.0.0.1:3100"

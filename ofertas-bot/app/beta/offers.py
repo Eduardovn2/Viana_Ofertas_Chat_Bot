@@ -2,12 +2,15 @@
 
 No I/O here. Every value shown in a message comes straight from the official
 Shopee Affiliate API response; nothing (original price, stock, coupon) is inferred.
+Coupons come only from official Shopee campaigns (shopeeOfferV2): the post links the
+campaign page and never claims that a coupon applies to the product.
 """
 
 import math
 import re
 import unicodedata
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from html import escape
 from urllib.parse import urlsplit
@@ -135,6 +138,64 @@ def parse_offer(node, *, secret: str | None = None) -> BetaOffer:
     )
 
 
+@dataclass(frozen=True)
+class CouponCampaign:
+    name: str
+    link: str
+
+
+COUPON_TEXT = "Pegue os cupons Shopee de hoje"
+_COUPON_NAME_TERMS = ("cupom", "cupons", "voucher", "vouchers")
+
+
+def _campaign_time(value) -> datetime | None:
+    """Shopee periods are Int64 epochs; 0/absent means no limit. Seconds or millis."""
+    if isinstance(value, str) and value.isdigit():
+        value = int(value)
+    if type(value) is not int or value <= 0:
+        return None
+    if value > 10**11:
+        value //= 1000
+    try:
+        return datetime.fromtimestamp(value, UTC)
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
+def parse_coupon_campaign(node, *, now: datetime, secret: str | None = None) -> CouponCampaign:
+    """A live official campaign whose name says it is about coupons/vouchers."""
+    if not isinstance(node, dict):
+        raise OfferRejected("INVALID_CAMPAIGN")
+    name = node.get("offerName")
+    if not isinstance(name, str) or not name.strip():
+        raise OfferRejected("MISSING_CAMPAIGN_NAME")
+    name = " ".join(name.split())
+    if not _tokens(name) & {_stem(t) for t in _COUPON_NAME_TERMS}:
+        raise OfferRejected("NOT_A_COUPON_CAMPAIGN")
+    start = _campaign_time(node.get("periodStartTime"))
+    end = _campaign_time(node.get("periodEndTime"))
+    if (start and start > now) or (end and end <= now):
+        raise OfferRejected("CAMPAIGN_NOT_ACTIVE")
+    link = node.get("offerLink")
+    try:
+        validate_public_url(link)
+    except MessageTemplateError:
+        raise OfferRejected("MISSING_CAMPAIGN_LINK") from None
+    if urlsplit(link).hostname not in _OFFER_LINK_HOSTS or (secret and secret in link):
+        raise OfferRejected("INVALID_CAMPAIGN_LINK")
+    return CouponCampaign(name=name[:120], link=link)
+
+
+def pick_coupon_campaign(nodes, *, now: datetime, secret: str | None = None):
+    """First valid coupon campaign (the API sorts by most recent)."""
+    for node in nodes or ():
+        try:
+            return parse_coupon_campaign(node, now=now, secret=secret)
+        except OfferRejected:
+            continue
+    return None
+
+
 def rejection_reason(offer: BetaOffer, settings) -> str | None:
     """First filter the offer fails, or None when it passes every filter."""
     if offer.discount_percent < settings.beta_min_discount_percent:
@@ -222,7 +283,9 @@ def _sales(value: int) -> str:
     return f"{value} vendido" + ("s" if value != 1 else "")
 
 
-def render(offer: BetaOffer, *, ad_label: bool = True) -> RenderedMessage:
+def render(
+    offer: BetaOffer, *, ad_label: bool = True, coupon: CouponCampaign | None = None
+) -> RenderedMessage:
     title = offer.title if len(offer.title) <= _MAX_TITLE else offer.title[: _MAX_TITLE - 1] + "…"
     lines = []
     if offer.discount_percent > 0:
@@ -238,6 +301,8 @@ def render(offer: BetaOffer, *, ad_label: bool = True) -> RenderedMessage:
     if details:
         lines.append(" · ".join(details))
     lines.append(f'🛒 <a href="{escape(offer.offer_link, quote=True)}">Comprar na Shopee</a>')
+    if coupon is not None:
+        lines.append(f'🎟️ <a href="{escape(coupon.link, quote=True)}">{COUPON_TEXT}</a>')
     lines.append("")
     lines.append(PRICE_NOTICE)
     if ad_label:
@@ -254,7 +319,9 @@ def render(offer: BetaOffer, *, ad_label: bool = True) -> RenderedMessage:
 _WA_FORMATTING = re.compile(r"[*_~`]")
 
 
-def render_whatsapp(offer: BetaOffer, *, ad_label: bool = True) -> RenderedMessage:
+def render_whatsapp(
+    offer: BetaOffer, *, ad_label: bool = True, coupon: CouponCampaign | None = None
+) -> RenderedMessage:
     """Same content as `render`, in WhatsApp formatting (*bold*, plain link)."""
     title = _WA_FORMATTING.sub("", offer.title)
     title = " ".join(title.split()) or "Oferta"
@@ -274,6 +341,8 @@ def render_whatsapp(offer: BetaOffer, *, ad_label: bool = True) -> RenderedMessa
     if details:
         lines.append(" · ".join(details))
     lines.append(f"🛒 Comprar na Shopee: {offer.offer_link}")
+    if coupon is not None:
+        lines.append(f"🎟️ {COUPON_TEXT}: {coupon.link}")
     lines.append("")
     lines.append(f"_{PRICE_NOTICE}_")
     if ad_label:

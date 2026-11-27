@@ -67,8 +67,10 @@ def make_settings(**overrides):
 class FakeConnector:
     """`nodes` is page 1 of every keyword; `pages` maps keyword -> list of pages."""
 
-    def __init__(self, nodes, lookup=None, pages=None):
+    def __init__(self, nodes, lookup=None, pages=None, campaigns=None):
         self.nodes = nodes
+        self.campaigns = campaigns if campaigns is not None else []
+        self.campaign_searches = []
         self.lookup = lookup or {}
         self.pages = pages or {}
         self.searches = []
@@ -89,6 +91,12 @@ class FakeConnector:
         for pages in self.pages.values():
             for page in pages:
                 yield from page
+
+    def beta_coupon_campaigns(self, keyword, *, limit=20):
+        self.campaign_searches.append(keyword)
+        if isinstance(self.campaigns, Exception):
+            raise self.campaigns
+        return list(self.campaigns)
 
     def beta_lookup(self, shop_id, item_id):
         self.lookups.append((shop_id, item_id))
@@ -1002,3 +1010,123 @@ def test_first_slice_is_fully_searched_before_publishing(factory):
     with factory() as session:
         report = run_cycle(session, settings, connector, None, now=NOON)
     assert report.published == 1 and rows(factory)[0].item_key == "900:2"
+
+
+# --- coupon campaigns (shopeeOfferV2) -----------------------------------------------------------
+
+
+def campaign(**overrides):
+    data = {
+        "offerName": "Cupons Shopee de Black Friday",
+        "offerType": 1,
+        "offerLink": "https://s.shopee.com.br/cupom1",
+        "originalLink": "https://shopee.com.br/m/cupons",
+        "commissionRate": "0.03",
+        "periodStartTime": int((NOON - timedelta(days=1)).timestamp()),
+        "periodEndTime": int((NOON + timedelta(days=1)).timestamp()),
+    }
+    data.update(overrides)
+    return data
+
+
+@pytest.mark.parametrize(
+    "overrides, reason",
+    [
+        ({"offerName": "Moda Feminina Black Friday"}, "NOT_A_COUPON_CAMPAIGN"),
+        ({"periodEndTime": int((NOON - timedelta(hours=1)).timestamp())}, "CAMPAIGN_NOT_ACTIVE"),
+        (
+            {"periodStartTime": int((NOON + timedelta(hours=1)).timestamp()) * 1000},
+            "CAMPAIGN_NOT_ACTIVE",
+        ),
+        ({"offerLink": "https://evil.example/cupom"}, "INVALID_CAMPAIGN_LINK"),
+        ({"offerLink": "https://s.shopee.com.br/segredo-shopee"}, "INVALID_CAMPAIGN_LINK"),
+        ({"offerLink": None}, "MISSING_CAMPAIGN_LINK"),
+        ({"offerName": " "}, "MISSING_CAMPAIGN_NAME"),
+    ],
+)
+def test_coupon_campaign_rejections(overrides, reason):
+    with pytest.raises(offers.OfferRejected) as error:
+        offers.parse_coupon_campaign(campaign(**overrides), now=NOON, secret="segredo-shopee")
+    assert error.value.reason == reason
+
+
+def test_coupon_campaign_accepts_open_periods_and_voucher_names():
+    found = offers.parse_coupon_campaign(
+        campaign(offerName="Vouchers do dia", periodStartTime=0, periodEndTime=None), now=NOON
+    )
+    assert found == offers.CouponCampaign("Vouchers do dia", "https://s.shopee.com.br/cupom1")
+    picked = offers.pick_coupon_campaign(
+        [campaign(offerName="Eletrônicos"), campaign(offerLink="https://s.shopee.com.br/c2")],
+        now=NOON,
+    )
+    assert picked.link == "https://s.shopee.com.br/c2"
+    assert offers.pick_coupon_campaign([], now=NOON) is None
+
+
+def test_render_adds_coupon_line_on_both_channels():
+    offer = offers.parse_offer(node(1))
+    coupon = offers.CouponCampaign("Cupons", "https://s.shopee.com.br/cupom1?a=1&b=2")
+    text = offers.render(offer, coupon=coupon).text
+    assert '🎟️ <a href="https://s.shopee.com.br/cupom1?a=1&amp;b=2">' in text
+    assert offers.COUPON_TEXT in text
+    wa = offers.render_whatsapp(offer, coupon=coupon).text
+    assert "🎟️ Pegue os cupons Shopee de hoje: https://s.shopee.com.br/cupom1?a=1&b=2" in wa
+    assert "🎟️" not in offers.render(offer).text
+
+
+def test_cycle_adds_coupon_campaign_to_posts(factory):
+    connector = FakeConnector([node(1), node(2)], campaigns=[campaign()])
+    publisher, whatsapp = FakePublisher(), FakeWhatsApp()
+    settings = wa_settings(beta_max_posts_per_cycle=2)
+    with factory() as session:
+        report = run_cycle(session, settings, connector, publisher, now=NOON, whatsapp=whatsapp)
+    assert report.published == 2 and report.coupon == "FOUND"
+    assert connector.campaign_searches == ["cupom"]  # once per cycle
+    assert all("s.shopee.com.br/cupom1" in message.text for _, message in publisher.sent)
+    assert all("s.shopee.com.br/cupom1" in message.text for _, message in whatsapp.sent)
+    assert all("s.shopee.com.br/cupom1" in row.text for row in rows(factory))
+
+
+def test_coupon_search_failure_never_blocks_the_post(factory):
+    error = IntegrationError("UPSTREAM_GRAPHQL_ERROR", "x")
+    error.upstream_code = 10020
+    connector = FakeConnector([node(1)], campaigns=error)
+    publisher = FakePublisher()
+    with factory() as session:
+        report = run_cycle(
+            session, make_settings(beta_dry_run=False), connector, publisher, now=NOON
+        )
+    assert report.status == "OK" and report.published == 1
+    assert report.coupon == "ERROR_10020" and report.errors == []
+    assert connector.campaign_searches == ["cupom", "cupons", "voucher"]
+    assert "🎟️" not in publisher.sent[0][1].text
+
+
+def test_coupon_campaigns_can_be_turned_off(factory):
+    connector = FakeConnector([node(1)], campaigns=[campaign()])
+    settings = make_settings(beta_coupon_campaigns_enabled=False)
+    with factory() as session:
+        report = run_cycle(session, settings, connector, FakePublisher(), now=NOON)
+    assert report.coupon == "DISABLED" and connector.campaign_searches == []
+
+
+def test_beta_coupon_campaigns_query():
+    from app.integrations.http import JsonTransport
+
+    seen = []
+
+    def handler(request):
+        seen.append(json.loads(request.content)["query"])
+        return httpx.Response(200, json={"data": {"shopeeOfferV2": {"nodes": [campaign()]}}})
+
+    transport = JsonTransport(
+        client=httpx.Client(transport=httpx.MockTransport(handler)), min_interval=0.1
+    )
+    connector = ShopeeConnector(
+        transport, app_id=SecretStr("app123"), secret=SecretStr("s3cr3t"), enabled=True
+    )
+    assert connector.beta_coupon_campaigns("cupom") == [campaign()]
+    assert 'shopeeOfferV2(keyword:"cupom",sortType:1,page:1,limit:20)' in seen[0]
+    assert "offerLink" in seen[0] and "periodEndTime" in seen[0]
+    with pytest.raises(InvalidPayload):
+        connector.beta_coupon_campaigns(" ")

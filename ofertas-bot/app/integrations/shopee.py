@@ -44,6 +44,10 @@ _PRODUCT_FIELDS = (
     "productCatIds commissionRate commission priceDiscountRate periodStartTime periodEndTime"
 )
 _PAGE_FIELDS = "page limit hasNextPage"
+_CAMPAIGN_FIELDS = (
+    "offerName offerType offerLink originalLink commissionRate "
+    "categoryId collectionId periodStartTime periodEndTime"
+)
 _MULTISTORE_FIELDS = _PRODUCT_FIELDS + " shopName ratingStar sales shopType"
 _NUMERIC_ID = re.compile(r"[1-9][0-9]{0,18}\Z")
 _REFERENCE_ID = re.compile(r"([1-9][0-9]{0,18}):([1-9][0-9]{0,18})\Z")
@@ -637,6 +641,27 @@ class ShopeeConnector:
         )
         nodes, _ = self._connection(response, page=1, limit=1)
         return (nodes[0] if nodes else None), response.fetched_at
+
+    def beta_coupon_campaigns(self, keyword: str, *, limit: int = 20) -> list:
+        """Raw Shopee campaign nodes (shopeeOfferV2) found by `keyword`.
+
+        The official API has no per-product coupon; campaigns are Shopee pages
+        (e.g. the coupon hub) with an affiliate `offerLink`. Validation happens in
+        app.beta.offers.
+        """
+        if not isinstance(keyword, str) or not keyword.strip() or len(keyword) > 100:
+            raise InvalidPayload("Busca de campanhas Shopee inválida.")
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise InvalidPayload("Use limite de 1 a 50.")
+        query = (
+            f"query {{ shopeeOfferV2(keyword:{json.dumps(keyword.strip(), ensure_ascii=False)},"
+            f"sortType:1,page:1,limit:{limit}) {{ nodes {{ {_CAMPAIGN_FIELDS} }} }} }}"
+        )
+        data = self._request(query).data["data"].get("shopeeOfferV2")
+        nodes = data.get("nodes") if isinstance(data, dict) else None
+        if not isinstance(nodes, list) or len(nodes) > limit:
+            raise InvalidPayload()
+        return nodes
 
     def fetch_coupons(self, ref: ProductRef) -> list:
         raise UnsupportedCapability(

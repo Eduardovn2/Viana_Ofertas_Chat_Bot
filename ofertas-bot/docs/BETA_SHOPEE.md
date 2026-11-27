@@ -93,6 +93,24 @@ quando nada passou nos filtros.
 - `BETA_EXCLUDED_TERMS`: descarta títulos com algum desses termos
   (ex.: `["masculino","infantil"]`). Aparece no relatório como `EXCLUDED_TERM`.
 
+## Cupons
+
+A API oficial de afiliados da Shopee não tem cupom por produto: ela só oferece
+produtos (`productOfferV2`), lojas (`shopOfferV2`) e campanhas da Shopee
+(`shopeeOfferV2`). Por isso o bot usa as **campanhas oficiais de cupom**:
+
+- uma vez por ciclo, busca `shopeeOfferV2` com os termos de `BETA_COUPON_KEYWORDS`
+  (padrão `cupom`, `cupons`, `voucher`);
+- usa a primeira campanha ativa cujo nome fala de cupom/voucher e cujo link é da Shopee;
+- coloca no post (Telegram e WhatsApp) a linha `🎟️ Pegue os cupons Shopee de hoje`
+  com o link de afiliado da campanha. Não afirma que o cupom vale para aquele produto;
+- se a busca falhar ou não houver campanha, o post sai normalmente, sem a linha.
+  O resultado aparece no relatório do ciclo em `coupon` (`FOUND`, `NONE`, `DISABLED`
+  ou `ERROR_<código>`).
+
+Para desligar: `BETA_COUPON_CAMPAIGNS_ENABLED=false`. Para ver o que a sua conta
+recebe (sem publicar nada): `.venv/Scripts/python.exe -m app.shopee_coupon_probe`.
+
 ## WhatsApp
 
 O WhatsApp não tem API oficial para postar em grupos comuns, então o bot usa um
